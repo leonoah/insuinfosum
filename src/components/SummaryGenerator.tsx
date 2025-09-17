@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, FileText, AlertTriangle, CheckCircle, Clock, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { jsPDF } from "jspdf";
 import agentLogo from "@/assets/agent-logo.png";
 
 interface FormData {
@@ -166,24 +167,196 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     window.open(whatsappLink, '_blank');
   };
 
-  const downloadPDF = () => {
-    // For now, this will create a simple text file
-    // In a real application, you'd use a PDF library like jsPDF
-    const text = generateSummaryText();
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `סיכום_פגישה_${formData.clientName}_${formData.meetingDate}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const downloadPDF = async () => {
+    try {
+      // Create new PDF document
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-    toast({
-      title: "הקובץ הורד",
-      description: "הסיכום נשמר במכשיר שלך",
-    });
+      // Set Hebrew font support (using Arial Unicode MS equivalent)
+      pdf.setFont('helvetica');
+      
+      let yPosition = 30;
+      const pageWidth = 210; // A4 width in mm
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+
+      // Helper function to add Hebrew text (right-to-left)
+      const addHebrewText = (text: string, x: number, y: number, fontSize = 12, isBold = false) => {
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+        pdf.text(text, x, y, { align: 'right' });
+      };
+
+      // Header with logo placeholder and title
+      pdf.setFillColor(59, 130, 246); // Blue header background
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      
+      pdf.setTextColor(255, 255, 255); // White text
+      addHebrewText('סיכום פגישת ביטוח', pageWidth - margin, 20, 18, true);
+      addHebrewText(formatDate(formData.meetingDate), pageWidth - margin, 30, 12);
+
+      yPosition = 50;
+      pdf.setTextColor(0, 0, 0); // Reset to black
+
+      // Client information section
+      pdf.setFillColor(248, 250, 252); // Light gray background
+      pdf.rect(margin, yPosition, contentWidth, 35, 'F');
+      
+      yPosition += 10;
+      addHebrewText('פרטי הלקוח', pageWidth - margin, yPosition, 14, true);
+      yPosition += 8;
+      
+      addHebrewText(`שם: ${formData.clientName}`, pageWidth - margin, yPosition, 11);
+      yPosition += 6;
+      addHebrewText(`טלפון: ${formData.clientPhone}`, pageWidth - margin, yPosition, 11);
+      yPosition += 6;
+      addHebrewText(`אימייל: ${formData.clientEmail}`, pageWidth - margin, yPosition, 11);
+      
+      if (formData.topics.length > 0) {
+        yPosition += 6;
+        addHebrewText(`נושאים: ${formData.topics.join(', ')}`, pageWidth - margin, yPosition, 11);
+      }
+
+      yPosition += 15;
+
+      // Current situation section
+      if (formData.currentSituation) {
+        pdf.setFillColor(239, 246, 255); // Light blue
+        pdf.rect(margin, yPosition, contentWidth, 20, 'F');
+        yPosition += 8;
+        addHebrewText('מצב קיים', pageWidth - margin, yPosition, 12, true);
+        yPosition += 7;
+        
+        // Split long text into lines
+        const situationLines = pdf.splitTextToSize(formData.currentSituation, contentWidth - 10);
+        situationLines.forEach((line: string) => {
+          addHebrewText(line, pageWidth - margin, yPosition, 10);
+          yPosition += 5;
+        });
+        yPosition += 10;
+      }
+
+      // Risks section
+      if (formData.risks) {
+        pdf.setFillColor(254, 242, 242); // Light red
+        pdf.rect(margin, yPosition, contentWidth, 20, 'F');
+        yPosition += 8;
+        addHebrewText('פערים וסיכונים', pageWidth - margin, yPosition, 12, true);
+        yPosition += 7;
+        
+        const riskLines = pdf.splitTextToSize(formData.risks, contentWidth - 10);
+        riskLines.forEach((line: string) => {
+          addHebrewText(line, pageWidth - margin, yPosition, 10);
+          yPosition += 5;
+        });
+        yPosition += 10;
+      }
+
+      // Recommendations section
+      const validRecommendations = formData.recommendations.filter(r => r.trim());
+      if (validRecommendations.length > 0) {
+        pdf.setFillColor(240, 253, 244); // Light green
+        pdf.rect(margin, yPosition, contentWidth, Math.max(20, validRecommendations.length * 7 + 15), 'F');
+        yPosition += 8;
+        addHebrewText('המלצות', pageWidth - margin, yPosition, 12, true);
+        yPosition += 7;
+        
+        validRecommendations.forEach((rec) => {
+          addHebrewText(`• ${rec}`, pageWidth - margin, yPosition, 10);
+          yPosition += 6;
+        });
+        yPosition += 10;
+      }
+
+      // Cost estimation
+      if (formData.estimatedCost) {
+        pdf.setFillColor(250, 245, 255); // Light purple
+        pdf.rect(margin, yPosition, contentWidth, 15, 'F');
+        yPosition += 8;
+        addHebrewText(`הערכת עלות: ${formData.estimatedCost}`, pageWidth - margin, yPosition, 12, true);
+        yPosition += 15;
+      }
+
+      // Decisions section
+      if (formData.decisions) {
+        pdf.setFillColor(255, 251, 235); // Light yellow
+        pdf.rect(margin, yPosition, contentWidth, 20, 'F');
+        yPosition += 8;
+        addHebrewText('החלטות שהתקבלו', pageWidth - margin, yPosition, 12, true);
+        yPosition += 7;
+        
+        const decisionLines = pdf.splitTextToSize(formData.decisions, contentWidth - 10);
+        decisionLines.forEach((line: string) => {
+          addHebrewText(line, pageWidth - margin, yPosition, 10);
+          yPosition += 5;
+        });
+        yPosition += 15;
+      }
+
+      // Documents and actions section
+      if (formData.documents.length > 0 || formData.timeframes || formData.approvals) {
+        pdf.setFillColor(248, 250, 252); // Light gray
+        const sectionHeight = Math.max(25, formData.documents.length * 6 + 20);
+        pdf.rect(margin, yPosition, contentWidth, sectionHeight, 'F');
+        yPosition += 8;
+        addHebrewText('פעולות נדרשות', pageWidth - margin, yPosition, 12, true);
+        yPosition += 7;
+        
+        if (formData.documents.length > 0) {
+          addHebrewText('מסמכים להכנה:', pageWidth - margin, yPosition, 11, true);
+          yPosition += 6;
+          formData.documents.forEach((doc) => {
+            addHebrewText(`• ${doc}`, pageWidth - margin, yPosition, 10);
+            yPosition += 5;
+          });
+        }
+        
+        if (formData.timeframes) {
+          yPosition += 3;
+          addHebrewText(`לוח זמנים: ${formData.timeframes}`, pageWidth - margin, yPosition, 11);
+          yPosition += 6;
+        }
+        
+        if (formData.approvals) {
+          yPosition += 3;
+          addHebrewText(`אישורים נדרשים: ${formData.approvals}`, pageWidth - margin, yPosition, 11);
+        }
+        
+        yPosition += 15;
+      }
+
+      // Footer section
+      yPosition = Math.max(yPosition + 20, 250);
+      pdf.setFillColor(59, 130, 246); // Blue footer
+      pdf.rect(0, yPosition, pageWidth, 40, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      yPosition += 15;
+      addHebrewText('בברכה, הסוכן שלכם', pageWidth - margin, yPosition, 12, true);
+      yPosition += 8;
+      addHebrewText('טלפון: [טלפון הסוכן] | אימייל: [אימייל הסוכן]', pageWidth - margin, yPosition, 10);
+
+      // Save the PDF
+      const fileName = `סיכום_פגישה_${formData.clientName}_${formData.meetingDate}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "PDF נוצר בהצלחה",
+        description: "הסיכום הורד כקובץ PDF מעוצב",
+      });
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן ליצור את קובץ ה-PDF",
+        variant: "destructive"
+      });
+    }
   };
 
   const summaryText = generateSummaryText();
