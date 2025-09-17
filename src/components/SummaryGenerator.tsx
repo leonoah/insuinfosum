@@ -46,6 +46,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [viewMode, setViewMode] = useState<'classic' | 'blocks'>('classic');
   const [blocks, setBlocks] = useState<DocumentBlock[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [showFinalReport, setShowFinalReport] = useState(false);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -229,8 +230,9 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         format: 'a4'
       });
 
-      // Set Hebrew font support (using Arial Unicode MS equivalent)
-      pdf.setFont('helvetica');
+      // Add Hebrew font support
+      pdf.addFont('https://fonts.gstatic.com/s/assistant/v16/2sDPZGJYnIjSi6H75xXIvQ.ttf', 'Assistant', 'normal');
+      pdf.setFont('Assistant');
       
       let yPosition = 30;
       const pageWidth = 210; // A4 width in mm
@@ -240,8 +242,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       // Helper function to add Hebrew text (right-to-left)
       const addHebrewText = (text: string, x: number, y: number, fontSize = 12, isBold = false) => {
         pdf.setFontSize(fontSize);
-        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-        pdf.text(text, x, y, { align: 'right' });
+        pdf.setFont('Assistant', isBold ? 'bold' : 'normal');
+        // Reverse Hebrew text for proper RTL display
+        const reversedText = text.split('').reverse().join('');
+        pdf.text(reversedText, x, y, { align: 'right' });
       };
 
       // Header with logo placeholder and title
@@ -610,7 +614,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <Button 
             onClick={() => copyToClipboard(summaryText, 'summary')}
             className="bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
@@ -623,6 +627,14 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
             <span className="text-sm">
               {copiedItems.has('summary') ? 'הועתק!' : 'העתק סיכום'}
             </span>
+          </Button>
+
+          <Button 
+            onClick={() => setShowFinalReport(true)}
+            className="bg-gradient-to-r from-primary to-primary-hover text-primary-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2 shadow-glow"
+          >
+            <Layout className="h-5 w-5" />
+            <span className="text-sm">תצוגת דוח סופי</span>
           </Button>
 
           <Button 
@@ -721,8 +733,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
               </CardHeader>
               <CardContent>
                 <div className="prose prose-lg max-w-none">
-                  <div className="bg-background/50 p-6 rounded-xl border border-border">
-                    <pre className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-right">
+                  <div className="bg-glass/80 p-6 rounded-xl border border-glass-border backdrop-blur-sm">
+                    <pre className="whitespace-pre-wrap font-sans text-glass-foreground leading-relaxed text-right font-medium">
                       {summaryText}
                     </pre>
                   </div>
@@ -743,6 +755,244 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Final Report Modal */}
+      {showFinalReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background max-w-4xl w-full max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-glass-border bg-glass/50">
+              <h2 className="text-2xl font-bold text-foreground">דוח סיכום פגישה - תצוגה סופית</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFinalReport(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6">
+              {/* Header Section */}
+              <div className="text-center mb-8 p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <Shield className="h-10 w-10 text-primary" />
+                  <h1 className="text-3xl font-bold text-foreground">סיכום פגישת ביטוח</h1>
+                </div>
+                <p className="text-lg text-muted-foreground">
+                  {formData.clientName} • {formatDate(formData.meetingDate)}
+                </p>
+              </div>
+
+              {/* Client Details */}
+              <div className="mb-8 p-6 bg-glass/30 rounded-2xl border border-glass-border">
+                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  פרטי הלקוח
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2 text-foreground">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">שם:</span> {formData.clientName}
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">טלפון:</span> {formData.clientPhone}
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">אימייל:</span> {formData.clientEmail}
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">תאריך פגישה:</span> {formatDate(formData.meetingDate)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Products */}
+              {formData.products?.filter(p => p.type === 'current').length > 0 && (
+                <div className="mb-8 p-6 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-blue-500" />
+                    מצב קיים - מוצרים פיננסיים
+                  </h3>
+                  <div className="space-y-4">
+                    {formData.products?.filter(p => p.type === 'current').map((product, index) => (
+                      <div key={index} className="p-4 bg-background/50 rounded-xl border border-border">
+                        <h4 className="font-semibold text-foreground mb-2">{product.productName} - {product.company}</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                          <span>סוג מסלול: {product.subType}</span>
+                          <span>סכום צבירה: ₪{product.amount.toLocaleString()}</span>
+                          <span>דמי ניהול: {product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
+                          {product.investmentTrack && <span>מסלול השקעה: {product.investmentTrack}</span>}
+                        </div>
+                        {product.notes && (
+                          <p className="mt-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded">{product.notes}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Current Situation & Risks */}
+              {(formData.currentSituation || formData.risks) && (
+                <div className="mb-8 p-6 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    ניתוח מצב וסיכונים
+                  </h3>
+                  {formData.currentSituation && (
+                    <div className="mb-4 p-4 bg-background/50 rounded-xl">
+                      <h4 className="font-medium text-foreground mb-2">מצב קיים כללי:</h4>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{formData.currentSituation}</p>
+                    </div>
+                  )}
+                  {formData.risks && (
+                    <div className="p-4 bg-background/50 rounded-xl">
+                      <h4 className="font-medium text-foreground mb-2">פערים וסיכונים:</h4>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{formData.risks}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {(formData.recommendations.some(r => r.trim()) || formData.products?.filter(p => p.type === 'recommended').length > 0) && (
+                <div className="mb-8 p-6 bg-green-500/10 rounded-2xl border border-green-500/20">
+                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    המלצות הסוכן
+                  </h3>
+                  
+                  {formData.products?.filter(p => p.type === 'recommended').length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium text-foreground mb-3">המלצות מוצרים חדשים:</h4>
+                      <div className="space-y-3">
+                        {formData.products?.filter(p => p.type === 'recommended').map((product, index) => (
+                          <div key={index} className="p-4 bg-background/50 rounded-xl border border-border">
+                            <h5 className="font-semibold text-foreground mb-2">{product.productName} - {product.company}</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                              <span>סוג מסלול: {product.subType}</span>
+                              <span>סכום צבירה: ₪{product.amount.toLocaleString()}</span>
+                              <span>דמי ניהול: {product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
+                              {product.investmentTrack && <span>מסלול השקעה: {product.investmentTrack}</span>}
+                              {product.riskLevelChange && <span>שינוי רמת סיכון: {product.riskLevelChange}</span>}
+                            </div>
+                            {product.notes && (
+                              <p className="mt-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded">{product.notes}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.recommendations.some(r => r.trim()) && (
+                    <div className="p-4 bg-background/50 rounded-xl">
+                      <h4 className="font-medium text-foreground mb-2">המלצות נוספות:</h4>
+                      <ul className="space-y-1">
+                        {formData.recommendations.filter(r => r.trim()).map((rec, index) => (
+                          <li key={index} className="text-muted-foreground">• {rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {formData.estimatedCost && (
+                    <div className="mt-4 p-4 bg-primary/10 rounded-xl border border-primary/20">
+                      <span className="font-medium text-foreground">הערכת עלות: </span>
+                      <span className="text-primary font-semibold">{formData.estimatedCost}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Decisions */}
+              {formData.decisions && (
+                <div className="mb-8 p-6 bg-purple-500/10 rounded-2xl border border-purple-500/20">
+                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-purple-500" />
+                    החלטות שהתקבלו
+                  </h3>
+                  <div className="p-4 bg-background/50 rounded-xl">
+                    <p className="text-foreground whitespace-pre-wrap">{formData.decisions}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Required Actions */}
+              {(formData.documents.length > 0 || formData.timeframes || formData.approvals) && (
+                <div className="mb-8 p-6 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-orange-500" />
+                    פעולות נדרשות
+                  </h3>
+                  
+                  {formData.documents.length > 0 && (
+                    <div className="mb-4 p-4 bg-background/50 rounded-xl">
+                      <h4 className="font-medium text-foreground mb-2">מסמכים להכנה:</h4>
+                      <ul className="space-y-1">
+                        {formData.documents.map((doc, index) => (
+                          <li key={index} className="text-muted-foreground">• {doc}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {formData.timeframes && (
+                    <div className="mb-4 p-4 bg-background/50 rounded-xl">
+                      <h4 className="font-medium text-foreground mb-2">לוח זמנים:</h4>
+                      <p className="text-muted-foreground">{formData.timeframes}</p>
+                    </div>
+                  )}
+                  
+                  {formData.approvals && (
+                    <div className="p-4 bg-background/50 rounded-xl">
+                      <h4 className="font-medium text-foreground mb-2">אישורים נדרשים:</h4>
+                      <p className="text-muted-foreground">{formData.approvals}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20">
+                <p className="text-lg font-semibold text-foreground mb-2">בברכה, הסוכן שלכם</p>
+                <p className="text-muted-foreground">טלפון: [טלפון הסוכן] | אימייל: [אימייל הסוכן]</p>
+              </div>
+            </div>
+            
+            {/* Modal Actions */}
+            <div className="p-6 border-t border-glass-border bg-glass/30 flex flex-wrap gap-4 justify-center">
+              <Button
+                onClick={() => copyToClipboard(summaryText, 'final-report')}
+                className="bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl"
+              >
+                <Copy className="h-4 w-4 ml-2" />
+                העתק דוח
+              </Button>
+              <Button
+                onClick={sendEmail}
+                variant="outline"
+                className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
+              >
+                <Mail className="h-4 w-4 ml-2" />
+                שלח במייל
+              </Button>
+              <Button
+                onClick={downloadPDF}
+                variant="outline"
+                className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
+              >
+                <Download className="h-4 w-4 ml-2" />
+                ייצא PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
