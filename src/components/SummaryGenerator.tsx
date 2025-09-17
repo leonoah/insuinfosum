@@ -328,123 +328,138 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         </div>
 
         {/* Summary Preview */}
-        <div id="summary-content" className="space-y-6 bg-white p-6 rounded-2xl">
+        <div id="summary-content" className="space-y-8 bg-background p-8 rounded-3xl border border-border shadow-lg">
           {/* Header Section */}
-          <Card className="glass border-glass-border rounded-2xl">
-            <CardHeader className="text-center pb-4">
-              <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="text-center space-y-4 pb-6 border-b border-border">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 rounded-full bg-primary/10">
                 <Shield className="h-8 w-8 text-primary" />
-                <CardTitle className="text-2xl">
-                  סיכום פגישת ביטוח
-                </CardTitle>
               </div>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <Badge variant="outline" className="border-glass-border bg-glass text-foreground">
-                  <Calendar className="h-3 w-3 ml-1" />
-                  {formatDate(formData.meetingDate)}
+              <h1 className="text-3xl font-bold text-foreground">
+                סיכום פגישת ביטוח
+              </h1>
+            </div>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
+                <Calendar className="h-4 w-4 ml-2" />
+                {formatDate(formData.meetingDate)}
+              </Badge>
+              {formData.topics.length > 0 && (
+                <Badge variant="outline" className="px-4 py-2 text-sm font-medium">
+                  <FileText className="h-4 w-4 ml-2" />
+                  {formData.topics.length} נושאים נדונו
                 </Badge>
-                {formData.topics.length > 0 && (
-                  <Badge variant="outline" className="border-glass-border bg-glass text-foreground">
-                    <FileText className="h-3 w-3 ml-1" />
-                    {formData.topics.length} נושאים
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-          </Card>
+              )}
+            </div>
+          </div>
 
           {/* Client Details Section */}
-          <Card className="glass border-glass-border rounded-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-primary/10">
                 <User className="h-5 w-5 text-primary" />
-                פרטי הלקוח
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
-                  <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">פרטי הלקוח</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                <div className="flex items-center gap-3">
+                  <User className="h-5 w-5 text-primary" />
                   <div>
                     <div className="text-sm text-muted-foreground">שם הלקוח</div>
-                    <div className="font-medium">{formData.clientName}</div>
+                    <div className="text-lg font-semibold text-foreground">{formData.clientName}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
+              </div>
+              
+              <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-primary" />
                   <div>
                     <div className="text-sm text-muted-foreground">טלפון</div>
-                    <div className="font-medium">{formData.clientPhone}</div>
+                    <div className="text-lg font-semibold text-foreground">{formData.clientPhone}</div>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+            </div>
+            
+            <div className="p-4 rounded-xl bg-muted/30 border border-border">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-sm text-muted-foreground">אימייל</div>
-                  <div className="font-medium">{formData.clientEmail}</div>
+                  <div className="text-lg font-semibold text-foreground">{formData.clientEmail}</div>
                 </div>
               </div>
-              {formData.topics.length > 0 && (
-                <div className="p-3 bg-muted/20 rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-2">נושאים שנדונו</div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.topics.map((topic, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
+            </div>
+            
+            {formData.topics.length > 0 && (
+              <div className="p-4 rounded-xl bg-accent/20 border border-border">
+                <div className="text-sm text-muted-foreground mb-3">נושאים שנדונו בפגישה</div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.topics.map((topic, index) => (
+                    <Badge key={index} variant="secondary" className="text-sm px-3 py-1">
+                      {topic}
+                    </Badge>
+                  ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </div>
 
           {/* Agent Recommendations Section */}
           {(formData.currentSituation || formData.risks || formData.recommendations.some(r => r.trim())) && (
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-primary" />
-                  המלצות הסוכן
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </div>
+                <h2 className="text-xl font-semibold text-foreground">המלצות הסוכן</h2>
+              </div>
+              
+              <div className="space-y-4">
                 {formData.currentSituation && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-blue-900 dark:text-blue-100 mb-1">מצב קיים</div>
-                        <div className="text-blue-800 dark:text-blue-200 text-sm">{formData.currentSituation}</div>
+                  <div className="p-6 rounded-xl bg-gradient-to-r from-blue-50/50 to-blue-100/30 border border-blue-200/50">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-blue-100">
+                        <MapPin className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-blue-900 mb-2">מצב קיים</h3>
+                        <p className="text-blue-800 leading-relaxed">{formData.currentSituation}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {formData.risks && (
-                  <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-red-900 dark:text-red-100 mb-1">פערים וסיכונים</div>
-                        <div className="text-red-800 dark:text-red-200 text-sm">{formData.risks}</div>
+                  <div className="p-6 rounded-xl bg-gradient-to-r from-red-50/50 to-red-100/30 border border-red-200/50">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-red-100">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-red-900 mb-2">פערים וסיכונים</h3>
+                        <p className="text-red-800 leading-relaxed">{formData.risks}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {formData.recommendations.filter(r => r.trim()).length > 0 && (
-                  <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                      <div className="w-full">
-                        <div className="font-medium text-green-900 dark:text-green-100 mb-2">המלצות</div>
-                        <div className="space-y-2">
+                  <div className="p-6 rounded-xl bg-gradient-to-r from-green-50/50 to-green-100/30 border border-green-200/50">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-green-100">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-green-900 mb-3">המלצות מפורטות</h3>
+                        <div className="space-y-3">
                           {formData.recommendations.filter(rec => rec.trim()).map((rec, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-2" />
-                              <div className="text-green-800 dark:text-green-200 text-sm">{rec}</div>
+                            <div key={index} className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0" />
+                              <p className="text-green-800 leading-relaxed">{rec}</p>
                             </div>
                           ))}
                         </div>
@@ -454,60 +469,60 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                 )}
 
                 {formData.estimatedCost && (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                        <span className="text-purple-600 font-bold text-sm">₪</span>
+                  <div className="p-6 rounded-xl bg-gradient-to-r from-purple-50/50 to-purple-100/30 border border-purple-200/50">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-lg bg-purple-100">
+                        <span className="text-purple-600 font-bold text-lg">₪</span>
                       </div>
-                      <div>
-                        <div className="font-medium text-purple-900 dark:text-purple-100">הערכת עלות</div>
-                        <div className="text-purple-800 dark:text-purple-200 text-sm">{formData.estimatedCost}</div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-purple-900 mb-2">הערכת עלות</h3>
+                        <p className="text-purple-800 text-lg font-medium">{formData.estimatedCost}</p>
                       </div>
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Decisions Section */}
           {formData.decisions && (
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-primary" />
-                  החלטות שהתקבלו
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-muted/20 rounded-lg">
-                  <p className="text-sm leading-relaxed">{formData.decisions}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <h2 className="text-xl font-semibold text-foreground">החלטות שהתקבלו</h2>
+              </div>
+              
+              <div className="p-6 rounded-xl bg-accent/20 border border-border">
+                <p className="text-foreground leading-relaxed">{formData.decisions}</p>
+              </div>
+            </div>
           )}
 
           {/* Actions Required Section */}
           {(formData.documents.length > 0 || formData.timeframes || formData.approvals) && (
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-primary/10">
                   <Clock className="h-5 w-5 text-primary" />
-                  פעולות נדרשות
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </div>
+                <h2 className="text-xl font-semibold text-foreground">פעולות נדרשות</h2>
+              </div>
+              
+              <div className="space-y-6">
                 {formData.documents.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">מסמכים להכנה</span>
+                  <div className="p-6 rounded-xl bg-muted/30 border border-border">
+                    <div className="flex items-center gap-3 mb-4">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">מסמכים להכנה</h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {formData.documents.map((doc, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-muted/20 rounded text-sm">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                          {doc}
+                        <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg">
+                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-foreground">{doc}</span>
                         </div>
                       ))}
                     </div>
@@ -515,56 +530,50 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                 )}
 
                 {formData.timeframes && (
-                  <>
-                    <Separator />
+                  <div className="p-6 rounded-xl bg-muted/30 border border-border">
                     <div className="flex items-start gap-3">
-                      <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <div className="font-medium text-sm mb-1">לוח זמנים</div>
-                        <div className="text-sm text-muted-foreground">{formData.timeframes}</div>
+                      <Clock className="h-5 w-5 text-primary mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground mb-2">לוח זמנים</h3>
+                        <p className="text-muted-foreground leading-relaxed">{formData.timeframes}</p>
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {formData.approvals && (
-                  <>
-                    <Separator />
+                  <div className="p-6 rounded-xl bg-muted/30 border border-border">
                     <div className="flex items-start gap-3">
-                      <CheckCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <div className="font-medium text-sm mb-1">אישורים נדרשים</div>
-                        <div className="text-sm text-muted-foreground">{formData.approvals}</div>
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground mb-2">אישורים נדרשים</h3>
+                        <p className="text-muted-foreground leading-relaxed">{formData.approvals}</p>
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Agent Signature Section */}
-          <Card className="glass border-glass-border rounded-2xl">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="flex justify-center">
-                  <img 
-                    src={agentLogo} 
-                    alt="לוגו הסוכן" 
-                    className="h-16 w-auto"
-                  />
-                </div>
-                <div>
-                  <p className="text-lg font-medium">בברכה,</p>
-                  <p className="text-primary font-semibold">הסוכן שלכם</p>
-                  <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                    <p>טלפון: [טלפון הסוכן]</p>
-                    <p>אימייל: [אימייל הסוכן]</p>
-                  </div>
-                </div>
+          <div className="text-center space-y-6 pt-8 border-t border-border">
+            <div className="flex justify-center">
+              <img 
+                src={agentLogo} 
+                alt="לוגו הסוכן" 
+                className="h-20 w-auto opacity-90"
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xl font-medium text-foreground">בברכה,</p>
+              <p className="text-primary font-bold text-lg">הסוכן שלכם</p>
+              <div className="text-muted-foreground space-y-1 pt-2">
+                <p>טלפון: [טלפון הסוכן]</p>
+                <p>אימייל: [אימייל הסוכן]</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Bottom CTA */}
