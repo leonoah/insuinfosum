@@ -38,7 +38,7 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Button asChild size="lg" className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow text-lg h-auto min-w-[200px] glass-hover">
               <Link to="/app" className="flex items-center gap-2">
-                התחל עכשיו
+               ומהר התחל עכשיו
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
