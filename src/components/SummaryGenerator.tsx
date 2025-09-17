@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, FileText, AlertTriangle, CheckCircle, Clock, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import agentLogo from "@/assets/agent-logo.png";
 
 interface FormData {
@@ -32,6 +35,8 @@ interface SummaryGeneratorProps {
 const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const { toast } = useToast();
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -153,11 +158,40 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
   };
 
-  const sendEmail = () => {
-    const subject = encodeURIComponent(`סיכום פגישת ביטוח – ${formData.clientName} – ${formatDate(formData.meetingDate)}`);
-    const body = encodeURIComponent(generateSummaryText());
-    const mailtoLink = `mailto:${formData.clientEmail}?subject=${subject}&body=${body}`;
-    window.open(mailtoLink);
+  const sendEmail = async () => {
+    if (isSendingEmail) return;
+    
+    setIsSendingEmail(true);
+    try {
+      const subject = `סיכום פגישת ביטוח – ${formData.clientName} – ${formatDate(formData.meetingDate)}`;
+      const summary = generateSummaryText();
+
+      const { data, error } = await supabase.functions.invoke('send-summary-email', {
+        body: {
+          to: formData.clientEmail,
+          subject,
+          summary,
+          clientName: formData.clientName,
+          meetingDate: formatDate(formData.meetingDate)
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "המייל נשלח בהצלחה!",
+        description: `סיכום הפגישה נשלח לכתובת ${formData.clientEmail}`,
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "שגיאה בשליחת המייל",
+        description: "ניסה שוב מאוחר יותר או השתמש בלחצן 'שלח בוואטסאפ'",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const sendWhatsApp = () => {
@@ -166,24 +200,60 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     window.open(whatsappLink, '_blank');
   };
 
-  const downloadPDF = () => {
-    // For now, this will create a simple text file
-    // In a real application, you'd use a PDF library like jsPDF
-    const text = generateSummaryText();
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `סיכום_פגישה_${formData.clientName}_${formData.meetingDate}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const downloadPDF = async () => {
+    if (isGeneratingPDF) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      const summaryElement = document.getElementById('summary-content');
+      if (!summaryElement) {
+        throw new Error('לא נמצא תוכן הסיכום');
+      }
 
-    toast({
-      title: "הקובץ הורד",
-      description: "הסיכום נשמר במכשיר שלך",
-    });
+      // Create canvas from the summary element
+      const canvas = await html2canvas(summaryElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Save the PDF
+      const fileName = `סיכום_פגישה_${formData.clientName}_${formData.meetingDate}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "קובץ PDF נוצר בהצלחה!",
+        description: "הסיכום הורד למכשיר שלך",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "שגיאה ביצירת PDF",
+        description: "ניסה שוב או השתמש באפשרות 'העתק סיכום'",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const summaryText = generateSummaryText();
@@ -229,11 +299,12 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
           <Button 
             onClick={sendEmail}
+            disabled={isSendingEmail}
             variant="outline"
-            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
+            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2 disabled:opacity-50"
           >
             <Mail className="h-5 w-5" />
-            <span className="text-sm">שלח במייל</span>
+            <span className="text-sm">{isSendingEmail ? 'שולח...' : 'שלח במייל'}</span>
           </Button>
 
           <Button 
@@ -247,16 +318,17 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
           <Button 
             onClick={downloadPDF}
+            disabled={isGeneratingPDF}
             variant="outline"
-            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
+            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2 disabled:opacity-50"
           >
             <Download className="h-5 w-5" />
-            <span className="text-sm">ייצא קובץ</span>
+            <span className="text-sm">{isGeneratingPDF ? 'יוצר PDF...' : 'ייצא PDF'}</span>
           </Button>
         </div>
 
         {/* Summary Preview */}
-        <div className="space-y-6">
+        <div id="summary-content" className="space-y-6 bg-white p-6 rounded-2xl">
           {/* Header Section */}
           <Card className="glass border-glass-border rounded-2xl">
             <CardHeader className="text-center pb-4">
