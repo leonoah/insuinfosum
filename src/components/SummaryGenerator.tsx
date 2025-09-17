@@ -15,6 +15,7 @@ import BlocksSidebar from "./blocks/BlocksSidebar";
 import BlockRenderer from "./blocks/BlockRenderer";
 import { BlockTemplate, DocumentBlock } from "@/types/blocks";
 import { blockTemplates, documentTemplates } from "@/data/blockTemplates";
+import { SelectedProduct } from "@/types/insurance";
 
 interface FormData {
   clientName: string;
@@ -27,6 +28,7 @@ interface FormData {
   risks: string;
   recommendations: string[];
   estimatedCost: string;
+  products: SelectedProduct[];
   decisions: string;
   documents: string[];
   timeframes: string;
@@ -56,6 +58,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
   const generateSummaryText = () => {
     const summaryParts = [];
+    const currentProducts = formData.products?.filter(p => p.type === 'current') || [];
+    const recommendedProducts = formData.products?.filter(p => p.type === 'recommended') || [];
 
     // Header
     summaryParts.push(`נושא: סיכום פגישת ביטוח – ${formData.clientName} – ${formatDate(formData.meetingDate)}`);
@@ -75,21 +79,59 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
     summaryParts.push('');
 
+    // Current products
+    if (currentProducts.length > 0) {
+      summaryParts.push('מצב קיים - מוצרים פיננסיים:');
+      currentProducts.forEach((product, index) => {
+        summaryParts.push(`${index + 1}. ${product.productName} - ${product.company}`);
+        summaryParts.push(`   • סוג מסלול: ${product.subType}`);
+        summaryParts.push(`   • סכום צבירה: ₪${product.amount.toLocaleString()}`);
+        summaryParts.push(`   • דמי ניהול: ${product.managementFeeOnDeposit}% מהפקדה, ${product.managementFeeOnAccumulation}% מצבירה`);
+        if (product.investmentTrack) {
+          summaryParts.push(`   • מסלול השקעה: ${product.investmentTrack}`);
+        }
+        if (product.notes) {
+          summaryParts.push(`   • הערות: ${product.notes}`);
+        }
+        summaryParts.push('');
+      });
+    }
+
     // Agent recommendations
-    if (formData.currentSituation || formData.risks || formData.recommendations.some(r => r.trim())) {
+    if (formData.currentSituation || formData.risks || formData.recommendations.some(r => r.trim()) || recommendedProducts.length > 0) {
       summaryParts.push('המלצות הסוכן:');
       
       if (formData.currentSituation) {
-        summaryParts.push(`• מצב קיים: ${formData.currentSituation}`);
+        summaryParts.push(`• מצב קיים כללי: ${formData.currentSituation}`);
       }
       
       if (formData.risks) {
         summaryParts.push(`• פערים/סיכונים: ${formData.risks}`);
       }
+
+      // Recommended products
+      if (recommendedProducts.length > 0) {
+        summaryParts.push('• המלצות מוצרים חדשים:');
+        recommendedProducts.forEach((product, index) => {
+          summaryParts.push(`  ${index + 1}. ${product.productName} - ${product.company}`);
+          summaryParts.push(`     - סוג מסלול: ${product.subType}`);
+          summaryParts.push(`     - סכום צבירה: ₪${product.amount.toLocaleString()}`);
+          summaryParts.push(`     - דמי ניהול: ${product.managementFeeOnDeposit}% מהפקדה, ${product.managementFeeOnAccumulation}% מצבירה`);
+          if (product.investmentTrack) {
+            summaryParts.push(`     - מסלול השקעה: ${product.investmentTrack}`);
+          }
+          if (product.riskLevelChange) {
+            summaryParts.push(`     - שינוי רמת סיכון: ${product.riskLevelChange}`);
+          }
+          if (product.notes) {
+            summaryParts.push(`     - הערות: ${product.notes}`);
+          }
+        });
+      }
       
       const validRecommendations = formData.recommendations.filter(r => r.trim());
       if (validRecommendations.length > 0) {
-        summaryParts.push('• המלצות:');
+        summaryParts.push('• המלצות נוספות:');
         validRecommendations.forEach(rec => {
           summaryParts.push(`  - ${rec}`);
         });

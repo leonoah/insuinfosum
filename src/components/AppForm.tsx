@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2 } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
+import ProductManager from "./ProductSelector/ProductManager";
+import { SelectedProduct } from "@/types/insurance";
 
 interface FormData {
   // Client details
@@ -26,6 +28,9 @@ interface FormData {
   risks: string;
   recommendations: string[];
   estimatedCost: string;
+  
+  // Products
+  products: SelectedProduct[];
   
   // Decisions
   decisions: string;
@@ -54,6 +59,7 @@ const AppForm = () => {
     risks: "",
     recommendations: [""],
     estimatedCost: "",
+    products: [],
     decisions: "",
     documents: [],
     timeframes: "",
@@ -193,7 +199,7 @@ const AppForm = () => {
 
         {/* Form */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 glass mb-8 p-1 rounded-2xl">
+          <TabsList className="grid w-full grid-cols-4 glass mb-8 p-1 rounded-2xl">
             <TabsTrigger 
               value="client" 
               className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -207,6 +213,13 @@ const AppForm = () => {
             >
               <FileText className="h-4 w-4 ml-2" />
               המלצות
+            </TabsTrigger>
+            <TabsTrigger 
+              value="products"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <BarChart3 className="h-4 w-4 ml-2" />
+              מוצרים
             </TabsTrigger>
             <TabsTrigger 
               value="decisions"
@@ -390,6 +403,25 @@ const AppForm = () => {
                     placeholder="₪ 500-800 לחודש"
                   />
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Products */}
+          <TabsContent value="products">
+            <Card className="glass border-glass-border rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  ניהול מוצרים פיננסיים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductManager
+                  currentProducts={formData.products.filter(p => p.type === 'current')}
+                  recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
+                  onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
+                />
               </CardContent>
             </Card>
           </TabsContent>
