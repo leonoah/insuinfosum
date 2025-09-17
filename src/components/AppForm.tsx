@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +8,32 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3 } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import { SelectedProduct } from "@/types/insurance";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+interface Client {
+  id: string;
+  client_id: string;
+  client_name: string;
+  client_phone: string;
+  client_email: string;
+}
 
 interface FormData {
   // Client details
@@ -50,6 +70,9 @@ const AppForm = () => {
   const [activeTab, setActiveTab] = useState("client");
   const [showSummary, setShowSummary] = useState(false);
   const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [clientSearchValue, setClientSearchValue] = useState("");
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
     clientId: "",
@@ -67,6 +90,64 @@ const AppForm = () => {
     timeframes: "",
     approvals: ""
   });
+
+  // Load clients on component mount
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('client_name');
+      
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
+  const saveClient = async () => {
+    if (!formData.clientName || !formData.clientId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .upsert([{
+          client_id: formData.clientId,
+          client_name: formData.clientName,
+          client_phone: formData.clientPhone,
+          client_email: formData.clientEmail
+        }], {
+          onConflict: 'client_id'
+        });
+      
+      if (error) throw error;
+      loadClients(); // Reload clients list
+    } catch (error) {
+      console.error('Error saving client:', error);
+    }
+  };
+
+  const selectClient = (client: Client) => {
+    setFormData(prev => ({
+      ...prev,
+      clientName: client.client_name,
+      clientId: client.client_id,
+      clientPhone: client.client_phone || "",
+      clientEmail: client.client_email || ""
+    }));
+    setClientSearchValue(client.client_name);
+    setClientSearchOpen(false);
+    
+    toast({
+      title: "לקוח נטען",
+      description: `פרטי ${client.client_name} נטענו בהצלחה`,
+    });
+  };
 
   const documentOptions = [
     "העתק תעודת זהות", "אישור הכנסה", "בדיקות רפואיות", 
@@ -142,7 +223,7 @@ const AppForm = () => {
     }
   };
 
-  const generateSummary = () => {
+  const generateSummary = async () => {
     if (!formData.clientName || !formData.clientPhone || !formData.currentSituation) {
       toast({
         title: "חסרים פרטים",
@@ -151,6 +232,10 @@ const AppForm = () => {
       });
       return;
     }
+    
+    // Save client before generating summary
+    await saveClient();
+    
     setShowSummary(true);
   };
 
@@ -308,13 +393,61 @@ const AppForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="clientName">שם הלקוח *</Label>
-                    <Input
-                      id="clientName"
-                      value={formData.clientName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl"
-                      placeholder="הכניסו שם מלא"
-                    />
+                    <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={clientSearchOpen}
+                          className="w-full justify-between mt-2 bg-input border-border rounded-xl h-10"
+                        >
+                          {clientSearchValue || formData.clientName || "בחרו לקוח קיים או הקלידו שם חדש"}
+                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput 
+                            placeholder="חפשו לקוח או הקלידו שם חדש..."
+                            value={clientSearchValue}
+                            onValueChange={(value) => {
+                              setClientSearchValue(value);
+                              setFormData(prev => ({ ...prev, clientName: value }));
+                            }}
+                          />
+                          <CommandEmpty>
+                            <div className="p-4 text-center">
+                              <p className="text-sm text-muted-foreground mb-2">
+                                לא נמצא לקוח עם השם "{clientSearchValue}"
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                המשיכו למלא את הפרטים ליצירת לקוח חדש
+                              </p>
+                            </div>
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {clients
+                              .filter(client => 
+                                client.client_name.toLowerCase().includes(clientSearchValue.toLowerCase())
+                              )
+                              .map((client) => (
+                                <CommandItem
+                                  key={client.id}
+                                  value={client.client_name}
+                                  onSelect={() => selectClient(client)}
+                                >
+                                  <div className="flex flex-col items-start">
+                                    <span className="font-medium">{client.client_name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ת.ز: {client.client_id} | טל: {client.client_phone}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   
                   <div>

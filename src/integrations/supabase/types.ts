@@ -577,6 +577,36 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          client_email: string | null
+          client_id: string
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_id: string
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          client_email?: string | null
+          client_id?: string
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_sections: {
         Row: {
           button_link: string | null
