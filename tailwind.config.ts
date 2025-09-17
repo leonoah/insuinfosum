@@ -14,9 +14,9 @@ export default {
     },
     extend: {
       colors: {
-        border: "rgba(255, 255, 255, 0.08)",
+        border: "hsl(var(--border))",
         input: {
-          DEFAULT: "rgba(255, 255, 255, 0.08)",
+          DEFAULT: "hsl(var(--input-background))",
           foreground: "hsl(var(--input-foreground))",
         },
         ring: "hsl(var(--ring))",
@@ -46,7 +46,7 @@ export default {
         glass: {
           DEFAULT: "rgba(255, 255, 255, 0.08)",
           foreground: "hsl(var(--glass-foreground))",
-          border: "rgba(255, 255, 255, 0.08)",
+          border: "hsl(var(--glass-border))",
         },
       },
       backgroundImage: {

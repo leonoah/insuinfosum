@@ -10,10 +10,10 @@
     --background: 215 25% 4%;
     --foreground: 220 9% 91%;
     
-    /* Glass surfaces */
-    --glass-background: 0 0% 100%;
+    /* Glass surfaces - עדכון לניגודיות טובה יותר */
+    --glass-background: 215 25% 8%;
     --glass-foreground: 220 9% 91%;
-    --glass-border: 0 0% 100%;
+    --glass-border: 215 20% 20%;
     
     /* Primary accent - Turquoise */
     --primary: 188 97% 42%;
@@ -36,9 +36,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 220 9% 91%;
     
-    /* Interactive elements */
-    --border: 0 0% 100%;
-    --input-background: 0 0% 100%;
+    /* Interactive elements - עדכון לניגודיות טובה יותר */
+    --border: 215 20% 20%;
+    --input-background: 215 25% 8%;
     --input-foreground: 220 9% 91%;
     --ring: 188 97% 42%;
     
@@ -80,11 +80,12 @@
   
   /* Glass morphism utilities */
   .glass {
-    background: rgba(255, 255, 255, 0.08);
+    background: hsl(var(--glass-background) / 0.7);
     backdrop-filter: var(--backdrop-blur);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid hsl(var(--glass-border));
     border-radius: var(--radius);
     box-shadow: var(--shadow-glass);
+    color: hsl(var(--glass-foreground));
   }
   
   .glass-hover {
@@ -92,8 +93,8 @@
   }
   
   .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: hsl(var(--glass-background) / 0.9);
+    border-color: hsl(var(--glass-border));
     transform: translateY(-2px);
   }
   
@@ -114,15 +115,5 @@
   
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
   }
 }
