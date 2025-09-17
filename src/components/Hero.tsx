@@ -1,14 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Play } from "lucide-react";
+import { FallingPattern } from "@/components/ui/falling-pattern";
 const Hero = () => {
   return <section className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16">
       <div className="max-w-6xl mx-auto text-center">
-        {/* Background decoration - Optimized for performance */}
-        <div className="absolute inset-0 overflow-hidden" style={{ contain: 'layout paint', willChange: 'transform' }}>
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-2xl animate-pulse" style={{ willChange: 'opacity, transform', transform: 'translate3d(0,0,0)' }}></div>
-          <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-2xl animate-pulse delay-1000" style={{ willChange: 'opacity, transform', transform: 'translate3d(0,0,0)' }}></div>
-        </div>
+        {/* Falling Pattern Background */}
+        <FallingPattern 
+          className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_10%,var(--background)_60%)]"
+          color="hsl(var(--primary) / 0.15)"
+          backgroundColor="transparent"
+          duration={200}
+          blurIntensity="0.5em"
+          density={0.8}
+        />
 
         {/* Content */}
         <div className="relative z-10">
