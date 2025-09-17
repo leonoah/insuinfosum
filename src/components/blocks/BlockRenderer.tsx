@@ -83,17 +83,17 @@ const BlockRenderer = ({ block, onEdit, onDelete, onMove, isDragging }: BlockRen
 
   const getBlockColor = (type: string) => {
     const colors = {
-      'opening': 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
-      'current-analysis': 'bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800',
-      'recommended-analysis': 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800',
-      'comparison-table': 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800',
-      'disclosure': 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800',
-      'agent-recommendations': 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800',
-      'decisions': 'bg-cyan-50 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-800',
-      'signature': 'bg-slate-50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800',
-      'call-to-action': 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
+      'opening': 'bg-blue-500/10 border-blue-500/30',
+      'current-analysis': 'bg-purple-500/10 border-purple-500/30',
+      'recommended-analysis': 'bg-green-500/10 border-green-500/30',
+      'comparison-table': 'bg-amber-500/10 border-amber-500/30',
+      'disclosure': 'bg-red-500/10 border-red-500/30',
+      'agent-recommendations': 'bg-emerald-500/10 border-emerald-500/30',
+      'decisions': 'bg-cyan-500/10 border-cyan-500/30',
+      'signature': 'bg-slate-500/10 border-slate-500/30',
+      'call-to-action': 'bg-orange-500/10 border-orange-500/30'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800';
+    return colors[type as keyof typeof colors] || 'bg-gray-500/10 border-gray-500/30';
   };
 
   return (
@@ -198,17 +198,17 @@ const BlockRenderer = ({ block, onEdit, onDelete, onMove, isDragging }: BlockRen
                 {block.content.title && (
                   <h4 className="font-medium">{block.content.title}</h4>
                 )}
-                <div className="text-sm text-muted-foreground">
+                <div className="text-foreground text-sm">
                   {block.content.description || 'טבלת השוואה מפורטת בין המצב הנוכחי למומלץ'}
                 </div>
-                <div className="bg-background/50 p-3 rounded border text-xs">
-                  <div className="grid grid-cols-4 gap-2 font-medium mb-2">
+                <div className="bg-background/80 p-3 rounded border text-xs">
+                  <div className="grid grid-cols-4 gap-2 font-medium mb-2 text-foreground">
                     <div>מוצר</div>
                     <div>מצב נוכחי</div>
                     <div>מומלץ</div>
                     <div>שינוי</div>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 text-muted-foreground">
+                  <div className="grid grid-cols-4 gap-2 text-foreground/80">
                     <div>אג"ח</div>
                     <div>40%</div>
                     <div>35%</div>
@@ -217,7 +217,7 @@ const BlockRenderer = ({ block, onEdit, onDelete, onMove, isDragging }: BlockRen
                 </div>
               </div>
             ) : (
-              <p className="text-sm leading-relaxed whitespace-pre-line">
+              <p className="text-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
                 {typeof block.content === 'string' ? block.content : block.content.text || block.content}
               </p>
             )}

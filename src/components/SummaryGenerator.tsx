@@ -733,8 +733,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
               </CardHeader>
               <CardContent>
                 <div className="prose prose-lg max-w-none">
-                  <div className="bg-glass/80 p-6 rounded-xl border border-glass-border backdrop-blur-sm">
-                    <pre className="whitespace-pre-wrap font-sans text-glass-foreground leading-relaxed text-right font-medium">
+                  <div className="bg-background border border-border p-8 rounded-2xl shadow-lg">
+                    <pre className="whitespace-pre-wrap font-sans text-foreground leading-[1.8] text-right text-base font-normal">
                       {summaryText}
                     </pre>
                   </div>
