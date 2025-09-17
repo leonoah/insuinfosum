@@ -162,7 +162,7 @@ const AppForm = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            יצירת סיכום פגישה
+            יצירת סיכום פגישה + מוצרים פיננסיים
           </h1>
           <p className="text-muted-foreground text-lg">
             מלאו את הפרטים להכנת סיכום מקצועי
