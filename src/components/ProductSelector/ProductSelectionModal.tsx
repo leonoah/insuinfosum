@@ -25,15 +25,16 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   existingProducts = []
 }) => {
   const [step, setStep] = useState<ProductSelectionStep>({ current: 1 });
-  const [formData, setFormData] = useState<Partial<SelectedProduct>>({
+  const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => ({
     type: productType,
+    subType: '',
     amount: 0,
     managementFeeOnDeposit: 0,
     managementFeeOnAccumulation: 0,
     investmentTrack: '',
     riskLevelChange: 'no-change',
     notes: ''
-  });
+  }));
 
   const companies = insuranceData as InsuranceCompany[];
   const allProducts = companies.flatMap(company => 
@@ -78,11 +79,14 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       return;
     }
 
+    const validSubTypes = selectedProductFromCompany?.תתי_סוגים?.filter(st => st && st.trim() !== '') || [];
+    const defaultSubType = validSubTypes.length > 0 ? validSubTypes[0] : '';
+
     const product: SelectedProduct = {
       id: `${Date.now()}`,
       company: step.selectedCompany,
       productName: step.selectedProduct,
-      subType: formData.subType || selectedProductFromCompany?.תתי_סוגים?.[0] || '',
+      subType: formData.subType || defaultSubType,
       amount: formData.amount || 0,
       managementFeeOnDeposit: formData.managementFeeOnDeposit || 0,
       managementFeeOnAccumulation: formData.managementFeeOnAccumulation || 0,
@@ -100,6 +104,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     setStep({ current: 1 });
     setFormData({
       type: productType,
+      subType: '',
       amount: 0,
       managementFeeOnDeposit: 0,
       managementFeeOnAccumulation: 0,
@@ -111,6 +116,11 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   };
 
   const progressValue = (step.current / 3) * 100;
+
+  // Filter out empty or invalid subtypes
+  const validSubTypes = selectedProductFromCompany?.תתי_סוגים?.filter(subType => 
+    subType && typeof subType === 'string' && subType.trim() !== ''
+  ) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -247,10 +257,8 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       <SelectValue placeholder="בחר סוג מסלול" />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedProductFromCompany?.תתי_סוגים
-                        .filter(subType => subType && subType.trim() !== '')
-                        .map((subType) => (
-                        <SelectItem key={subType} value={subType}>
+                      {validSubTypes.map((subType) => (
+                        <SelectItem key={`subtype-${subType}`} value={subType}>
                           {subType}
                         </SelectItem>
                       ))}
@@ -303,10 +311,8 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       <SelectValue placeholder="בחר מסלול השקעה" />
                     </SelectTrigger>
                     <SelectContent>
-                      {INVESTMENT_TRACKS
-                        .filter(track => track && track.trim() !== '')
-                        .map((track) => (
-                        <SelectItem key={track} value={track}>
+                      {INVESTMENT_TRACKS.map((track) => (
+                        <SelectItem key={`track-${track}`} value={track}>
                           {track}
                         </SelectItem>
                       ))}
@@ -325,10 +331,10 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                         <SelectValue placeholder="בחר שינוי סיכון" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="no-change">ללא שינוי</SelectItem>
-                        <SelectItem value="ירידה">ירידת סיכון</SelectItem>
-                        <SelectItem value="העלאה">העלאת סיכון</SelectItem>
-                        <SelectItem value="פיזור מחדש">פיזור מחדש</SelectItem>
+                        <SelectItem key="no-change" value="no-change">ללא שינוי</SelectItem>
+                        <SelectItem key="decrease" value="ירידה">ירידת סיכון</SelectItem>
+                        <SelectItem key="increase" value="העלאה">העלאת סיכון</SelectItem>
+                        <SelectItem key="redistribute" value="פיזור מחדש">פיזור מחדש</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

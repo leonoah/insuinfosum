@@ -55,4 +55,4 @@ export const INVESTMENT_TRACKS = [
   'מניות חו"ל',
   'הלכתי/שרעי',
   'סקטוריאלי/אלטרנטיבי'
-];
+].filter(track => track && track.trim() !== '');
