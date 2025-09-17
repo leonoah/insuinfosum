@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
-import { FileText, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo.png";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,7 +26,7 @@ const Navigation = () => {
             to="/" 
             className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors"
           >
-            <FileText className="h-6 w-6" />
+            <img src={logo} alt="InsuNote" className="h-6 w-6" />
             <span>InsuNote</span>
           </Link>
 
