@@ -19,7 +19,7 @@ export interface SelectedProduct {
   managementFeeOnDeposit: number;
   managementFeeOnAccumulation: number;
   investmentTrack: string;
-  riskLevelChange?: 'ירידה' | 'העלאה' | 'פיזור מחדש' | '';
+  riskLevelChange?: 'ירידה' | 'העלאה' | 'פיזור מחדש' | 'no-change' | '';
   notes: string;
   type: 'current' | 'recommended';
 }

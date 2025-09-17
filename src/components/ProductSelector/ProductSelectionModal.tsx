@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, ArrowRight, Copy } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,7 +31,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     managementFeeOnDeposit: 0,
     managementFeeOnAccumulation: 0,
     investmentTrack: '',
-    riskLevelChange: '',
+    riskLevelChange: 'no-change',
     notes: ''
   });
 
@@ -74,16 +74,20 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   };
 
   const handleSubmit = () => {
+    if (!step.selectedCompany || !step.selectedProduct) {
+      return;
+    }
+
     const product: SelectedProduct = {
       id: `${Date.now()}`,
-      company: step.selectedCompany!,
-      productName: step.selectedProduct!,
-      subType: formData.subType || selectedProductFromCompany?.תתי_סוגים[0] || '',
+      company: step.selectedCompany,
+      productName: step.selectedProduct,
+      subType: formData.subType || selectedProductFromCompany?.תתי_סוגים?.[0] || '',
       amount: formData.amount || 0,
       managementFeeOnDeposit: formData.managementFeeOnDeposit || 0,
       managementFeeOnAccumulation: formData.managementFeeOnAccumulation || 0,
       investmentTrack: formData.investmentTrack || '',
-      riskLevelChange: formData.riskLevelChange || '',
+      riskLevelChange: formData.riskLevelChange === 'no-change' ? '' : formData.riskLevelChange || '',
       notes: formData.notes || '',
       type: productType
     };
@@ -100,7 +104,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       managementFeeOnDeposit: 0,
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
-      riskLevelChange: '',
+      riskLevelChange: 'no-change',
       notes: ''
     });
     onClose();
@@ -120,6 +124,11 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               <X className="h-4 w-4" />
             </Button>
           </DialogTitle>
+          <DialogDescription>
+            {step.current === 1 && 'בחר את סוג המוצר הפיננסי'}
+            {step.current === 2 && 'בחר את החברה המבטחת'}
+            {step.current === 3 && 'הזן את פרטי המוצר'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -230,12 +239,17 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">סוג מסלול</label>
-                  <Select value={formData.subType} onValueChange={(value) => setFormData({ ...formData, subType: value })}>
+                  <Select 
+                    value={formData.subType || ''} 
+                    onValueChange={(value) => setFormData({ ...formData, subType: value })}
+                  >
                     <SelectTrigger className="glass">
                       <SelectValue placeholder="בחר סוג מסלול" />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedProductFromCompany?.תתי_סוגים.map((subType) => (
+                      {selectedProductFromCompany?.תתי_סוגים
+                        .filter(subType => subType && subType.trim() !== '')
+                        .map((subType) => (
                         <SelectItem key={subType} value={subType}>
                           {subType}
                         </SelectItem>
@@ -281,12 +295,17 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">מסלול השקעה</label>
-                  <Select value={formData.investmentTrack} onValueChange={(value) => setFormData({ ...formData, investmentTrack: value })}>
+                  <Select 
+                    value={formData.investmentTrack || ''} 
+                    onValueChange={(value) => setFormData({ ...formData, investmentTrack: value })}
+                  >
                     <SelectTrigger className="glass">
                       <SelectValue placeholder="בחר מסלול השקעה" />
                     </SelectTrigger>
                     <SelectContent>
-                      {INVESTMENT_TRACKS.map((track) => (
+                      {INVESTMENT_TRACKS
+                        .filter(track => track && track.trim() !== '')
+                        .map((track) => (
                         <SelectItem key={track} value={track}>
                           {track}
                         </SelectItem>
@@ -298,12 +317,15 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 {productType === 'recommended' && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">שינוי רמת סיכון</label>
-                    <Select value={formData.riskLevelChange} onValueChange={(value) => setFormData({ ...formData, riskLevelChange: value as any })}>
+                    <Select 
+                      value={formData.riskLevelChange || 'no-change'} 
+                      onValueChange={(value) => setFormData({ ...formData, riskLevelChange: value as any })}
+                    >
                       <SelectTrigger className="glass">
                         <SelectValue placeholder="בחר שינוי סיכון" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">ללא שינוי</SelectItem>
+                        <SelectItem value="no-change">ללא שינוי</SelectItem>
                         <SelectItem value="ירידה">ירידת סיכון</SelectItem>
                         <SelectItem value="העלאה">העלאת סיכון</SelectItem>
                         <SelectItem value="פיזור מחדש">פיזור מחדש</SelectItem>
