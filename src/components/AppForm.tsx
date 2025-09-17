@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import { SelectedProduct } from "@/types/insurance";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
   // Client details
@@ -48,6 +49,7 @@ const AppForm = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("client");
   const [showSummary, setShowSummary] = useState(false);
+  const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
     clientId: "",
@@ -150,6 +152,69 @@ const AppForm = () => {
       return;
     }
     setShowSummary(true);
+  };
+
+  const handleGenerateDecisions = async () => {
+    setIsGeneratingDecisions(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-decisions', {
+        body: {
+          products: {
+            current: formData.products.filter(p => p.type === 'current'),
+            recommended: formData.products.filter(p => p.type === 'recommended')
+          },
+          currentDecisions: formData.decisions,
+          clientInfo: {
+            clientName: formData.clientName,
+            clientPhone: formData.clientPhone,
+            clientEmail: formData.clientEmail,
+            meetingDate: formData.meetingDate,
+            topics: formData.topics,
+            currentSituation: formData.currentSituation,
+            risks: formData.risks,
+            recommendations: formData.recommendations,
+            estimatedCost: formData.estimatedCost
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Error generating decisions:', error);
+        toast({
+          title: "שגיאה",
+          description: "שגיאה ביצירת ההחלטות. אנא נסה שוב.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data?.decisions) {
+        setFormData(prev => ({
+          ...prev,
+          decisions: data.decisions
+        }));
+        toast({
+          title: "הצלחה!",
+          description: "החלטות סונכרנו בהצלחה! ניתן לערוך את הטקסט לפי הצורך.",
+        });
+      } else {
+        toast({
+          title: "שגיאה",
+          description: "לא הצלחנו לייצר החלטות. אנא נסה שוב.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה ביצירת ההחלטות. אנא נסה שוב.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingDecisions(false);
+    }
   };
 
   if (showSummary) {
@@ -437,7 +502,19 @@ const AppForm = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateDecisions}
+                      disabled={isGeneratingDecisions || (!formData.products?.length)}
+                      className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
+                    >
+                      {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
+                    </Button>
+                  </div>
                   <Textarea
                     id="decisions"
                     value={formData.decisions}

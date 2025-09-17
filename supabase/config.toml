@@ -1,1 +1,4 @@
 project_id = "eoodkccjwyybwgmkzarx"
+
+[functions.generate-decisions]
+verify_jwt = false
