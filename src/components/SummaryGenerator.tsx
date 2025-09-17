@@ -719,6 +719,15 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                   <CardTitle className="text-2xl">סיכום פגישת ביטוח</CardTitle>
                 </div>
               </CardHeader>
+              <CardContent>
+                <div className="prose prose-lg max-w-none">
+                  <div className="bg-background/50 p-6 rounded-xl border border-border">
+                    <pre className="whitespace-pre-wrap font-sans text-foreground leading-relaxed text-right">
+                      {summaryText}
+                    </pre>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </div>
         )}
