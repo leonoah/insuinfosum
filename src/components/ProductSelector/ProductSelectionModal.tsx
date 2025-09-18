@@ -76,6 +76,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
   const handleSubmit = () => {
     if (!step.selectedCompany || !step.selectedProduct) {
+      console.log('Missing required fields:', { company: step.selectedCompany, product: step.selectedProduct });
       return;
     }
 
@@ -96,6 +97,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       type: productType
     };
 
+    console.log('Submitting product:', product);
     onAddProduct(product);
     handleClose();
   };

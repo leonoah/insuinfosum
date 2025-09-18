@@ -97,6 +97,24 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     setExcelData(null);
   };
 
+  const handleCopyProductToRecommended = (excelProduct: any) => {
+    const product: SelectedProduct = {
+      id: `${Date.now()}`,
+      company: excelProduct.manufacturer || '',
+      productName: excelProduct.productName || excelProduct.product || excelProduct.productType,
+      subType: '',
+      amount: excelProduct.accumulation || excelProduct.premium || 0,
+      managementFeeOnDeposit: excelProduct.depositFee || 0,
+      managementFeeOnAccumulation: excelProduct.accumulationFee || 0,
+      investmentTrack: excelProduct.investmentTrack || '',
+      riskLevelChange: '',
+      notes: `העתק מ: ${excelProduct.policyNumber || 'מצב קיים'}`,
+      type: 'recommended'
+    };
+    
+    onUpdateProducts([...allProducts, product]);
+  };
+
   if (showComparison) {
     return (
       <ComparisonView
@@ -136,6 +154,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         <CurrentStateView 
           data={excelData} 
           onCreateNewState={handleCreateNewState}
+          onCopyToRecommended={handleCopyProductToRecommended}
         />
       </div>
     );

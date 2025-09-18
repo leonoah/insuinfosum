@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp, Search, TrendingUp, TrendingDown, DollarSign, Percent } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, TrendingUp, TrendingDown, DollarSign, Percent, Copy, ArrowRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SavingsProduct {
@@ -46,9 +46,10 @@ interface ExcelData {
 interface CurrentStateViewProps {
   data: ExcelData;
   onCreateNewState: () => void;
+  onCopyToRecommended: (product: SavingsProduct | InsuranceProduct) => void;
 }
 
-const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewState }) => {
+const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewState, onCopyToRecommended }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
@@ -257,34 +258,46 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
                     <CollapsibleContent>
                       <div className="mt-2 border rounded-lg">
                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right">יצרן</TableHead>
-                              <TableHead className="text-right">מס' פוליסה</TableHead>
-                              <TableHead className="text-right">צבירה</TableHead>
-                              <TableHead className="text-right">דמי ניהול מהפקדה</TableHead>
-                              <TableHead className="text-right">דמי ניהול מצבירה</TableHead>
-                              <TableHead className="text-right">מסלול השקעה</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {group.products.map((product, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{product.manufacturer}</TableCell>
-                                <TableCell>{product.policyNumber}</TableCell>
-                                <TableCell className="font-medium">
-                                  {formatCurrency(product.accumulation)}
-                                </TableCell>
-                                <TableCell>{formatPercentage(product.depositFee)}</TableCell>
-                                <TableCell>{formatPercentage(product.accumulationFee)}</TableCell>
-                                <TableCell>
-                                  {product.investmentTrack && (
-                                    <Badge variant="outline">{product.investmentTrack}</Badge>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
+                           <TableHeader>
+                             <TableRow>
+                               <TableHead className="text-right">יצרן</TableHead>
+                               <TableHead className="text-right">מס' פוליסה</TableHead>
+                               <TableHead className="text-right">צבירה</TableHead>
+                               <TableHead className="text-right">דמי ניהול מהפקדה</TableHead>
+                               <TableHead className="text-right">דמי ניהול מצבירה</TableHead>
+                               <TableHead className="text-right">מסלול השקעה</TableHead>
+                               <TableHead className="text-right">פעולות</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {group.products.map((product, index) => (
+                               <TableRow key={index}>
+                                 <TableCell>{product.manufacturer}</TableCell>
+                                 <TableCell>{product.policyNumber}</TableCell>
+                                 <TableCell className="font-medium">
+                                   {formatCurrency(product.accumulation)}
+                                 </TableCell>
+                                 <TableCell>{formatPercentage(product.depositFee)}</TableCell>
+                                 <TableCell>{formatPercentage(product.accumulationFee)}</TableCell>
+                                 <TableCell>
+                                   {product.investmentTrack && (
+                                     <Badge variant="outline">{product.investmentTrack}</Badge>
+                                   )}
+                                 </TableCell>
+                                 <TableCell>
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => onCopyToRecommended(product)}
+                                     className="gap-2"
+                                   >
+                                     <Copy className="h-3 w-3" />
+                                     <ArrowRight className="h-3 w-3" />
+                                   </Button>
+                                 </TableCell>
+                               </TableRow>
+                             ))}
+                           </TableBody>
                         </Table>
                       </div>
                     </CollapsibleContent>
@@ -333,24 +346,36 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
                     <CollapsibleContent>
                       <div className="mt-2 border rounded-lg">
                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right">מוצר</TableHead>
-                              <TableHead className="text-right">מס' פוליסה</TableHead>
-                              <TableHead className="text-right">פרמיה חודשית</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {group.products.map((product, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{product.product}</TableCell>
-                                <TableCell>{product.policyNumber}</TableCell>
-                                <TableCell className="font-medium">
-                                  {formatCurrency(product.premium)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
+                           <TableHeader>
+                             <TableRow>
+                               <TableHead className="text-right">מוצר</TableHead>
+                               <TableHead className="text-right">מס' פוליסה</TableHead>
+                               <TableHead className="text-right">פרמיה חודשית</TableHead>
+                               <TableHead className="text-right">פעולות</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {group.products.map((product, index) => (
+                               <TableRow key={index}>
+                                 <TableCell>{product.product}</TableCell>
+                                 <TableCell>{product.policyNumber}</TableCell>
+                                 <TableCell className="font-medium">
+                                   {formatCurrency(product.premium)}
+                                 </TableCell>
+                                 <TableCell>
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => onCopyToRecommended(product)}
+                                     className="gap-2"
+                                   >
+                                     <Copy className="h-3 w-3" />
+                                     <ArrowRight className="h-3 w-3" />
+                                   </Button>
+                                 </TableCell>
+                               </TableRow>
+                             ))}
+                           </TableBody>
                         </Table>
                       </div>
                     </CollapsibleContent>
