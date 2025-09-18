@@ -1018,7 +1018,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                     החלטות שהתקבלו
                   </h3>
                   <div className="p-4 bg-background/50 rounded-xl">
-                    <p className="text-foreground whitespace-pre-wrap">{formData.decisions}</p>
+                    <div 
+                      className="ai-content"
+                      dangerouslySetInnerHTML={{ __html: formData.decisions }}
+                    />
                   </div>
                 </div>
               )}

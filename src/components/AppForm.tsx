@@ -660,13 +660,34 @@ const AppForm = () => {
                       {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
                     </Button>
                   </div>
-                  <Textarea
-                    id="decisions"
-                    value={formData.decisions}
-                    onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
-                    className="mt-2 bg-input rounded-xl min-h-[100px]"
-                    placeholder="פרטו את ההחלטות שהתקבלו בפגישה..."
-                  />
+                  
+                  {formData.decisions && formData.decisions.includes('<div') ? (
+                    <div className="space-y-2">
+                      <div className="p-4 bg-background/50 rounded-xl border min-h-[100px]">
+                        <div 
+                          className="ai-content"
+                          dangerouslySetInnerHTML={{ __html: formData.decisions }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, decisions: '' }))}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        עריכה ידנית
+                      </Button>
+                    </div>
+                  ) : (
+                    <Textarea
+                      id="decisions"
+                      value={formData.decisions}
+                      onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl min-h-[100px]"
+                      placeholder="פרטו את ההחלטות שהתקבלו בפגישה..."
+                    />
+                  )}
                 </div>
 
                 <div>

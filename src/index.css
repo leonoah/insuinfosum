@@ -116,4 +116,68 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
+  
+  /* AI Generated Content Styles */
+  .ai-content {
+    font-family: 'Assistant', 'Heebo', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .ai-content h3 {
+    color: hsl(var(--primary));
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid hsl(var(--primary) / 0.2);
+  }
+  
+  .ai-content h4 {
+    color: hsl(var(--foreground));
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0.75rem 0 0.5rem 0;
+  }
+  
+  .ai-content .section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 0.75rem;
+    border: 1px solid hsl(var(--border));
+  }
+  
+  .ai-content ul {
+    list-style: disc;
+    margin-right: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .ai-content ol {
+    list-style: decimal;
+    margin-right: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .ai-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+  
+  .ai-content .risk-item {
+    background: hsl(var(--destructive) / 0.1);
+    border: 1px solid hsl(var(--destructive) / 0.2);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .ai-content .risk-item strong {
+    color: hsl(var(--destructive));
+    font-weight: 600;
+  }
+  
+  .ai-content p {
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+  }
 }
