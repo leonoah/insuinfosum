@@ -147,23 +147,25 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           const accumulation = parseFloat(
             row[accumulationIndex]?.toString().replace(/[₪,\s]/g, '') || '0'
           );
-          const policyNumber = row[policyNumberIndex]?.toString() || '';
+          const policyNumber = row[policyNumberIndex]?.toString().trim() || '';
+          const productName = row[productIndex]?.toString().trim() || '';
           
-          if (accumulation > 0) {
-            // Check for duplicates based on key fields
+          // Only include rows with meaningful data
+          if (accumulation > 0 && productName) {
+            // Check for duplicates based on key fields (ignore planName as requested)
             const isDuplicate = savings.some(existing => 
               existing.productType === productType &&
-              existing.manufacturer === (row[manufacturerIndex]?.toString() || '') &&
-              existing.policyNumber === policyNumber &&
+              existing.manufacturer === (row[manufacturerIndex]?.toString().trim() || '') &&
+              existing.productName === productName &&
               Math.abs(existing.accumulation - accumulation) < 0.01
             );
 
             if (!isDuplicate) {
               savings.push({
                 productType,
-                manufacturer: row[manufacturerIndex]?.toString() || '',
-                productName: row[productIndex]?.toString() || '',
-                planName: row[planNameIndex]?.toString() || '',
+                manufacturer: row[manufacturerIndex]?.toString().trim() || '',
+                productName,
+                planName: '', // Ignore planName as requested
                 accumulation,
                 depositFee: parseFloat(
                   row[depositFeeIndex]?.toString().replace('%', '') || '0'
@@ -171,7 +173,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
                 accumulationFee: parseFloat(
                   row[accumulationFeeIndex]?.toString().replace('%', '') || '0'
                 ),
-                investmentTrack: row[investmentTrackIndex]?.toString() || '',
+                investmentTrack: row[investmentTrackIndex]?.toString().trim() || '',
                 policyNumber
               });
             }
@@ -183,22 +185,24 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           const premium = parseFloat(
             row[premiumIndex]?.toString().replace(/[₪,\s]/g, '') || '0'
           );
-          const policyNumber = row[policyNumberIndex]?.toString() || '';
+          const policyNumber = row[policyNumberIndex]?.toString().trim() || '';
+          const productName = row[productIndex]?.toString().trim() || '';
           
-          if (premium > 0) {
+          // Only include rows with meaningful data
+          if (premium > 0 && productName) {
             // Check for duplicates based on key fields
             const isDuplicate = insurance.some(existing => 
               existing.productType === productType &&
-              existing.manufacturer === (row[manufacturerIndex]?.toString() || '') &&
-              existing.policyNumber === policyNumber &&
+              existing.manufacturer === (row[manufacturerIndex]?.toString().trim() || '') &&
+              existing.product === productName &&
               Math.abs(existing.premium - premium) < 0.01
             );
 
             if (!isDuplicate) {
               insurance.push({
                 productType,
-                manufacturer: row[manufacturerIndex]?.toString() || '',
-                product: row[productIndex]?.toString() || '',
+                manufacturer: row[manufacturerIndex]?.toString().trim() || '',
+                product: productName,
                 premium,
                 policyNumber
               });
