@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo.png";
 
-const Navigation = () => {
+const AppNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
@@ -101,4 +101,4 @@ const Navigation = () => {
   );
 };
 
-export default Navigation;
+export default AppNavigation;

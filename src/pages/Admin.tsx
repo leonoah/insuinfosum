@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InsuranceManagement } from "@/components/admin/InsuranceManagement";
@@ -11,7 +11,7 @@ import { Shield, Building2, User, Users, FileText } from "lucide-react";
 const Admin = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <Navigation />
+      <AppNavigation />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

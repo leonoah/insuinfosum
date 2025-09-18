@@ -1,4 +1,4 @@
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -11,7 +11,7 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen">
-      <Navigation />
+      <AppNavigation />
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="text-center glass p-12 rounded-2xl border-glass-border">
           <h1 className="mb-4 text-6xl font-bold text-foreground">404</h1>

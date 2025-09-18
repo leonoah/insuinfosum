@@ -1,4 +1,4 @@
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, Database, Trash2, Eye, AlertCircle } from "lucide-react";
 
@@ -28,7 +28,7 @@ const Privacy = () => {
 
   return (
     <div className="min-h-screen">
-      <Navigation />
+      <AppNavigation />
       
       <div className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">

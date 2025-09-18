@@ -1,10 +1,10 @@
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import AppForm from "@/components/AppForm";
 
 const App = () => {
   return (
     <div className="min-h-screen">
-      <Navigation />
+      <AppNavigation />
       <AppForm />
     </div>
   );

@@ -1,4 +1,4 @@
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,7 +77,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen">
-      <Navigation />
+      <AppNavigation />
       
       <div className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">

@@ -1,4 +1,4 @@
-import Navigation from "@/components/Navigation";
+import AppNavigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,7 +53,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      <Navigation />
+      <AppNavigation />
       
       {/* Hero Section */}
       <Hero />
