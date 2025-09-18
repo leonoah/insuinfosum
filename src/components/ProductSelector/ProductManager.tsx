@@ -71,6 +71,10 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
   const handleExcelDataImported = (data: any) => {
     setExcelData(data);
+  };
+
+  const handleProductsSelected = (products: SelectedProduct[]) => {
+    onUpdateProducts([...allProducts, ...products]);
     setCurrentView('current-state');
   };
 
@@ -112,7 +116,10 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           </Button>
           <h2 className="text-2xl font-bold">ייבוא מצב קיים מאקסל</h2>
         </div>
-        <ExcelImport onDataImported={handleExcelDataImported} />
+        <ExcelImport 
+          onDataImported={handleExcelDataImported} 
+          onProductsSelected={handleProductsSelected}
+        />
       </div>
     );
   }

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { SelectedProduct } from '@/types/insurance';
 import * as XLSX from 'xlsx';
 
 interface ExcelData {
@@ -43,13 +45,17 @@ interface KPIData {
 
 interface ExcelImportProps {
   onDataImported: (data: ExcelData) => void;
+  onProductsSelected: (products: SelectedProduct[]) => void;
 }
 
-const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported }) => {
+const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSelected }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [importedData, setImportedData] = useState<ExcelData | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedSavings, setSelectedSavings] = useState<Set<number>>(new Set());
+  const [selectedInsurance, setSelectedInsurance] = useState<Set<number>>(new Set());
+  const [showProductSelection, setShowProductSelection] = useState(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -67,6 +73,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported }) => {
       
       setImportedData(processedData);
       setImportStatus('success');
+      setShowProductSelection(true);
       onDataImported(processedData);
       
     } catch (error) {
@@ -183,6 +190,76 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported }) => {
     const kpis = calculateKPIs(savings, insurance);
 
     return { savings, insurance, kpis };
+  };
+
+  const handleSavingsSelection = (index: number, checked: boolean) => {
+    const newSelected = new Set(selectedSavings);
+    if (checked) {
+      newSelected.add(index);
+    } else {
+      newSelected.delete(index);
+    }
+    setSelectedSavings(newSelected);
+  };
+
+  const handleInsuranceSelection = (index: number, checked: boolean) => {
+    const newSelected = new Set(selectedInsurance);
+    if (checked) {
+      newSelected.add(index);
+    } else {
+      newSelected.delete(index);
+    }
+    setSelectedInsurance(newSelected);
+  };
+
+  const handleGenerateCurrentState = () => {
+    if (!importedData) return;
+
+    const selectedProducts: SelectedProduct[] = [];
+
+    // Generate products from selected savings
+    selectedSavings.forEach(index => {
+      const savingsProduct = importedData.savings[index];
+      if (savingsProduct) {
+        const product: SelectedProduct = {
+          id: `savings-${Date.now()}-${index}`,
+          company: savingsProduct.manufacturer,
+          productName: savingsProduct.productName,
+          subType: savingsProduct.planName || 'כללי',
+          amount: savingsProduct.accumulation,
+          managementFeeOnDeposit: savingsProduct.depositFee,
+          managementFeeOnAccumulation: savingsProduct.accumulationFee,
+          investmentTrack: savingsProduct.investmentTrack || 'כללי',
+          riskLevelChange: '',
+          notes: `מס' פוליסה: ${savingsProduct.policyNumber}`,
+          type: 'current'
+        };
+        selectedProducts.push(product);
+      }
+    });
+
+    // Generate products from selected insurance
+    selectedInsurance.forEach(index => {
+      const insuranceProduct = importedData.insurance[index];
+      if (insuranceProduct) {
+        const product: SelectedProduct = {
+          id: `insurance-${Date.now()}-${index}`,
+          company: insuranceProduct.manufacturer,
+          productName: insuranceProduct.product,
+          subType: 'ביטוח',
+          amount: insuranceProduct.premium * 12, // Convert monthly to yearly
+          managementFeeOnDeposit: 0,
+          managementFeeOnAccumulation: 0,
+          investmentTrack: 'לא רלוונטי',
+          riskLevelChange: '',
+          notes: `פרמיה חודשית: ${insuranceProduct.premium} ₪ | פוליסה: ${insuranceProduct.policyNumber}`,
+          type: 'current'
+        };
+        selectedProducts.push(product);
+      }
+    });
+
+    onProductsSelected(selectedProducts);
   };
 
   const calculateKPIs = (savings: SavingsProduct[], insurance: InsuranceProduct[]): KPIData => {
@@ -356,7 +433,98 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported }) => {
       )}
 
       {/* Data Preview */}
-      {importedData && importedData.savings.length > 0 && (
+      {importedData && importedData.savings.length > 0 && showProductSelection && (
+        <Card>
+          <CardHeader>
+            <CardTitle>בחירת מוצרי חיסכון - מצב קיים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {importedData.savings.map((product, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={selectedSavings.has(index)}
+                      onCheckedChange={(checked) => handleSavingsSelection(index, checked as boolean)}
+                    />
+                    <div className="space-y-1">
+                      <div className="font-medium">{product.productType}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {product.manufacturer} | {product.productName}
+                      </div>
+                      {product.planName && (
+                        <Badge variant="outline">{product.planName}</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-left space-y-1">
+                    <div className="font-bold">{formatCurrency(product.accumulation)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      דמי ניהול: {formatPercentage(product.accumulationFee)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Insurance Selection */}
+      {importedData && importedData.insurance.length > 0 && showProductSelection && (
+        <Card>
+          <CardHeader>
+            <CardTitle>בחירת מוצרי ביטוח - מצב קיים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {importedData.insurance.map((product, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={selectedInsurance.has(index)}
+                      onCheckedChange={(checked) => handleInsuranceSelection(index, checked as boolean)}
+                    />
+                    <div className="space-y-1">
+                      <div className="font-medium">{product.productType}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {product.manufacturer} | {product.product}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-left space-y-1">
+                    <div className="font-bold">{formatCurrency(product.premium)}</div>
+                    <div className="text-xs text-muted-foreground">פרמיה חודשית</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generate Current State Button */}
+      {showProductSelection && (selectedSavings.size > 0 || selectedInsurance.size > 0) && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="text-lg font-medium">
+                נבחרו {selectedSavings.size} מוצרי חיסכון ו-{selectedInsurance.size} מוצרי ביטוח
+              </div>
+              <Button 
+                onClick={handleGenerateCurrentState}
+                className="w-full"
+                size="lg"
+              >
+                צור מצב קיים
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Data Preview - Old version, keep for when not in selection mode */}
+      {importedData && importedData.savings.length > 0 && !showProductSelection && (
         <Card>
           <CardHeader>
             <CardTitle>תצוגה מקדימה - מוצרי חיסכון</CardTitle>
