@@ -5,7 +5,7 @@ import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonView from './ComparisonView';
-import ExcelImport from './ExcelImport';
+import ExcelImportDialog from './ExcelImportDialog';
 import CurrentStateView from './CurrentStateView';
 import EditableStateView from './EditableStateView';
 
@@ -24,8 +24,9 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   const [modalType, setModalType] = useState<'current' | 'recommended'>('current');
   const [showComparison, setShowComparison] = useState(false);
   const [editingProduct, setEditingProduct] = useState<SelectedProduct | null>(null);
-  const [currentView, setCurrentView] = useState<'products' | 'excel-import' | 'current-state' | 'editable-state'>('products');
+  const [currentView, setCurrentView] = useState<'products' | 'current-state' | 'editable-state'>('products');
   const [excelData, setExcelData] = useState<any>(null);
+  const [showExcelImport, setShowExcelImport] = useState(false);
 
   const allProducts = [...currentProducts, ...recommendedProducts];
 
@@ -141,22 +142,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     );
   }
 
-  if (currentView === 'excel-import') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={handleBackToProducts}>
-            חזור לניהול מוצרים
-          </Button>
-          <h2 className="text-2xl font-bold">ייבוא מצב קיים מאקסל</h2>
-        </div>
-        <ExcelImport 
-          onDataImported={handleExcelDataImported} 
-          onProductsSelected={handleProductsSelected}
-        />
-      </div>
-    );
-  }
 
   if (currentView === 'current-state' && excelData) {
     return (
@@ -208,7 +193,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-3">
-        <Button onClick={() => setCurrentView('excel-import')} variant="default" className="glass-hover">
+        <Button onClick={() => setShowExcelImport(true)} variant="default" className="glass-hover">
           <Upload className="h-4 w-4 mr-2" />
           יבוא מצב קיים מאקסל
         </Button>
@@ -254,6 +239,16 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         productType={modalType}
         existingProducts={allProducts.filter(p => p.type !== modalType)}
         editingProduct={editingProduct}
+      />
+
+      {/* Excel Import Dialog */}
+      <ExcelImportDialog
+        isOpen={showExcelImport}
+        onClose={() => setShowExcelImport(false)}
+        onProductsSelected={(products) => {
+          onUpdateProducts([...allProducts, ...products]);
+          setShowExcelImport(false);
+        }}
       />
     </div>
   );

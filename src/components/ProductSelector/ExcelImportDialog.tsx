@@ -1,0 +1,665 @@
+import React, { useState, useMemo } from 'react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectedProduct } from '@/types/insurance';
+import * as XLSX from 'xlsx';
+
+interface ExcelData {
+  savings: SavingsProduct[];
+  insurance: InsuranceProduct[];
+  kpis: KPIData;
+}
+
+interface SavingsProduct {
+  productType: string;
+  manufacturer: string;
+  productName: string;
+  planName: string;
+  accumulation: number;
+  depositFee: number;
+  accumulationFee: number;
+  investmentTrack: string;
+  policyNumber: string;
+}
+
+interface InsuranceProduct {
+  productType: string;
+  manufacturer: string;
+  product: string;
+  premium: number;
+  policyNumber: string;
+}
+
+interface KPIData {
+  savingsProductCount: number;
+  totalAccumulation: number;
+  avgAccumulationFee: number;
+  avgDepositFee: number;
+  insurancePolicyCount: number;
+  totalMonthlyPremium: number;
+}
+
+interface ExcelImportDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onProductsSelected: (products: SelectedProduct[]) => void;
+}
+
+const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  onProductsSelected 
+}) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [importedData, setImportedData] = useState<ExcelData | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [selectedSavings, setSelectedSavings] = useState<Set<number>>(new Set());
+  const [selectedInsurance, setSelectedInsurance] = useState<Set<number>>(new Set());
+  const [showProductSelection, setShowProductSelection] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [manufacturerFilter, setManufacturerFilter] = useState<string>('all');
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    setImportStatus('idle');
+    setErrorMessage('');
+    setSelectedSavings(new Set());
+    setSelectedInsurance(new Set());
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'buffer' });
+
+      const processedData = await processExcelData(workbook);
+
+      setImportedData(processedData);
+      setImportStatus('success');
+      setShowProductSelection(true);
+      
+    } catch (error) {
+      console.error('Excel import error:', error);
+      setErrorMessage('שגיאה בעיבוד הקובץ. אנא וודא שהקובץ תקין וכולל את הנתונים הנדרשים.');
+      setImportStatus('error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const processExcelData = async (workbook: XLSX.WorkBook): Promise<ExcelData> => {
+    const normalizeText = (value: unknown): string => {
+      if (value === null || value === undefined) return '';
+      return value
+        .toString()
+        .replace(/[\u200E\u200F]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const savingsMap = new Map<string, SavingsProduct>();
+    const insuranceMap = new Map<string, InsuranceProduct>();
+
+    // Process each sheet
+    Object.keys(workbook.Sheets).forEach(sheetName => {
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      
+      // Find header row with "סוג מוצר" column (the main products table)
+      let headerRow = -1;
+      for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+        const row = jsonData[i] as any[];
+        if (!row) continue;
+        const hasMainColumns = row.some(cell => 
+          typeof cell === 'string' && 
+          cell.includes('סוג מוצר')
+        );
+        if (hasMainColumns) {
+          headerRow = i;
+          break;
+        }
+      }
+      
+      if (headerRow === -1) return;
+
+      const headers = (jsonData[headerRow] as string[]).map(h => String(h || ''));
+      const dataRows = jsonData.slice(headerRow + 1) as any[][];
+
+      const getColumnIndex = (keywords: string[]) =>
+        headers.findIndex(header => header && keywords.some(keyword => header.toString().includes(keyword)));
+
+      const idx = {
+        productType: getColumnIndex(['סוג מוצר']),
+        manufacturer: getColumnIndex(['יצרן']),
+        product: getColumnIndex(['מוצר']),
+        accumulation: getColumnIndex(['צבירה']),
+        depositFee: getColumnIndex(['דמי ניהול מהפקדה']),
+        accumulationFee: getColumnIndex(['דמי ניהול מצבירה']),
+        investmentTrack: getColumnIndex(['מסלולי השקעה']),
+        policyNumber: getColumnIndex(['פוליסה', 'חשבון']),
+        premium: getColumnIndex(['פרמיה'])
+      };
+
+      // Process each row individually
+      dataRows.forEach((row, rowIndex) => {
+        if (!row || row.length === 0) return;
+
+        const productType = idx.productType >= 0 ? normalizeText(row[idx.productType]) : '';
+        const manufacturer = idx.manufacturer >= 0 ? normalizeText(row[idx.manufacturer]) : '';
+        const productName = idx.product >= 0 ? normalizeText(row[idx.product]) : '';
+        const policyNumber = idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : '';
+
+        if (!productType && !manufacturer && !productName) {
+          return;
+        }
+
+        const accumulationRaw = idx.accumulation >= 0 ? row[idx.accumulation] : null;
+        const accumulation = accumulationRaw ? 
+          parseFloat(accumulationRaw.toString().replace(/[₪,\s]/g, '')) || 0 : 0;
+
+        const premiumRaw = idx.premium >= 0 ? row[idx.premium] : null;
+        const premium = premiumRaw ? 
+          parseFloat(premiumRaw.toString().replace(/[₪,\s]/g, '')) || 0 : 0;
+
+        if (accumulation > 0 && productName) {
+          const depositFee = idx.depositFee >= 0 ?
+            parseFloat((row[idx.depositFee] || '').toString().replace('%', '')) || 0 : 0;
+          const accumulationFee = idx.accumulationFee >= 0 ?
+            parseFloat((row[idx.accumulationFee] || '').toString().replace('%', '')) || 0 : 0;
+          const investmentTrack = idx.investmentTrack >= 0 ?
+            normalizeText(row[idx.investmentTrack]) : '';
+
+          const key = `${productType}|${manufacturer}|${productName}|${policyNumber}`;
+          const existingSavings = savingsMap.get(key);
+
+          if (!existingSavings) {
+            const savingsProduct: SavingsProduct = {
+              productType,
+              manufacturer,
+              productName,
+              planName: '',
+              accumulation,
+              depositFee,
+              accumulationFee,
+              investmentTrack,
+              policyNumber
+            };
+            savingsMap.set(key, savingsProduct);
+          }
+        }
+
+        if (premium > 0 && productName) {
+          const key = `${productType}|${manufacturer}|${productName}|${policyNumber}`;
+          const existingInsurance = insuranceMap.get(key);
+
+          if (!existingInsurance) {
+            const insuranceProduct: InsuranceProduct = {
+              productType,
+              manufacturer,
+              product: productName,
+              premium,
+              policyNumber
+            };
+            insuranceMap.set(key, insuranceProduct);
+          }
+        }
+      });
+    });
+
+    const savings = Array.from(savingsMap.values());
+    const insurance = Array.from(insuranceMap.values());
+    const kpis = calculateKPIs(savings, insurance);
+
+    return { savings, insurance, kpis };
+  };
+
+  const calculateKPIs = (savings: SavingsProduct[], insurance: InsuranceProduct[]): KPIData => {
+    const totalAccumulation = savings.reduce((sum, product) => sum + product.accumulation, 0);
+    
+    const weightedAccumulationFee = savings.reduce((sum, product) => {
+      return sum + (product.accumulationFee * product.accumulation);
+    }, 0) / (totalAccumulation || 1);
+
+    const avgDepositFee = savings.reduce((sum, product) => sum + product.depositFee, 0) / (savings.length || 1);
+    const totalMonthlyPremium = insurance.reduce((sum, product) => sum + product.premium, 0);
+
+    return {
+      savingsProductCount: savings.length,
+      totalAccumulation,
+      avgAccumulationFee: weightedAccumulationFee,
+      avgDepositFee,
+      insurancePolicyCount: insurance.length,
+      totalMonthlyPremium
+    };
+  };
+
+  // Filter and search logic
+  const { filteredSavings, filteredInsurance, manufacturers, categories } = useMemo(() => {
+    if (!importedData) return { filteredSavings: [], filteredInsurance: [], manufacturers: [], categories: [] };
+
+    const allProducts = [...importedData.savings, ...importedData.insurance];
+    const uniqueManufacturers = [...new Set(allProducts.map(p => 'manufacturer' in p ? p.manufacturer : ''))].filter(Boolean);
+    const uniqueCategories = [...new Set(allProducts.map(p => p.productType))].filter(Boolean);
+
+    const filterBySearch = (product: any) => {
+      const searchableText = `${product.manufacturer} ${product.productName || product.product} ${product.productType}`.toLowerCase();
+      return searchableText.includes(searchTerm.toLowerCase());
+    };
+
+    const filterByManufacturer = (product: any) => {
+      return manufacturerFilter === 'all' || product.manufacturer === manufacturerFilter;
+    };
+
+    const filterByCategory = (product: any) => {
+      return categoryFilter === 'all' || product.productType === categoryFilter;
+    };
+
+    const filteredSavings = importedData.savings.filter(product => 
+      filterBySearch(product) && filterByManufacturer(product) && filterByCategory(product)
+    );
+
+    const filteredInsurance = importedData.insurance.filter(product => 
+      filterBySearch(product) && filterByManufacturer(product) && filterByCategory(product)
+    );
+
+    return {
+      filteredSavings,
+      filteredInsurance,
+      manufacturers: uniqueManufacturers,
+      categories: uniqueCategories
+    };
+  }, [importedData, searchTerm, manufacturerFilter, categoryFilter]);
+
+  const handleSelectAllSavings = () => {
+    if (selectedSavings.size === filteredSavings.length) {
+      setSelectedSavings(new Set());
+    } else {
+      const allIndices = filteredSavings.map((_, index) => 
+        importedData!.savings.findIndex(s => s === filteredSavings[index])
+      );
+      setSelectedSavings(new Set(allIndices));
+    }
+  };
+
+  const handleSelectAllInsurance = () => {
+    if (selectedInsurance.size === filteredInsurance.length) {
+      setSelectedInsurance(new Set());
+    } else {
+      const allIndices = filteredInsurance.map((_, index) => 
+        importedData!.insurance.findIndex(i => i === filteredInsurance[index])
+      );
+      setSelectedInsurance(new Set(allIndices));
+    }
+  };
+
+  const handleSavingsSelection = (index: number, checked: boolean) => {
+    const newSelected = new Set(selectedSavings);
+    if (checked) {
+      newSelected.add(index);
+    } else {
+      newSelected.delete(index);
+    }
+    setSelectedSavings(newSelected);
+  };
+
+  const handleInsuranceSelection = (index: number, checked: boolean) => {
+    const newSelected = new Set(selectedInsurance);
+    if (checked) {
+      newSelected.add(index);
+    } else {
+      newSelected.delete(index);
+    }
+    setSelectedInsurance(newSelected);
+  };
+
+  const handleGenerateCurrentState = () => {
+    if (!importedData) return;
+
+    const selectedProducts: SelectedProduct[] = [];
+    let productCounter = 0;
+
+    selectedSavings.forEach(index => {
+      const savingsProduct = importedData.savings[index];
+      if (savingsProduct) {
+        productCounter++;
+        const product: SelectedProduct = {
+          id: `savings-${Date.now()}-${productCounter}`,
+          company: savingsProduct.manufacturer,
+          productName: savingsProduct.productName || savingsProduct.productType,
+          subType: '',
+          amount: savingsProduct.accumulation,
+          managementFeeOnDeposit: savingsProduct.depositFee || 0,
+          managementFeeOnAccumulation: savingsProduct.accumulationFee || 0,
+          investmentTrack: savingsProduct.investmentTrack || '',
+          riskLevelChange: '',
+          notes: savingsProduct.policyNumber || '',
+          type: 'current'
+        };
+        selectedProducts.push(product);
+      }
+    });
+
+    selectedInsurance.forEach(index => {
+      const insuranceProduct = importedData.insurance[index];
+      if (insuranceProduct) {
+        productCounter++;
+        const product: SelectedProduct = {
+          id: `insurance-${Date.now()}-${productCounter}`,
+          company: insuranceProduct.manufacturer,
+          productName: insuranceProduct.product || insuranceProduct.productType,
+          subType: '',
+          amount: insuranceProduct.premium,
+          managementFeeOnDeposit: 0,
+          managementFeeOnAccumulation: 0,
+          investmentTrack: '',
+          riskLevelChange: '',
+          notes: insuranceProduct.policyNumber || '',
+          type: 'current'
+        };
+        selectedProducts.push(product);
+      }
+    });
+
+    onProductsSelected(selectedProducts);
+    handleClose();
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('he-IL', {
+      style: 'currency',
+      currency: 'ILS'
+    }).format(amount);
+  };
+
+  const resetDialog = () => {
+    setImportStatus('idle');
+    setImportedData(null);
+    setShowProductSelection(false);
+    setSearchTerm('');
+    setCategoryFilter('all');
+    setManufacturerFilter('all');
+    setSelectedSavings(new Set());
+    setSelectedInsurance(new Set());
+  };
+
+  const handleClose = () => {
+    resetDialog();
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" />
+            ייבוא מצב קיים מאקסל
+          </DialogTitle>
+          <DialogDescription>
+            העלה קובץ אקסל כדי לייבא את המצב הקיים של הלקוח
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {!showProductSelection ? (
+            <>
+              {/* Upload Section */}
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">העלה קובץ אקסל</p>
+                  <p className="text-sm text-muted-foreground">
+                    המערכת תזהה אוטומטית טאבים של מוצרי חיסכון וביטוח
+                  </p>
+                  <div className="pt-4">
+                    <label className="cursor-pointer">
+                      <Button 
+                        variant="outline" 
+                        disabled={isProcessing}
+                        asChild
+                      >
+                        <span>
+                          {isProcessing ? 'מעבד קובץ...' : 'בחר קובץ'}
+                        </span>
+                      </Button>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        disabled={isProcessing}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Messages */}
+              {importStatus === 'success' && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    הקובץ יובא בהצלחה! נמצאו {importedData?.savings.length || 0} מוצרי חיסכון
+                    {importedData?.insurance.length ? ` ו-${importedData.insurance.length} מוצרי ביטוח` : ''}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {importStatus === 'error' && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Filters and Search */}
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="חפש מוצר..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                {manufacturers.length > 0 && (
+                  <Select value={manufacturerFilter} onValueChange={setManufacturerFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="בחר יצרן" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל היצרנים</SelectItem>
+                      {manufacturers.map((manufacturer) => (
+                        <SelectItem key={manufacturer} value={manufacturer}>
+                          {manufacturer}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {categories.length > 0 && (
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="בחר קטגוריה" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל הקטגוריות</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {/* KPIs */}
+              {importedData && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-primary">
+                          {importedData.kpis.savingsProductCount}
+                        </div>
+                        <div className="text-xs text-muted-foreground">מוצרי חיסכון</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-primary">
+                          {formatCurrency(importedData.kpis.totalAccumulation)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">סך צבירה</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-primary">
+                          {importedData.kpis.insurancePolicyCount}
+                        </div>
+                        <div className="text-xs text-muted-foreground">מוצרי ביטוח</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-primary">
+                          {formatCurrency(importedData.kpis.totalMonthlyPremium)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">פרמיה חודשית</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Products Selection */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Savings Products */}
+                {filteredSavings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>מוצרי חיסכון ({filteredSavings.length})</CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSelectAllSavings}
+                        >
+                          {selectedSavings.size === filteredSavings.length ? 'בטל בחירת הכל' : 'בחר הכל'}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="max-h-96 overflow-y-auto">
+                      <div className="space-y-2">
+                        {filteredSavings.map((product, index) => {
+                          const originalIndex = importedData!.savings.findIndex(s => s === product);
+                          return (
+                            <div key={originalIndex} className="flex items-center space-x-2 p-3 border rounded-lg">
+                              <Checkbox
+                                checked={selectedSavings.has(originalIndex)}
+                                onCheckedChange={(checked) => 
+                                  handleSavingsSelection(originalIndex, checked as boolean)
+                                }
+                              />
+                              <div className="flex-1 text-right">
+                                <div className="font-medium">{product.manufacturer || 'לא צוין'}</div>
+                                <div className="text-sm text-muted-foreground">{product.productName}</div>
+                                <div className="text-sm">
+                                  <Badge variant="secondary">{product.productType}</Badge>
+                                  <span className="ml-2">{formatCurrency(product.accumulation)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Insurance Products */}
+                {filteredInsurance.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>מוצרי ביטוח ({filteredInsurance.length})</CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSelectAllInsurance}
+                        >
+                          {selectedInsurance.size === filteredInsurance.length ? 'בטל בחירת הכל' : 'בחר הכל'}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="max-h-96 overflow-y-auto">
+                      <div className="space-y-2">
+                        {filteredInsurance.map((product, index) => {
+                          const originalIndex = importedData!.insurance.findIndex(i => i === product);
+                          return (
+                            <div key={originalIndex} className="flex items-center space-x-2 p-3 border rounded-lg">
+                              <Checkbox
+                                checked={selectedInsurance.has(originalIndex)}
+                                onCheckedChange={(checked) => 
+                                  handleInsuranceSelection(originalIndex, checked as boolean)
+                                }
+                              />
+                              <div className="flex-1 text-right">
+                                <div className="font-medium">{product.manufacturer || 'לא צוין'}</div>
+                                <div className="text-sm text-muted-foreground">{product.product}</div>
+                                <div className="text-sm">
+                                  <Badge variant="secondary">{product.productType}</Badge>
+                                  <span className="ml-2">{formatCurrency(product.premium)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={handleClose}>
+                  ביטול
+                </Button>
+                <Button 
+                  onClick={handleGenerateCurrentState}
+                  disabled={selectedSavings.size === 0 && selectedInsurance.size === 0}
+                >
+                  יצר מצב קיים ({selectedSavings.size + selectedInsurance.size} מוצרים)
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ExcelImportDialog;
