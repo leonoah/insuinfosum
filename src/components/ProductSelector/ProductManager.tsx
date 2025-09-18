@@ -186,12 +186,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         </Button>
       </div>
 
-      {/* Comparison Section - Always Visible */}
-      <ComparisonSection 
-        currentProducts={currentProducts}
-        recommendedProducts={recommendedProducts}
-      />
-
       {/* Products Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ProductList
