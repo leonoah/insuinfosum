@@ -381,7 +381,7 @@ const AppForm = () => {
 
         {/* Form - RTL Layout */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 glass mb-8 p-1 rounded-2xl">
+          <TabsList className="grid w-full grid-cols-3 glass mb-8 p-1 rounded-2xl">
             <TabsTrigger 
               value="client" 
               className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -402,13 +402,6 @@ const AppForm = () => {
             >
               <CheckCircle className="h-4 w-4 ml-2" />
               החלטות
-            </TabsTrigger>
-            <TabsTrigger 
-              value="recommendations"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <FileText className="h-4 w-4 ml-2" />
-              המלצות
             </TabsTrigger>
           </TabsList>
 
@@ -552,13 +545,13 @@ const AppForm = () => {
             </Card>
           </TabsContent>
 
-          {/* Recommendations */}
-          <TabsContent value="recommendations">
+          {/* Decisions */}
+          <TabsContent value="decisions">
             <Card className="glass border-glass-border rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  המלצות הסוכן
+                  <CheckCircle className="h-5 w-5" />
+                  סיכום החלטות שהתקבלו
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -633,39 +626,7 @@ const AppForm = () => {
                     placeholder="₪ 500-800 לחודש"
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Products */}
-          <TabsContent value="products">
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  ניהול מוצרים פיננסיים
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProductManager
-                  currentProducts={formData.products.filter(p => p.type === 'current')}
-                  recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
-                  onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Decisions */}
-          <TabsContent value="decisions">
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
-                  סיכום החלטות שהתקבלו
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
@@ -731,6 +692,25 @@ const AppForm = () => {
                     placeholder="חתימת בן/בת זוג, אישור רופא..."
                   />
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Products */}
+          <TabsContent value="products">
+            <Card className="glass border-glass-border rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  ניהול מוצרים פיננסיים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductManager
+                  currentProducts={formData.products.filter(p => p.type === 'current')}
+                  recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
+                  onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
+                />
               </CardContent>
             </Card>
           </TabsContent>
