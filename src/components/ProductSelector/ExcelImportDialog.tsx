@@ -159,7 +159,13 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         const productName = idx.product >= 0 ? normalizeText(row[idx.product]) : '';
         const policyNumber = idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : '';
 
+        // Skip rows without essential information or without manufacturer
         if (!productType && !manufacturer && !productName) {
+          return;
+        }
+        
+        // Skip products without manufacturer (prevents "לא צוין" entries)
+        if (!manufacturer) {
           return;
         }
 
@@ -171,7 +177,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         const premium = premiumRaw ? 
           parseFloat(premiumRaw.toString().replace(/[₪,\s]/g, '')) || 0 : 0;
 
-        if (accumulation > 0 && productName) {
+        if (accumulation > 0 && productName && manufacturer) {
           const depositFee = idx.depositFee >= 0 ?
             parseFloat((row[idx.depositFee] || '').toString().replace('%', '')) || 0 : 0;
           const accumulationFee = idx.accumulationFee >= 0 ?
@@ -179,6 +185,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
           const investmentTrack = idx.investmentTrack >= 0 ?
             normalizeText(row[idx.investmentTrack]) : '';
 
+          // Create unique key for deduplication
           const key = `${productType}|${manufacturer}|${productName}|${policyNumber}`;
           const existingSavings = savingsMap.get(key);
 
@@ -195,10 +202,22 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
               policyNumber
             };
             savingsMap.set(key, savingsProduct);
+          } else {
+            // Merge data to avoid duplicates while keeping the most complete information
+            existingSavings.accumulation = Math.max(existingSavings.accumulation, accumulation);
+            if (!existingSavings.investmentTrack && investmentTrack) {
+              existingSavings.investmentTrack = investmentTrack;
+            }
+            if (!existingSavings.depositFee && depositFee) {
+              existingSavings.depositFee = depositFee;
+            }
+            if (!existingSavings.accumulationFee && accumulationFee) {
+              existingSavings.accumulationFee = accumulationFee;
+            }
           }
         }
 
-        if (premium > 0 && productName) {
+        if (premium > 0 && productName && manufacturer) {
           const key = `${productType}|${manufacturer}|${productName}|${policyNumber}`;
           const existingInsurance = insuranceMap.get(key);
 
@@ -211,6 +230,9 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
               policyNumber
             };
             insuranceMap.set(key, insuranceProduct);
+          } else {
+            // Merge premium data (take the maximum)
+            existingInsurance.premium = Math.max(existingInsurance.premium, premium);
           }
         }
       });
@@ -583,7 +605,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
                                 }
                               />
                               <div className="flex-1 text-right">
-                                <div className="font-medium">{product.manufacturer || 'לא צוין'}</div>
+                                <div className="font-medium">{product.manufacturer}</div>
                                 <div className="text-sm text-muted-foreground">{product.productName}</div>
                                 <div className="text-sm">
                                   <Badge variant="secondary">{product.productType}</Badge>
@@ -626,7 +648,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
                                 }
                               />
                               <div className="flex-1 text-right">
-                                <div className="font-medium">{product.manufacturer || 'לא צוין'}</div>
+                                <div className="font-medium">{product.manufacturer}</div>
                                 <div className="text-sm text-muted-foreground">{product.product}</div>
                                 <div className="text-sm">
                                   <Badge variant="secondary">{product.productType}</Badge>
