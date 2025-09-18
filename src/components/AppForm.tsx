@@ -545,6 +545,25 @@ const AppForm = () => {
             </Card>
           </TabsContent>
 
+          {/* Products */}
+          <TabsContent value="products">
+            <Card className="glass border-glass-border rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  ניהול מוצרים פיננסיים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductManager
+                  currentProducts={formData.products.filter(p => p.type === 'current')}
+                  recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
+                  onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Decisions */}
           <TabsContent value="decisions">
             <Card className="glass border-glass-border rounded-2xl">
