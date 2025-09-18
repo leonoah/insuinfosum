@@ -258,16 +258,15 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
   const downloadPDF = async () => {
     try {
-      // Create new PDF document
+      // Create new PDF document with RTL support
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
 
-      // Add Hebrew font support
-      pdf.addFont('https://fonts.gstatic.com/s/assistant/v16/2sDPZGJYnIjSi6H75xXIvQ.ttf', 'Assistant', 'normal');
-      pdf.setFont('Assistant');
+      // Use default font for Hebrew support
+      pdf.setFont('helvetica');
       
       let yPosition = 30;
       const pageWidth = 210; // A4 width in mm
@@ -277,10 +276,9 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       // Helper function to add Hebrew text (right-to-left)
       const addHebrewText = (text: string, x: number, y: number, fontSize = 12, isBold = false) => {
         pdf.setFontSize(fontSize);
-        pdf.setFont('Assistant', isBold ? 'bold' : 'normal');
-        // Reverse Hebrew text for proper RTL display
-        const reversedText = text.split('').reverse().join('');
-        pdf.text(reversedText, x, y, { align: 'right' });
+        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+        // For Hebrew text, we'll use the text as-is since jsPDF handles RTL
+        pdf.text(text, x, y, { align: 'right' });
       };
 
       // Header with logo placeholder and title
