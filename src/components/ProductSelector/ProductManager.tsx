@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
-import ComparisonSection from './ComparisonSection';
 import ExcelImportDialog from './ExcelImportDialog';
 import CurrentStateView from './CurrentStateView';
 import EditableStateView from './EditableStateView';
@@ -185,12 +184,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           הוסף מוצר מוצע
         </Button>
       </div>
-
-      {/* Comparison Section - Always Visible */}
-      <ComparisonSection 
-        currentProducts={currentProducts}
-        recommendedProducts={recommendedProducts}
-      />
 
       {/* Products Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
