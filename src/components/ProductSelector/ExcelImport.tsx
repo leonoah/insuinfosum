@@ -64,13 +64,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     setIsProcessing(true);
     setImportStatus('idle');
     setErrorMessage('');
+    setSelectedSavings(new Set());
+    setSelectedInsurance(new Set());
 
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'buffer' });
-      
+
       const processedData = await processExcelData(workbook);
-      
+
       setImportedData(processedData);
       setImportStatus('success');
       setShowProductSelection(true);
@@ -86,8 +88,17 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
   };
 
   const processExcelData = async (workbook: XLSX.WorkBook): Promise<ExcelData> => {
-    const savings: SavingsProduct[] = [];
-    const insurance: InsuranceProduct[] = [];
+    const normalizeText = (value: unknown): string => {
+      if (value === null || value === undefined) return '';
+      return value
+        .toString()
+        .replace(/[\u200E\u200F]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const savingsMap = new Map<string, SavingsProduct>();
+    const insuranceMap = new Map<string, InsuranceProduct>();
 
     // Process each sheet
     Object.keys(workbook.Sheets).forEach(sheetName => {
@@ -137,11 +148,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       dataRows.forEach((row, rowIndex) => {
         if (!row || row.length === 0) return;
 
-        const productType = idx.productType >= 0 ? (row[idx.productType] || '').toString().trim() : '';
-        const manufacturer = idx.manufacturer >= 0 ? (row[idx.manufacturer] || '').toString().trim() : '';
-        const productName = idx.product >= 0 ? (row[idx.product] || '').toString().trim() : '';
-        const policyNumber = idx.policyNumber >= 0 ? (row[idx.policyNumber] || '').toString().trim() : '';
-        
+        const productType = idx.productType >= 0 ? normalizeText(row[idx.productType]) : '';
+        const manufacturer = idx.manufacturer >= 0 ? normalizeText(row[idx.manufacturer]) : '';
+        const productName = idx.product >= 0 ? normalizeText(row[idx.product]) : '';
+        const policyNumber = idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : '';
+
         // Skip empty rows
         if (!productType && !manufacturer && !productName) {
           return;
@@ -166,23 +177,18 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
 
         // If this row has accumulation data, it's a savings product
         if (accumulation > 0 && productName) {
-          // Check for duplicates
-          const existingSavings = savings.find(s => 
-            s.productType === productType &&
-            s.manufacturer === manufacturer &&
-            s.productName === productName &&
-            s.policyNumber === policyNumber
-          );
+          const depositFee = idx.depositFee >= 0 ?
+            parseFloat((row[idx.depositFee] || '').toString().replace('%', '')) || 0 : 0;
+          const accumulationFee = idx.accumulationFee >= 0 ?
+            parseFloat((row[idx.accumulationFee] || '').toString().replace('%', '')) || 0 : 0;
+          const investmentTrack = idx.investmentTrack >= 0 ?
+            normalizeText(row[idx.investmentTrack]) : '';
+
+          const key = `${productType}|${manufacturer}|${productName}|${policyNumber}`;
+          const existingSavings = savingsMap.get(key);
 
           if (!existingSavings) {
-            const depositFee = idx.depositFee >= 0 ? 
-              parseFloat((row[idx.depositFee] || '').toString().replace('%', '')) || 0 : 0;
-            const accumulationFee = idx.accumulationFee >= 0 ? 
-              parseFloat((row[idx.accumulationFee] || '').toString().replace('%', '')) || 0 : 0;
-            const investmentTrack = idx.investmentTrack >= 0 ? 
-              (row[idx.investmentTrack] || '').toString().trim() : '';
-
-            savings.push({
+            const savingsProduct: SavingsProduct = {
               productType,
               manufacturer,
               productName,
@@ -192,7 +198,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
               accumulationFee,
               investmentTrack,
               policyNumber
-            });
+            };
+
+            savingsMap.set(key, savingsProduct);
 
             console.log('Added savings product:', {
               productType,
@@ -201,27 +209,36 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
               accumulation,
               policyNumber
             });
+          } else {
+            // Merge data to avoid duplicates while keeping the most complete information
+            existingSavings.accumulation = Math.max(existingSavings.accumulation, accumulation);
+            if (!existingSavings.investmentTrack && investmentTrack) {
+              existingSavings.investmentTrack = investmentTrack;
+            }
+            if (!existingSavings.depositFee && depositFee) {
+              existingSavings.depositFee = depositFee;
+            }
+            if (!existingSavings.accumulationFee && accumulationFee) {
+              existingSavings.accumulationFee = accumulationFee;
+            }
           }
         }
 
         // If this row has premium data, it's an insurance product
         if (premium > 0 && productName) {
-          // Check for duplicates
-          const existingInsurance = insurance.find(i => 
-            i.productType === productType &&
-            i.manufacturer === manufacturer &&
-            i.product === productName &&
-            i.policyNumber === policyNumber
-          );
+          const key = `${productType}|${manufacturer}|${productName}|${policyNumber}`;
+          const existingInsurance = insuranceMap.get(key);
 
           if (!existingInsurance) {
-            insurance.push({
+            const insuranceProduct: InsuranceProduct = {
               productType,
               manufacturer,
               product: productName,
               premium,
               policyNumber
-            });
+            };
+
+            insuranceMap.set(key, insuranceProduct);
 
             console.log('Added insurance product:', {
               productType,
@@ -230,10 +247,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
               premium,
               policyNumber
             });
+          } else {
+            existingInsurance.premium = Math.max(existingInsurance.premium, premium);
           }
         }
       });
     });
+
+    const savings = Array.from(savingsMap.values());
+    const insurance = Array.from(insuranceMap.values());
 
     console.log('Final results:', {
       savingsCount: savings.length,
