@@ -2,12 +2,10 @@ import React from 'react';
 import { ArrowRight, TrendingUp, TrendingDown, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
-
 interface ComparisonSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
 }
-
 const ComparisonSection: React.FC<ComparisonSectionProps> = ({
   currentProducts,
   recommendedProducts
@@ -24,7 +22,6 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
         return null;
     }
   };
-
   const getChangeColor = (change?: string) => {
     switch (change) {
       case 'ירידה':
@@ -37,7 +34,6 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
         return 'text-muted-foreground';
     }
   };
-
   const totalCurrentAmount = currentProducts.reduce((sum, p) => sum + p.amount, 0);
   const totalRecommendedAmount = recommendedProducts.reduce((sum, p) => sum + p.amount, 0);
   const amountDifference = totalRecommendedAmount - totalCurrentAmount;
@@ -46,9 +42,7 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
   if (currentProducts.length === 0 && recommendedProducts.length === 0) {
     return null;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Summary Header */}
       <Card className="glass">
         <CardHeader>
@@ -81,119 +75,7 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
       </Card>
 
       {/* Detailed Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Current Products */}
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle className="text-lg text-blue-400">מצב קיים ({currentProducts.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-            {currentProducts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-2">📋</div>
-                <div>אין מוצרים קיימים</div>
-              </div>
-            ) : (
-              currentProducts.map((product) => (
-                <div key={product.id} className="bg-background/30 p-4 rounded-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xl">{PRODUCT_ICONS[product.productName] || '📄'}</span>
-                    <div>
-                      <div className="font-medium">{product.productName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {product.company} {product.subType && `- ${product.subType}`}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span>סכום:</span>
-                      <span className="font-medium">₪{product.amount.toLocaleString()}</span>
-                    </div>
-                    {(product.managementFeeOnDeposit > 0 || product.managementFeeOnAccumulation > 0) && (
-                      <div className="flex justify-between">
-                        <span>דמי ניהול:</span>
-                        <span>{product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
-                      </div>
-                    )}
-                    {product.investmentTrack && (
-                      <div className="flex justify-between">
-                        <span>מסלול:</span>
-                        <span>{product.investmentTrack}</span>
-                      </div>
-                    )}
-                    {product.notes && (
-                      <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                        {product.notes}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recommended Products */}
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle className="text-lg text-green-400">מצב מוצע ({recommendedProducts.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-            {recommendedProducts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-2">💡</div>
-                <div>אין המלצות</div>
-              </div>
-            ) : (
-              recommendedProducts.map((product) => (
-                <div key={product.id} className="bg-background/30 p-4 rounded-lg border-l-4 border-primary">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xl">{PRODUCT_ICONS[product.productName] || '📄'}</span>
-                    <div className="flex-1">
-                      <div className="font-medium">{product.productName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {product.company} {product.subType && `- ${product.subType}`}
-                      </div>
-                    </div>
-                    {product.riskLevelChange && (
-                      <div className="flex items-center gap-1">
-                        {getRiskIcon(product.riskLevelChange)}
-                        <span className={`text-xs ${getChangeColor(product.riskLevelChange)}`}>
-                          {product.riskLevelChange}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span>סכום:</span>
-                      <span className="font-medium">₪{product.amount.toLocaleString()}</span>
-                    </div>
-                    {(product.managementFeeOnDeposit > 0 || product.managementFeeOnAccumulation > 0) && (
-                      <div className="flex justify-between">
-                        <span>דמי ניהול:</span>
-                        <span>{product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
-                      </div>
-                    )}
-                    {product.investmentTrack && (
-                      <div className="flex justify-between">
-                        <span>מסלול:</span>
-                        <span>{product.investmentTrack}</span>
-                      </div>
-                    )}
-                    {product.notes && (
-                      <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                        {product.notes}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      
 
       {/* Summary Table */}
       <Card className="glass">
@@ -231,55 +113,29 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
                 <tr className="border-b border-border/50">
                   <td className="p-2 font-medium">ממוצע דמי ניהול (הפקדה)</td>
                   <td className="p-2">
-                    {currentProducts.length > 0 
-                      ? (currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length).toFixed(2) + '%'
-                      : '-'
-                    }
+                    {currentProducts.length > 0 ? (currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length).toFixed(2) + '%' : '-'}
                   </td>
                   <td className="p-2">
-                    {recommendedProducts.length > 0 
-                      ? (recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length).toFixed(2) + '%'
-                      : '-'
-                    }
+                    {recommendedProducts.length > 0 ? (recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length).toFixed(2) + '%' : '-'}
                   </td>
                   <td className="p-2 font-medium">
-                    {currentProducts.length > 0 && recommendedProducts.length > 0 ? (
-                      <span className={
-                        (recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length) <
-                        (currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length)
-                        ? 'text-green-500' : 'text-red-500'
-                      }>
-                        {((recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length) -
-                          (currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length)).toFixed(2)}%
-                      </span>
-                    ) : '-'}
+                    {currentProducts.length > 0 && recommendedProducts.length > 0 ? <span className={recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length < currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length ? 'text-green-500' : 'text-red-500'}>
+                        {(recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length - currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length).toFixed(2)}%
+                      </span> : '-'}
                   </td>
                 </tr>
                 <tr>
                   <td className="p-2 font-medium">ממוצע דמי ניהול (צבירה)</td>
                   <td className="p-2">
-                    {currentProducts.length > 0 
-                      ? (currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length).toFixed(2) + '%'
-                      : '-'
-                    }
+                    {currentProducts.length > 0 ? (currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length).toFixed(2) + '%' : '-'}
                   </td>
                   <td className="p-2">
-                    {recommendedProducts.length > 0 
-                      ? (recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length).toFixed(2) + '%'
-                      : '-'
-                    }
+                    {recommendedProducts.length > 0 ? (recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length).toFixed(2) + '%' : '-'}
                   </td>
                   <td className="p-2 font-medium">
-                    {currentProducts.length > 0 && recommendedProducts.length > 0 ? (
-                      <span className={
-                        (recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length) <
-                        (currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length)
-                        ? 'text-green-500' : 'text-red-500'
-                      }>
-                        {((recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length) -
-                          (currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length)).toFixed(2)}%
-                      </span>
-                    ) : '-'}
+                    {currentProducts.length > 0 && recommendedProducts.length > 0 ? <span className={recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length < currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length ? 'text-green-500' : 'text-red-500'}>
+                        {(recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length - currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length).toFixed(2)}%
+                      </span> : '-'}
                   </td>
                 </tr>
               </tbody>
@@ -287,8 +143,6 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default ComparisonSection;
