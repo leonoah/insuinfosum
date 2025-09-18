@@ -520,6 +520,36 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_info: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           category: string
@@ -1303,6 +1333,39 @@ export type Database = {
           project_id?: string
           project_name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reports_log: {
+        Row: {
+          client_id: string
+          client_name: string
+          created_at: string
+          generated_at: string
+          id: string
+          report_content: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          client_id: string
+          client_name: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          report_content?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_name?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          report_content?: string | null
+          sent_at?: string | null
+          status?: string | null
         }
         Relationships: []
       }

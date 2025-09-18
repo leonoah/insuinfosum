@@ -13,6 +13,7 @@ const Navigation = () => {
     { label: "איך זה עובד", href: "/how-it-works" },
     { label: "פרטיות", href: "/privacy" },
     { label: "יצירת קשר", href: "/contact" },
+    { label: "ניהול", href: "/admin" },
   ];
 
   const isActive = (path: string) => location.pathname === path;

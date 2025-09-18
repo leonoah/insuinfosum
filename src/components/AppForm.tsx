@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import { SelectedProduct } from "@/types/insurance";
+// Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
 import {
   Command,
@@ -236,7 +237,38 @@ const AppForm = () => {
     // Save client before generating summary
     await saveClient();
     
+    // Log the report generation
+    await logReport();
+    
     setShowSummary(true);
+  };
+
+  const logReport = async () => {
+    try {
+      const reportContent = `דוח ייעוץ פיננסי עבור ${formData.clientName}
+תאריך: ${formData.meetingDate || new Date().toLocaleDateString('he-IL')}
+נושאים: ${formData.topics}
+מצב קיים: ${formData.currentSituation}
+סיכונים: ${formData.risks}
+המלצות: ${formData.recommendations.join(', ')}
+עלות משוערת: ${formData.estimatedCost}
+החלטות: ${formData.decisions}`;
+
+      const { error } = await supabase
+        .from('reports_log')
+        .insert({
+          client_id: formData.clientPhone, // Using phone as ID for now
+          client_name: formData.clientName,
+          report_content: reportContent,
+          status: 'generated'
+        });
+
+      if (error) {
+        console.error('Error logging report:', error);
+      }
+    } catch (error) {
+      console.error('Error in logReport:', error);
+    }
   };
 
   const handleGenerateDecisions = async () => {
