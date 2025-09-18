@@ -89,128 +89,127 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     const savings: SavingsProduct[] = [];
     const insurance: InsuranceProduct[] = [];
 
-    // Process all sheets looking for relevant data
+    type SheetCandidate = {
+      name: string;
+      headers: string[];
+      idx: {
+        productType: number;
+        manufacturer: number;
+        product: number;
+        accumulation: number;
+        depositFee: number;
+        accumulationFee: number;
+        investmentTrack: number;
+        policyNumber: number;
+        premium: number;
+      };
+      savingsCount: number;
+      insuranceCount: number;
+      dataRows: any[][];
+    };
+
+    const candidates: SheetCandidate[] = [];
+
+    const normalize = (v: any) => parseFloat((v ?? '').toString().replace(/[^\d.-]/g, '')) || 0;
+    const str = (v: any) => (v ?? '').toString().trim();
+
+    // First pass: collect candidates and estimate counts per sheet
     Object.keys(workbook.Sheets).forEach(sheetName => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       
-      // Find header row and data
+      // Find header row by requiring both "מוצר" and ("צבירה" or "פרמיה")
       let headerRow = -1;
-      for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+      for (let i = 0; i < Math.min(20, jsonData.length); i++) {
         const row = jsonData[i] as any[];
-        if (row && row.some(cell => 
-          typeof cell === 'string' && 
-          (cell.includes('סוג מוצר') || cell.includes('צבירה') || cell.includes('פרמיה'))
-        )) {
+        if (!row) continue;
+        const includesProduct = row.some(cell => typeof cell === 'string' && cell.includes('מוצר'));
+        const includesAccumulation = row.some(cell => typeof cell === 'string' && cell.includes('צבירה'));
+        const includesPremium = row.some(cell => typeof cell === 'string' && cell.includes('פרמיה'));
+        if (includesProduct && (includesAccumulation || includesPremium)) {
           headerRow = i;
           break;
         }
       }
-
       if (headerRow === -1) return;
 
-      const headers = jsonData[headerRow] as string[];
+      const headers = (jsonData[headerRow] as string[]).map(h => String(h || ''));
       const dataRows = jsonData.slice(headerRow + 1) as any[][];
 
-      // Map column indices
-      const getColumnIndex = (keywords: string[]) => {
-        return headers.findIndex(header => 
-          header && keywords.some(keyword => 
-            header.toString().includes(keyword)
-          )
-        );
+      const getColumnIndex = (keywords: string[]) =>
+        headers.findIndex(header => header && keywords.some(keyword => header.toString().includes(keyword)));
+
+      const idx = {
+        productType: getColumnIndex(['סוג מוצר']),
+        manufacturer: getColumnIndex(['יצרן']),
+        product: getColumnIndex(['מוצר']),
+        accumulation: getColumnIndex(['צבירה']),
+        depositFee: getColumnIndex(['דמי ניהול מהפקדה']),
+        accumulationFee: getColumnIndex(['דמי ניהול מצבירה']),
+        investmentTrack: getColumnIndex(['מסלולי השקעה', 'מסלול']),
+        policyNumber: getColumnIndex(['פוליסה', 'חשבון']),
+        premium: getColumnIndex(['פרמיה'])
       };
 
-      const productTypeIndex = getColumnIndex(['סוג מוצר']);
-      const manufacturerIndex = getColumnIndex(['יצרן']);
-      const productIndex = getColumnIndex(['מוצר']);
-      const planNameIndex = getColumnIndex(['שם תוכנית']);
-      const accumulationIndex = getColumnIndex(['צבירה']);
-      const depositFeeIndex = getColumnIndex(['דמי ניהול מהפקדה']);
-      const accumulationFeeIndex = getColumnIndex(['דמי ניהול מצבירה']);
-      const investmentTrackIndex = getColumnIndex(['מסלולי השקעה']);
-      const policyNumberIndex = getColumnIndex(['פוליסה', 'חשבון']);
-      const premiumIndex = getColumnIndex(['פרמיה']);
-
-      // Process data rows
+      let savingsCount = 0;
+      let insuranceCount = 0;
       dataRows.forEach(row => {
-        if (!row || row.length === 0) return;
-
-        const productType = row[productTypeIndex]?.toString().trim() || '';
-        if (!productType) return;
-
-        // Check if it's a savings product
-        if (productType.includes('קופת גמל') || 
-            productType.includes('קרן פנסיה') || 
-            productType.includes('קרן השתלמות')) {
-          
-          const accumulation = parseFloat(
-            row[accumulationIndex]?.toString().replace(/[₪,\s]/g, '') || '0'
-          );
-          const policyNumber = row[policyNumberIndex]?.toString().trim() || '';
-          const productName = row[productIndex]?.toString().trim() || '';
-          
-          // Only include rows with meaningful data
-          if (accumulation > 0 && productName) {
-            // Check for duplicates based on key fields (ignore planName as requested)
-            const isDuplicate = savings.some(existing => 
-              existing.productType === productType &&
-              existing.manufacturer === (row[manufacturerIndex]?.toString().trim() || '') &&
-              existing.productName === productName &&
-              Math.abs(existing.accumulation - accumulation) < 0.01
-            );
-
-            if (!isDuplicate) {
-              savings.push({
-                productType,
-                manufacturer: row[manufacturerIndex]?.toString().trim() || '',
-                productName,
-                planName: '', // Ignore planName as requested
-                accumulation,
-                depositFee: parseFloat(
-                  row[depositFeeIndex]?.toString().replace('%', '') || '0'
-                ),
-                accumulationFee: parseFloat(
-                  row[accumulationFeeIndex]?.toString().replace('%', '') || '0'
-                ),
-                investmentTrack: row[investmentTrackIndex]?.toString().trim() || '',
-                policyNumber
-              });
-            }
-          }
-        }
-
-        // Check if it's an insurance product (if premium exists)
-        if (premiumIndex !== -1 && row[premiumIndex]) {
-          const premium = parseFloat(
-            row[premiumIndex]?.toString().replace(/[₪,\s]/g, '') || '0'
-          );
-          const policyNumber = row[policyNumberIndex]?.toString().trim() || '';
-          const productName = row[productIndex]?.toString().trim() || '';
-          
-          // Only include rows with meaningful data
-          if (premium > 0 && productName) {
-            // Check for duplicates based on key fields
-            const isDuplicate = insurance.some(existing => 
-              existing.productType === productType &&
-              existing.manufacturer === (row[manufacturerIndex]?.toString().trim() || '') &&
-              existing.product === productName &&
-              Math.abs(existing.premium - premium) < 0.01
-            );
-
-            if (!isDuplicate) {
-              insurance.push({
-                productType,
-                manufacturer: row[manufacturerIndex]?.toString().trim() || '',
-                product: productName,
-                premium,
-                policyNumber
-              });
-            }
-          }
-        }
+        const productName = idx.product >= 0 ? str(row[idx.product]) : '';
+        if (!productName) return;
+        const acc = idx.accumulation >= 0 ? normalize(row[idx.accumulation]) : 0;
+        const prem = idx.premium >= 0 ? normalize(row[idx.premium]) : 0;
+        if (acc > 0) savingsCount++;
+        if (prem > 0) insuranceCount++;
       });
+
+      candidates.push({ name: sheetName, headers, idx, savingsCount, insuranceCount, dataRows });
     });
+
+    // Choose the single best sheet for each category to avoid duplicates
+    const savingsSheet = candidates.reduce<SheetCandidate | undefined>((best, c) =>
+      c.savingsCount > (best?.savingsCount ?? 0) ? c : best,
+    undefined);
+
+    const insuranceSheet = candidates.reduce<SheetCandidate | undefined>((best, c) =>
+      c.insuranceCount > (best?.insuranceCount ?? 0) ? c : best,
+    undefined);
+
+    // Second pass: extract rows only from the chosen sheets
+    if (savingsSheet && savingsSheet.savingsCount > 0) {
+      const { idx, dataRows } = savingsSheet;
+      dataRows.forEach(row => {
+        const productName = idx.product >= 0 ? str(row[idx.product]) : '';
+        const accumulation = idx.accumulation >= 0 ? normalize(row[idx.accumulation]) : 0;
+        if (!productName || accumulation <= 0) return;
+        savings.push({
+          productType: idx.productType >= 0 ? str(row[idx.productType]) : '',
+          manufacturer: idx.manufacturer >= 0 ? str(row[idx.manufacturer]) : '',
+          productName,
+          planName: '', // ignore plan name per requirements
+          accumulation,
+          depositFee: idx.depositFee >= 0 ? normalize(row[idx.depositFee]) : 0,
+          accumulationFee: idx.accumulationFee >= 0 ? normalize(row[idx.accumulationFee]) : 0,
+          investmentTrack: idx.investmentTrack >= 0 ? str(row[idx.investmentTrack]) : '',
+          policyNumber: idx.policyNumber >= 0 ? str(row[idx.policyNumber]) : ''
+        });
+      });
+    }
+
+    if (insuranceSheet && insuranceSheet.insuranceCount > 0) {
+      const { idx, dataRows } = insuranceSheet;
+      dataRows.forEach(row => {
+        const productName = idx.product >= 0 ? str(row[idx.product]) : '';
+        const premium = idx.premium >= 0 ? normalize(row[idx.premium]) : 0;
+        if (!productName || premium <= 0) return;
+        insurance.push({
+          productType: idx.productType >= 0 ? str(row[idx.productType]) : '',
+          manufacturer: idx.manufacturer >= 0 ? str(row[idx.manufacturer]) : '',
+          product: productName,
+          premium,
+          policyNumber: idx.policyNumber >= 0 ? str(row[idx.policyNumber]) : ''
+        });
+      });
+    }
 
     // Calculate KPIs
     const kpis = calculateKPIs(savings, insurance);
@@ -253,13 +252,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           id: `savings-${Date.now()}-${productCounter}`,
           company: savingsProduct.manufacturer,
           productName: savingsProduct.productName || savingsProduct.productType,
-          subType: savingsProduct.planName || 'כללי',
+          subType: '',
           amount: savingsProduct.accumulation,
-          managementFeeOnDeposit: savingsProduct.depositFee,
-          managementFeeOnAccumulation: savingsProduct.accumulationFee,
-          investmentTrack: savingsProduct.investmentTrack || 'כללי',
+          managementFeeOnDeposit: savingsProduct.depositFee || 0,
+          managementFeeOnAccumulation: savingsProduct.accumulationFee || 0,
+          investmentTrack: savingsProduct.investmentTrack || '',
           riskLevelChange: '',
-          notes: `מס' פוליסה: ${savingsProduct.policyNumber}`,
+          notes: savingsProduct.policyNumber || '',
           type: 'current'
         };
         selectedProducts.push(product);
@@ -275,13 +274,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           id: `insurance-${Date.now()}-${productCounter}`,
           company: insuranceProduct.manufacturer,
           productName: insuranceProduct.product || insuranceProduct.productType,
-          subType: 'ביטוח',
-          amount: insuranceProduct.premium * 12, // Convert monthly to yearly
+          subType: '',
+          amount: insuranceProduct.premium,
           managementFeeOnDeposit: 0,
           managementFeeOnAccumulation: 0,
-          investmentTrack: 'לא רלוונטי',
+          investmentTrack: '',
           riskLevelChange: '',
-          notes: `פרמיה חודשית: ${insuranceProduct.premium} ₪ | פוליסה: ${insuranceProduct.policyNumber}`,
+          notes: insuranceProduct.policyNumber || '',
           type: 'current'
         };
         selectedProducts.push(product);
