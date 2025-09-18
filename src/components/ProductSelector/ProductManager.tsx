@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, BarChart3 } from 'lucide-react';
+import { Plus, BarChart3, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonView from './ComparisonView';
+import ExcelImport from './ExcelImport';
+import CurrentStateView from './CurrentStateView';
+import EditableStateView from './EditableStateView';
 
 interface ProductManagerProps {
   currentProducts: SelectedProduct[];
@@ -21,6 +24,8 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   const [modalType, setModalType] = useState<'current' | 'recommended'>('current');
   const [showComparison, setShowComparison] = useState(false);
   const [editingProduct, setEditingProduct] = useState<SelectedProduct | null>(null);
+  const [currentView, setCurrentView] = useState<'products' | 'excel-import' | 'current-state' | 'editable-state'>('products');
+  const [excelData, setExcelData] = useState<any>(null);
 
   const allProducts = [...currentProducts, ...recommendedProducts];
 
@@ -64,6 +69,30 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     setModalOpen(true);
   };
 
+  const handleExcelDataImported = (data: any) => {
+    setExcelData(data);
+    setCurrentView('current-state');
+  };
+
+  const handleCreateNewState = () => {
+    setCurrentView('editable-state');
+  };
+
+  const handleEditableStateSave = (savings: any[], insurance: any[]) => {
+    // Here you would typically save the edited state
+    console.log('Saving edited state:', { savings, insurance });
+    setCurrentView('current-state');
+  };
+
+  const handleBackToCurrentState = () => {
+    setCurrentView('current-state');
+  };
+
+  const handleBackToProducts = () => {
+    setCurrentView('products');
+    setExcelData(null);
+  };
+
   if (showComparison) {
     return (
       <ComparisonView
@@ -71,6 +100,50 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         recommendedProducts={recommendedProducts}
         onClose={() => setShowComparison(false)}
       />
+    );
+  }
+
+  if (currentView === 'excel-import') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleBackToProducts}>
+            חזור לניהול מוצרים
+          </Button>
+          <h2 className="text-2xl font-bold">ייבוא מצב קיים מאקסל</h2>
+        </div>
+        <ExcelImport onDataImported={handleExcelDataImported} />
+      </div>
+    );
+  }
+
+  if (currentView === 'current-state' && excelData) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleBackToProducts}>
+            חזור לניהול מוצרים
+          </Button>
+          <h2 className="text-2xl font-bold">מצב קיים</h2>
+        </div>
+        <CurrentStateView 
+          data={excelData} 
+          onCreateNewState={handleCreateNewState}
+        />
+      </div>
+    );
+  }
+
+  if (currentView === 'editable-state' && excelData) {
+    return (
+      <div className="space-y-6">
+        <EditableStateView
+          originalSavings={excelData.savings}
+          originalInsurance={excelData.insurance}
+          onSave={handleEditableStateSave}
+          onBack={handleBackToCurrentState}
+        />
+      </div>
     );
   }
 
@@ -93,6 +166,10 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-3">
+        <Button onClick={() => setCurrentView('excel-import')} variant="default" className="glass-hover">
+          <Upload className="h-4 w-4 mr-2" />
+          יבוא מצב קיים מאקסל
+        </Button>
         <Button onClick={() => openModal('current')} className="glass-hover">
           <Plus className="h-4 w-4 mr-2" />
           הוסף מוצר קיים
