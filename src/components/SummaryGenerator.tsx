@@ -326,24 +326,24 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       const currentProducts = formData.products?.filter(p => p.type === 'current') || [];
       const recommendedProducts = formData.products?.filter(p => p.type === 'recommended') || [];
       
-      reportContent.innerHTML = \`
+      reportContent.innerHTML = `
         <div style="background: #3b82f6; color: white; padding: 30px; text-align: center;">
-          <h1>דוח ייעוץ פיננסי - \${agentData.name}</h1>
-          <p>\${formatDate(formData.meetingDate)}</p>
+          <h1>דוח ייעוץ פיננסי - ${agentData.name}</h1>
+          <p>${formatDate(formData.meetingDate)}</p>
         </div>
         <div style="padding: 25px; background: #f8fafc; margin: 20px 0;">
           <h2>פרטי הלקוח</h2>
-          <p><strong>שם:</strong> \${formData.clientName}</p>
-          <p><strong>טלפון:</strong> \${formData.clientPhone}</p>
-          <p><strong>אימייל:</strong> \${formData.clientEmail}</p>
+          <p><strong>שם:</strong> ${formData.clientName}</p>
+          <p><strong>טלפון:</strong> ${formData.clientPhone}</p>
+          <p><strong>אימייל:</strong> ${formData.clientEmail}</p>
         </div>
-        \${formData.decisions ? \`<div style="padding: 25px; background: #fffbeb; margin: 20px 0;">
-          <h2>החלטות</h2><div>\${formData.decisions.replace(/\\n/g, '<br>')}</div></div>\` : ''}
+        ${formData.decisions ? `<div style="padding: 25px; background: #fffbeb; margin: 20px 0;">
+          <h2>החלטות</h2><div>${formData.decisions.replace(/\n/g, '<br>')}</div></div>` : ''}
         <div style="background: #3b82f6; color: white; padding: 20px; text-align: center;">
-          <p>בברכה, \${agentData.name}</p>
-          \${agentData.phone ? \`<p>טלפון: \${agentData.phone}</p>\` : ''}
+          <p>בברכה, ${agentData.name}</p>
+          ${agentData.phone ? `<p>טלפון: ${agentData.phone}</p>` : ''}
         </div>
-      \`;
+      `;
 
       document.body.appendChild(reportContent);
       
@@ -361,273 +361,16 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(\`דוח_\${formData.clientName}_\${formData.meetingDate}.pdf\`);
+      pdf.save(`דוח_${formData.clientName}_${formData.meetingDate}.pdf`);
 
       toast({
         title: "PDF נוצר בהצלחה",
         description: "הדוח הורד עם תמיכה מלאה בעברית",
       });
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      // Use default font for Hebrew support
-      pdf.setFont('helvetica');
-      
-      let yPosition = 30;
-      const pageWidth = 210; // A4 width in mm
-      const margin = 20;
-      const contentWidth = pageWidth - (margin * 2);
-
-      // Helper function to add Hebrew text (right-to-left)
-      const addHebrewText = (text: string, x: number, y: number, fontSize = 12, isBold = false) => {
-        pdf.setFontSize(fontSize);
-        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-        // For Hebrew text, we'll use the text as-is since jsPDF handles RTL
-        pdf.text(text, x, y, { align: 'right' });
-      };
-
-      // Header with logo placeholder and title
-      pdf.setFillColor(59, 130, 246); // Blue header background
-      pdf.rect(0, 0, pageWidth, 40, 'F');
-      
-      pdf.setTextColor(255, 255, 255); // White text
-      addHebrewText(`סיכום פגישת ביטוח - ${agentData.name}`, pageWidth - margin, 20, 18, true);
-      addHebrewText(formatDate(formData.meetingDate), pageWidth - margin, 30, 12);
-
-      yPosition = 50;
-      pdf.setTextColor(0, 0, 0); // Reset to black
-
-      // Client information section
-      pdf.setFillColor(248, 250, 252); // Light gray background
-      pdf.rect(margin, yPosition, contentWidth, 35, 'F');
-      
-      yPosition += 10;
-      addHebrewText('פרטי הלקוח', pageWidth - margin, yPosition, 14, true);
-      yPosition += 8;
-      
-      addHebrewText(`שם: ${formData.clientName}`, pageWidth - margin, yPosition, 11);
-      yPosition += 6;
-      addHebrewText(`טלפון: ${formData.clientPhone}`, pageWidth - margin, yPosition, 11);
-      yPosition += 6;
-      addHebrewText(`אימייל: ${formData.clientEmail}`, pageWidth - margin, yPosition, 11);
-      
-      if (formData.topics.length > 0) {
-        yPosition += 6;
-        addHebrewText(`נושאים: ${formData.topics.join(', ')}`, pageWidth - margin, yPosition, 11);
-      }
-
-      yPosition += 15;
-
-      // Portfolio comparison section
-      const totalCurrentAmount = formData.products?.filter(p => p.type === 'current').reduce((sum, p) => sum + p.amount, 0) || 0;
-      const totalRecommendedAmount = formData.products?.filter(p => p.type === 'recommended').reduce((sum, p) => sum + p.amount, 0) || 0;
-      const amountDifference = totalRecommendedAmount - totalCurrentAmount;
-      
-      if (totalCurrentAmount > 0 || totalRecommendedAmount > 0) {
-        pdf.setFillColor(240, 248, 255); // Very light blue
-        pdf.rect(margin, yPosition, contentWidth, 45, 'F');  
-        yPosition += 8;
-        addHebrewText('השוואת תיקים', pageWidth - margin, yPosition, 14, true);
-        yPosition += 10;
-        
-        // Create comparison table
-        pdf.setDrawColor(200, 200, 200);
-        pdf.setLineWidth(0.5);
-        
-        const tableY = yPosition;
-        const rowHeight = 8;
-        const colWidths = [contentWidth * 0.4, contentWidth * 0.3, contentWidth * 0.3];
-        let currentX = margin;
-        
-        // Table headers
-        pdf.rect(currentX, tableY, colWidths[0], rowHeight);
-        pdf.rect(currentX + colWidths[0], tableY, colWidths[1], rowHeight);
-        pdf.rect(currentX + colWidths[0] + colWidths[1], tableY, colWidths[2], rowHeight);
-        
-        addHebrewText('קטגוריה', currentX + colWidths[0] - 5, tableY + 5, 10, true);
-        addHebrewText('מצב קיים', currentX + colWidths[0] + colWidths[1] - 5, tableY + 5, 10, true);
-        addHebrewText('מצב מוצע', currentX + colWidths[0] + colWidths[1] + colWidths[2] - 5, tableY + 5, 10, true);
-        
-        // Row 1: Total amounts
-        yPosition = tableY + rowHeight;
-        pdf.rect(currentX, yPosition, colWidths[0], rowHeight);
-        pdf.rect(currentX + colWidths[0], yPosition, colWidths[1], rowHeight);
-        pdf.rect(currentX + colWidths[0] + colWidths[1], yPosition, colWidths[2], rowHeight);
-        
-        addHebrewText('סה"כ צבירה', currentX + colWidths[0] - 5, yPosition + 5, 9);
-        addHebrewText(`₪${totalCurrentAmount.toLocaleString()}`, currentX + colWidths[0] + colWidths[1] - 5, yPosition + 5, 9);
-        addHebrewText(`₪${totalRecommendedAmount.toLocaleString()}`, currentX + colWidths[0] + colWidths[1] + colWidths[2] - 5, yPosition + 5, 9);
-        
-        // Row 2: Number of products
-        yPosition += rowHeight;
-        pdf.rect(currentX, yPosition, colWidths[0], rowHeight);
-        pdf.rect(currentX + colWidths[0], yPosition, colWidths[1], rowHeight);
-        pdf.rect(currentX + colWidths[0] + colWidths[1], yPosition, colWidths[2], rowHeight);
-        
-        const currentCount = formData.products?.filter(p => p.type === 'current').length || 0;
-        const recommendedCount = formData.products?.filter(p => p.type === 'recommended').length || 0;
-        
-        addHebrewText('מספר מוצרים', currentX + colWidths[0] - 5, yPosition + 5, 9);
-        addHebrewText(currentCount.toString(), currentX + colWidths[0] + colWidths[1] - 5, yPosition + 5, 9);
-        addHebrewText(recommendedCount.toString(), currentX + colWidths[0] + colWidths[1] + colWidths[2] - 5, yPosition + 5, 9);
-        
-        yPosition += rowHeight + 5;
-        
-        // Difference summary
-        if (amountDifference !== 0) {
-          pdf.setFillColor(amountDifference >= 0 ? 240 : 254, amountDifference >= 0 ? 253 : 242, amountDifference >= 0 ? 244 : 242);
-          pdf.rect(margin, yPosition, contentWidth, 10, 'F');
-          yPosition += 3;
-          const differenceText = `הפרש: ${amountDifference >= 0 ? '+' : ''}₪${amountDifference.toLocaleString()}`;
-          addHebrewText(differenceText, pageWidth - margin, yPosition, 11, true);
-          yPosition += 10;
-        }
-      }
-
-      // Current situation section
-      if (formData.currentSituation) {
-        pdf.setFillColor(239, 246, 255); // Light blue
-        pdf.rect(margin, yPosition, contentWidth, 20, 'F');
-        yPosition += 8;
-        addHebrewText('מצב קיים', pageWidth - margin, yPosition, 12, true);
-        yPosition += 7;
-        
-        // Split long text into lines
-        const situationLines = pdf.splitTextToSize(formData.currentSituation, contentWidth - 10);
-        situationLines.forEach((line: string) => {
-          addHebrewText(line, pageWidth - margin, yPosition, 10);
-          yPosition += 5;
-        });
-        yPosition += 10;
-      }
-
-      // Risks section
-      if (formData.risks) {
-        pdf.setFillColor(254, 242, 242); // Light red
-        pdf.rect(margin, yPosition, contentWidth, 20, 'F');
-        yPosition += 8;
-        addHebrewText('פערים וסיכונים', pageWidth - margin, yPosition, 12, true);
-        yPosition += 7;
-        
-        const riskLines = pdf.splitTextToSize(formData.risks, contentWidth - 10);
-        riskLines.forEach((line: string) => {
-          addHebrewText(line, pageWidth - margin, yPosition, 10);
-          yPosition += 5;
-        });
-        yPosition += 10;
-      }
-
-      // Recommendations section
-      const validRecommendations = formData.recommendations.filter(r => r.trim());
-      if (validRecommendations.length > 0) {
-        pdf.setFillColor(240, 253, 244); // Light green
-        pdf.rect(margin, yPosition, contentWidth, Math.max(20, validRecommendations.length * 7 + 15), 'F');
-        yPosition += 8;
-        addHebrewText('המלצות', pageWidth - margin, yPosition, 12, true);
-        yPosition += 7;
-        
-        validRecommendations.forEach((rec) => {
-          addHebrewText(`• ${rec}`, pageWidth - margin, yPosition, 10);
-          yPosition += 6;
-        });
-        yPosition += 10;
-      }
-
-      // Cost estimation
-      if (formData.estimatedCost) {
-        pdf.setFillColor(250, 245, 255); // Light purple
-        pdf.rect(margin, yPosition, contentWidth, 15, 'F');
-        yPosition += 8;
-        addHebrewText(`הערכת עלות: ${formData.estimatedCost}`, pageWidth - margin, yPosition, 12, true);
-        yPosition += 15;
-      }
-
-      // Decisions section
-      if (formData.decisions) {
-        pdf.setFillColor(255, 251, 235); // Light yellow
-        pdf.rect(margin, yPosition, contentWidth, 20, 'F');
-        yPosition += 8;
-        addHebrewText('החלטות שהתקבלו', pageWidth - margin, yPosition, 12, true);
-        yPosition += 7;
-        
-        const decisionLines = pdf.splitTextToSize(formData.decisions, contentWidth - 10);
-        decisionLines.forEach((line: string) => {
-          addHebrewText(line, pageWidth - margin, yPosition, 10);
-          yPosition += 5;
-        });
-        yPosition += 15;
-      }
-
-      // Documents and actions section
-      if (formData.documents.length > 0 || formData.timeframes || formData.approvals) {
-        pdf.setFillColor(248, 250, 252); // Light gray
-        const sectionHeight = Math.max(25, formData.documents.length * 6 + 20);
-        pdf.rect(margin, yPosition, contentWidth, sectionHeight, 'F');
-        yPosition += 8;
-        addHebrewText('פעולות נדרשות', pageWidth - margin, yPosition, 12, true);
-        yPosition += 7;
-        
-        if (formData.documents.length > 0) {
-          addHebrewText('מסמכים להכנה:', pageWidth - margin, yPosition, 11, true);
-          yPosition += 6;
-          formData.documents.forEach((doc) => {
-            addHebrewText(`• ${doc}`, pageWidth - margin, yPosition, 10);
-            yPosition += 5;
-          });
-        }
-        
-        if (formData.timeframes) {
-          yPosition += 3;
-          addHebrewText(`לוח זמנים: ${formData.timeframes}`, pageWidth - margin, yPosition, 11);
-          yPosition += 6;
-        }
-        
-        if (formData.approvals) {
-          yPosition += 3;
-          addHebrewText(`אישורים נדרשים: ${formData.approvals}`, pageWidth - margin, yPosition, 11);
-        }
-        
-        yPosition += 15;
-      }
-
-      // Footer section
-      yPosition = Math.max(yPosition + 20, 250);
-      pdf.setFillColor(59, 130, 246); // Blue footer
-      pdf.rect(0, yPosition, pageWidth, 40, 'F');
-      
-      pdf.setTextColor(255, 255, 255);
-      yPosition += 15;
-      addHebrewText(`בברכה, ${agentData.name}`, pageWidth - margin, yPosition, 12, true);
-      yPosition += 8;
-      
-      const contactInfo = [];
-      if (agentData.phone) {
-        contactInfo.push(`טלפון: ${agentData.phone}`);
-      }
-      if (agentData.email) {
-        contactInfo.push(`אימייל: ${agentData.email}`);
-      }
-      
-      if (contactInfo.length > 0) {
-        addHebrewText(contactInfo.join(' | '), pageWidth - margin, yPosition, 10);
-      }
-
-      // Save the PDF
-      const fileName = `סיכום_פגישה_${formData.clientName}_${formData.meetingDate}.pdf`;
-      pdf.save(fileName);
-
-      toast({
-        title: "PDF נוצר בהצלחה",
-        description: "הסיכום הורד כקובץ PDF מעוצב",
-      });
-      
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
-        title: "שגיאה",
+        title: "שגיאה", 
         description: "לא ניתן ליצור את קובץ ה-PDF",
         variant: "destructive"
       });
