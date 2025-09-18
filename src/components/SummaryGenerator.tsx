@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, FileText, AlertTriangle, CheckCircle, Clock, Shield, Layers, Layout } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
@@ -306,7 +307,66 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
   const downloadPDF = async () => {
     try {
-      // Create new PDF document with RTL support
+      // Create HTML content for better Hebrew support
+      const reportContent = document.createElement('div');
+      reportContent.style.cssText = `
+        width: 800px;
+        padding: 40px;
+        font-family: 'Assistant', 'Heebo', Arial, sans-serif;
+        background: white;
+        direction: rtl;
+        text-align: right;
+        color: #333;
+        line-height: 1.6;
+        position: absolute;
+        top: -10000px;
+        left: -10000px;
+      `;
+
+      const currentProducts = formData.products?.filter(p => p.type === 'current') || [];
+      const recommendedProducts = formData.products?.filter(p => p.type === 'recommended') || [];
+      
+      reportContent.innerHTML = \`
+        <div style="background: #3b82f6; color: white; padding: 30px; text-align: center;">
+          <h1>דוח ייעוץ פיננסי - \${agentData.name}</h1>
+          <p>\${formatDate(formData.meetingDate)}</p>
+        </div>
+        <div style="padding: 25px; background: #f8fafc; margin: 20px 0;">
+          <h2>פרטי הלקוח</h2>
+          <p><strong>שם:</strong> \${formData.clientName}</p>
+          <p><strong>טלפון:</strong> \${formData.clientPhone}</p>
+          <p><strong>אימייל:</strong> \${formData.clientEmail}</p>
+        </div>
+        \${formData.decisions ? \`<div style="padding: 25px; background: #fffbeb; margin: 20px 0;">
+          <h2>החלטות</h2><div>\${formData.decisions.replace(/\\n/g, '<br>')}</div></div>\` : ''}
+        <div style="background: #3b82f6; color: white; padding: 20px; text-align: center;">
+          <p>בברכה, \${agentData.name}</p>
+          \${agentData.phone ? \`<p>טלפון: \${agentData.phone}</p>\` : ''}
+        </div>
+      \`;
+
+      document.body.appendChild(reportContent);
+      
+      const canvas = await html2canvas(reportContent, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+
+      document.body.removeChild(reportContent);
+
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(\`דוח_\${formData.clientName}_\${formData.meetingDate}.pdf\`);
+
+      toast({
+        title: "PDF נוצר בהצלחה",
+        description: "הדוח הורד עם תמיכה מלאה בעברית",
+      });
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
