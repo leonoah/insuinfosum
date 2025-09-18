@@ -15,6 +15,7 @@ interface ProductSelectionModalProps {
   onAddProduct: (product: SelectedProduct) => void;
   productType: 'current' | 'recommended';
   existingProducts?: SelectedProduct[];
+  editingProduct?: SelectedProduct | null;
 }
 
 const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
@@ -22,19 +23,49 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   onClose,
   onAddProduct,
   productType,
-  existingProducts = []
+  existingProducts = [],
+  editingProduct = null
 }) => {
-  const [step, setStep] = useState<ProductSelectionStep>({ current: 1 });
-  const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => ({
-    type: productType,
-    subType: '',
-    amount: 0,
-    managementFeeOnDeposit: 0,
-    managementFeeOnAccumulation: 0,
-    investmentTrack: '',
-    riskLevelChange: 'no-change',
-    notes: ''
-  }));
+  const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
+  const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
+    if (editingProduct) {
+      return editingProduct;
+    }
+    return {
+      type: productType,
+      subType: '',
+      amount: 0,
+      managementFeeOnDeposit: 0,
+      managementFeeOnAccumulation: 0,
+      investmentTrack: '',
+      riskLevelChange: 'no-change',
+      notes: ''
+    };
+  });
+
+  // Update step and formData when editingProduct changes
+  useEffect(() => {
+    if (editingProduct) {
+      setStep({ 
+        current: 3, 
+        selectedProduct: editingProduct.productName,
+        selectedCompany: editingProduct.company 
+      });
+      setFormData(editingProduct);
+    } else {
+      setStep({ current: 1 });
+      setFormData({
+        type: productType,
+        subType: '',
+        amount: 0,
+        managementFeeOnDeposit: 0,
+        managementFeeOnAccumulation: 0,
+        investmentTrack: '',
+        riskLevelChange: 'no-change',
+        notes: ''
+      });
+    }
+  }, [editingProduct, productType]);
 
   const companies = insuranceData as InsuranceCompany[];
   const allProducts = companies.flatMap(company => 
@@ -84,7 +115,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     const defaultSubType = validSubTypes.length > 0 ? validSubTypes[0] : '';
 
     const product: SelectedProduct = {
-      id: `${Date.now()}`,
+      id: editingProduct ? editingProduct.id : `${Date.now()}`,
       company: step.selectedCompany,
       productName: step.selectedProduct,
       subType: formData.subType || defaultSubType,
@@ -130,7 +161,10 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>
-              {productType === 'current' ? 'הוסף מוצר קיים' : 'הוסף מוצר מוצע'}
+              {editingProduct 
+                ? (productType === 'current' ? 'ערוך מוצר קיים' : 'ערוך מוצר מוצע')
+                : (productType === 'current' ? 'הוסף מוצר קיים' : 'הוסף מוצר מוצע')
+              }
             </span>
             <Button variant="ghost" size="sm" onClick={handleClose}>
               <X className="h-4 w-4" />
@@ -359,7 +393,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   ביטול
                 </Button>
                 <Button onClick={handleSubmit}>
-                  הוסף מוצר
+                  {editingProduct ? 'עדכן מוצר' : 'הוסף מוצר'}
                 </Button>
               </div>
             </div>

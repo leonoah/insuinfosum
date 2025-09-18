@@ -236,6 +236,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         onAddProduct={editingProduct ? handleUpdateProduct : handleAddProduct}
         productType={modalType}
         existingProducts={allProducts.filter(p => p.type !== modalType)}
+        editingProduct={editingProduct}
       />
     </div>
   );
