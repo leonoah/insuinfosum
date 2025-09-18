@@ -147,23 +147,34 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           const accumulation = parseFloat(
             row[accumulationIndex]?.toString().replace(/[₪,\s]/g, '') || '0'
           );
+          const policyNumber = row[policyNumberIndex]?.toString() || '';
           
           if (accumulation > 0) {
-            savings.push({
-              productType,
-              manufacturer: row[manufacturerIndex]?.toString() || '',
-              productName: row[productIndex]?.toString() || '',
-              planName: row[planNameIndex]?.toString() || '',
-              accumulation,
-              depositFee: parseFloat(
-                row[depositFeeIndex]?.toString().replace('%', '') || '0'
-              ),
-              accumulationFee: parseFloat(
-                row[accumulationFeeIndex]?.toString().replace('%', '') || '0'
-              ),
-              investmentTrack: row[investmentTrackIndex]?.toString() || '',
-              policyNumber: row[policyNumberIndex]?.toString() || ''
-            });
+            // Check for duplicates based on key fields
+            const isDuplicate = savings.some(existing => 
+              existing.productType === productType &&
+              existing.manufacturer === (row[manufacturerIndex]?.toString() || '') &&
+              existing.policyNumber === policyNumber &&
+              Math.abs(existing.accumulation - accumulation) < 0.01
+            );
+
+            if (!isDuplicate) {
+              savings.push({
+                productType,
+                manufacturer: row[manufacturerIndex]?.toString() || '',
+                productName: row[productIndex]?.toString() || '',
+                planName: row[planNameIndex]?.toString() || '',
+                accumulation,
+                depositFee: parseFloat(
+                  row[depositFeeIndex]?.toString().replace('%', '') || '0'
+                ),
+                accumulationFee: parseFloat(
+                  row[accumulationFeeIndex]?.toString().replace('%', '') || '0'
+                ),
+                investmentTrack: row[investmentTrackIndex]?.toString() || '',
+                policyNumber
+              });
+            }
           }
         }
 
@@ -172,15 +183,26 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           const premium = parseFloat(
             row[premiumIndex]?.toString().replace(/[₪,\s]/g, '') || '0'
           );
+          const policyNumber = row[policyNumberIndex]?.toString() || '';
           
           if (premium > 0) {
-            insurance.push({
-              productType,
-              manufacturer: row[manufacturerIndex]?.toString() || '',
-              product: row[productIndex]?.toString() || '',
-              premium,
-              policyNumber: row[policyNumberIndex]?.toString() || ''
-            });
+            // Check for duplicates based on key fields
+            const isDuplicate = insurance.some(existing => 
+              existing.productType === productType &&
+              existing.manufacturer === (row[manufacturerIndex]?.toString() || '') &&
+              existing.policyNumber === policyNumber &&
+              Math.abs(existing.premium - premium) < 0.01
+            );
+
+            if (!isDuplicate) {
+              insurance.push({
+                productType,
+                manufacturer: row[manufacturerIndex]?.toString() || '',
+                product: row[productIndex]?.toString() || '',
+                premium,
+                policyNumber
+              });
+            }
           }
         }
       });
@@ -216,15 +238,17 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     if (!importedData) return;
 
     const selectedProducts: SelectedProduct[] = [];
+    let productCounter = 0;
 
     // Generate products from selected savings
     selectedSavings.forEach(index => {
       const savingsProduct = importedData.savings[index];
       if (savingsProduct) {
+        productCounter++;
         const product: SelectedProduct = {
-          id: `savings-${Date.now()}-${index}`,
+          id: `savings-${Date.now()}-${productCounter}`,
           company: savingsProduct.manufacturer,
-          productName: savingsProduct.productName,
+          productName: savingsProduct.productName || savingsProduct.productType,
           subType: savingsProduct.planName || 'כללי',
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee,
@@ -242,10 +266,11 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     selectedInsurance.forEach(index => {
       const insuranceProduct = importedData.insurance[index];
       if (insuranceProduct) {
+        productCounter++;
         const product: SelectedProduct = {
-          id: `insurance-${Date.now()}-${index}`,
+          id: `insurance-${Date.now()}-${productCounter}`,
           company: insuranceProduct.manufacturer,
-          productName: insuranceProduct.product,
+          productName: insuranceProduct.product || insuranceProduct.productType,
           subType: 'ביטוח',
           amount: insuranceProduct.premium * 12, // Convert monthly to yearly
           managementFeeOnDeposit: 0,
