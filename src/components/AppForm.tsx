@@ -379,22 +379,15 @@ const AppForm = () => {
           </Button>
         </div>
 
-        {/* Form */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Form - RTL Layout */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
           <TabsList className="grid w-full grid-cols-4 glass mb-8 p-1 rounded-2xl">
             <TabsTrigger 
-              value="client" 
+              value="decisions"
               className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <User className="h-4 w-4 ml-2" />
-              פרטי לקוח
-            </TabsTrigger>
-            <TabsTrigger 
-              value="recommendations"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              <FileText className="h-4 w-4 ml-2" />
-              המלצות
+              <CheckCircle className="h-4 w-4 ml-2" />
+              החלטות
             </TabsTrigger>
             <TabsTrigger 
               value="products"
@@ -404,11 +397,18 @@ const AppForm = () => {
               מוצרים
             </TabsTrigger>
             <TabsTrigger 
-              value="decisions"
+              value="recommendations"
               className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <CheckCircle className="h-4 w-4 ml-2" />
-              החלטות
+              <FileText className="h-4 w-4 ml-2" />
+              המלצות
+            </TabsTrigger>
+            <TabsTrigger 
+              value="client" 
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <User className="h-4 w-4 ml-2" />
+              פרטי לקוח
             </TabsTrigger>
           </TabsList>
 

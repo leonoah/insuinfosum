@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BarChart3, Upload } from 'lucide-react';
+import { Plus, BarChart3, Upload, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
@@ -8,6 +8,7 @@ import ComparisonSection from './ComparisonSection';
 import ExcelImportDialog from './ExcelImportDialog';
 import CurrentStateView from './CurrentStateView';
 import EditableStateView from './EditableStateView';
+import ProductComparisonModal from './ProductComparisonModal';
 
 interface ProductManagerProps {
   currentProducts: SelectedProduct[];
@@ -26,6 +27,8 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   const [currentView, setCurrentView] = useState<'products' | 'current-state' | 'editable-state'>('products');
   const [excelData, setExcelData] = useState<any>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
 
   const allProducts = [...currentProducts, ...recommendedProducts];
 
@@ -87,6 +90,32 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   const handleProductsSelected = (products: SelectedProduct[]) => {
     onUpdateProducts([...allProducts, ...products]);
     setCurrentView('current-state');
+  };
+
+  const handleProductSelect = (productId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedProducts(prev => [...prev, productId]);
+    } else {
+      setSelectedProducts(prev => prev.filter(id => id !== productId));
+    }
+  };
+
+  const getSelectedCurrentProduct = () => {
+    const currentSelected = selectedProducts.find(id => 
+      allProducts.find(p => p.id === id && p.type === 'current')
+    );
+    return currentSelected ? allProducts.find(p => p.id === currentSelected) : undefined;
+  };
+
+  const getSelectedRecommendedProduct = () => {
+    const recommendedSelected = selectedProducts.find(id => 
+      allProducts.find(p => p.id === id && p.type === 'recommended')
+    );
+    return recommendedSelected ? allProducts.find(p => p.id === recommendedSelected) : undefined;
+  };
+
+  const canShowComparison = () => {
+    return getSelectedCurrentProduct() && getSelectedRecommendedProduct();
   };
 
   const handleCreateNewState = () => {
@@ -192,25 +221,49 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         recommendedProducts={recommendedProducts}
       />
 
-      {/* Products Lists */}
+      {/* Comparison Button */}
+      {canShowComparison() && (
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => setShowComparison(true)}
+            className="glass-hover flex items-center gap-2"
+            variant="default"
+          >
+            <GitCompare className="h-4 w-4" />
+            השוואה בין מוצרים נבחרים
+          </Button>
+        </div>
+      )}
+
+      {/* Products Lists - RTL Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProductList
-          products={allProducts}
-          onEdit={handleEditProduct}
-          onDelete={handleDeleteProduct}
-          onDuplicate={handleDuplicateProduct}
-          onCopyToRecommended={handleCopyCurrentToRecommended}
-          title="מצב קיים"
-          type="current"
-        />
-        <ProductList
-          products={allProducts}
-          onEdit={handleEditProduct}
-          onDelete={handleDeleteProduct}
-          onDuplicate={handleDuplicateProduct}
-          title="מצב מוצע"
-          type="recommended"
-        />
+        {/* Recommended on the left */}
+        <div className="lg:order-2">
+          <ProductList
+            products={allProducts}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+            onDuplicate={handleDuplicateProduct}
+            title="מצב מוצע"
+            type="recommended"
+            selectedProducts={selectedProducts}
+            onProductSelect={handleProductSelect}
+          />
+        </div>
+        {/* Current on the right */}
+        <div className="lg:order-1">
+          <ProductList
+            products={allProducts}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+            onDuplicate={handleDuplicateProduct}
+            onCopyToRecommended={handleCopyCurrentToRecommended}
+            title="מצב קיים"
+            type="current"
+            selectedProducts={selectedProducts}
+            onProductSelect={handleProductSelect}
+          />
+        </div>
       </div>
 
       {/* Selection Modal */}
@@ -234,6 +287,14 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           onUpdateProducts([...allProducts, ...products]);
           setShowExcelImport(false);
         }}
+      />
+
+      {/* Product Comparison Modal */}
+      <ProductComparisonModal
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
+        currentProduct={getSelectedCurrentProduct()}
+        recommendedProduct={getSelectedRecommendedProduct()}
       />
     </div>
   );

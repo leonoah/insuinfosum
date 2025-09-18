@@ -3,6 +3,7 @@ import { Trash2, Edit, Copy, ArrowRight, ChevronDown, ChevronUp } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
 
 interface ProductListProps {
@@ -13,6 +14,8 @@ interface ProductListProps {
   onCopyToRecommended?: (product: SelectedProduct) => void;
   title: string;
   type: 'current' | 'recommended';
+  selectedProducts: string[];
+  onProductSelect: (productId: string, selected: boolean) => void;
 }
 
 const ProductItem: React.FC<{
@@ -22,7 +25,9 @@ const ProductItem: React.FC<{
   onDelete: (productId: string) => void;
   onDuplicate: (product: SelectedProduct) => void;
   onCopyToRecommended?: (product: SelectedProduct) => void;
-}> = ({ product, type, onEdit, onDelete, onDuplicate, onCopyToRecommended }) => {
+  selectedProducts: string[];
+  onProductSelect: (productId: string, selected: boolean) => void;
+}> = ({ product, type, onEdit, onDelete, onDuplicate, onCopyToRecommended, selectedProducts, onProductSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -30,9 +35,16 @@ const ProductItem: React.FC<{
       <div className="glass-hover p-4 rounded-lg">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
-            <span className="text-2xl">
-              {PRODUCT_ICONS[product.productName] || '📄'}
-            </span>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                checked={selectedProducts.includes(product.id)}
+                onCheckedChange={(checked) => onProductSelect(product.id, checked as boolean)}
+                className="mt-1"
+              />
+              <span className="text-2xl">
+                {PRODUCT_ICONS[product.productName] || '📄'}
+              </span>
+            </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <div className="font-medium">{product.productName}</div>
@@ -128,7 +140,9 @@ const ProductList: React.FC<ProductListProps> = ({
   onDuplicate,
   onCopyToRecommended,
   title,
-  type
+  type,
+  selectedProducts,
+  onProductSelect
 }) => {
   const filteredProducts = products.filter(p => p.type === type);
 
@@ -158,6 +172,8 @@ const ProductList: React.FC<ProductListProps> = ({
               onDelete={onDelete}
               onDuplicate={onDuplicate}
               onCopyToRecommended={onCopyToRecommended}
+              selectedProducts={selectedProducts}
+              onProductSelect={onProductSelect}
             />
           ))
         )}
