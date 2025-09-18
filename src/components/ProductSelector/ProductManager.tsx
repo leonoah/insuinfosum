@@ -109,20 +109,25 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   };
 
   const handleCopyProductToRecommended = (excelProduct: any) => {
+    const notesParts = [
+      excelProduct.planName ? `תוכנית: ${excelProduct.planName}` : '',
+      excelProduct.policyNumber ? `פוליסה: ${excelProduct.policyNumber}` : ''
+    ].filter(Boolean);
+
     const product: SelectedProduct = {
       id: `${Date.now()}`,
-      company: excelProduct.manufacturer || '',
-      productName: excelProduct.productName || excelProduct.product || excelProduct.productType,
-      subType: '',
+      company: excelProduct.manufacturer || excelProduct.productType || 'לא צוין',
+      productName: excelProduct.productName || excelProduct.product || excelProduct.productType || 'מוצר',
+      subType: excelProduct.planName || excelProduct.productType || '',
       amount: excelProduct.accumulation || excelProduct.premium || 0,
       managementFeeOnDeposit: excelProduct.depositFee || 0,
       managementFeeOnAccumulation: excelProduct.accumulationFee || 0,
       investmentTrack: excelProduct.investmentTrack || '',
       riskLevelChange: '',
-      notes: `העתק מ: ${excelProduct.policyNumber || 'מצב קיים'}`,
+      notes: notesParts.length ? notesParts.join(' | ') : 'הועתק ממצב קיים',
       type: 'recommended'
     };
-    
+
     onUpdateProducts([...allProducts, product]);
   };
 

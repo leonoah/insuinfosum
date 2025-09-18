@@ -61,37 +61,51 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
   };
 
   const formatPercentage = (percentage: number) => {
-    return `${percentage.toFixed(2)}%`;
+    return `${(percentage || 0).toFixed(2)}%`;
   };
 
   // Group savings products by type and plan
   const groupSavingsProducts = () => {
     const groups: { [key: string]: SavingsProduct[] } = {};
-    
+
     data.savings.forEach(product => {
-      const groupKey = `${product.productType} - ${product.planName || product.productName}`;
+      const labelParts = [
+        product.productName || product.productType,
+        product.planName,
+        product.manufacturer
+      ].filter(part => part && part.trim() !== '');
+      const groupKey = labelParts.join(' | ') || product.productType || product.productName;
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }
       groups[groupKey].push(product);
     });
 
-    return Object.entries(groups).map(([groupName, products]) => ({
-      groupName,
-      products,
-      totalAccumulation: products.reduce((sum, p) => sum + p.accumulation, 0),
-      avgAccumulationFee: products.reduce((sum, p) => sum + (p.accumulationFee * p.accumulation), 0) / 
-                          products.reduce((sum, p) => sum + p.accumulation, 0),
-      avgDepositFee: products.reduce((sum, p) => sum + p.depositFee, 0) / products.length
-    }));
+    return Object.entries(groups).map(([groupName, products]) => {
+      const totalAccumulation = products.reduce((sum, p) => sum + p.accumulation, 0);
+      const weightedFeeDenominator = totalAccumulation || 1;
+      return {
+        groupName,
+        products,
+        totalAccumulation,
+        avgAccumulationFee: products.reduce((sum, p) => sum + (p.accumulationFee * p.accumulation), 0) /
+          weightedFeeDenominator,
+        avgDepositFee: products.length ? products.reduce((sum, p) => sum + p.depositFee, 0) / products.length : 0
+      };
+    });
   };
 
   // Group insurance products by type and manufacturer
   const groupInsuranceProducts = () => {
     const groups: { [key: string]: InsuranceProduct[] } = {};
-    
+
     data.insurance.forEach(product => {
-      const groupKey = `${product.productType} - ${product.manufacturer}`;
+      const labelParts = [
+        product.productType,
+        product.product,
+        product.manufacturer
+      ].filter(part => part && part.trim() !== '');
+      const groupKey = labelParts.join(' | ') || product.productType || product.product;
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }
@@ -260,6 +274,7 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
                         <Table>
                            <TableHeader>
                              <TableRow>
+                               <TableHead className="text-right">תוכנית</TableHead>
                                <TableHead className="text-right">יצרן</TableHead>
                                <TableHead className="text-right">מס' פוליסה</TableHead>
                                <TableHead className="text-right">צבירה</TableHead>
@@ -272,6 +287,7 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
                            <TableBody>
                              {group.products.map((product, index) => (
                                <TableRow key={index}>
+                                 <TableCell>{product.planName || '-'}</TableCell>
                                  <TableCell>{product.manufacturer}</TableCell>
                                  <TableCell>{product.policyNumber}</TableCell>
                                  <TableCell className="font-medium">
@@ -348,6 +364,7 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
                         <Table>
                            <TableHeader>
                              <TableRow>
+                               <TableHead className="text-right">יצרן</TableHead>
                                <TableHead className="text-right">מוצר</TableHead>
                                <TableHead className="text-right">מס' פוליסה</TableHead>
                                <TableHead className="text-right">פרמיה חודשית</TableHead>
@@ -357,6 +374,7 @@ const CurrentStateView: React.FC<CurrentStateViewProps> = ({ data, onCreateNewSt
                            <TableBody>
                              {group.products.map((product, index) => (
                                <TableRow key={index}>
+                                 <TableCell>{product.manufacturer || '-'}</TableCell>
                                  <TableCell>{product.product}</TableCell>
                                  <TableCell>{product.policyNumber}</TableCell>
                                  <TableCell className="font-medium">
