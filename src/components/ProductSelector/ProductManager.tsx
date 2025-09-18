@@ -173,9 +173,8 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-3">
-        <Button onClick={() => setShowExcelImport(true)} variant="default" className="glass-hover">
-          <Upload className="h-4 w-4 mr-2" />
-          יבוא מצב קיים מאקסל
+        <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover" title="יבוא מצב קיים מאקסל">
+          <Upload className="h-4 w-4" />
         </Button>
         <Button onClick={() => openModal('current')} className="glass-hover">
           <Plus className="h-4 w-4 mr-2" />
