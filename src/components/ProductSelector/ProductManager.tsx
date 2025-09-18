@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
-import ComparisonView from './ComparisonView';
+import ComparisonSection from './ComparisonSection';
 import ExcelImportDialog from './ExcelImportDialog';
 import CurrentStateView from './CurrentStateView';
 import EditableStateView from './EditableStateView';
@@ -22,7 +22,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'current' | 'recommended'>('current');
-  const [showComparison, setShowComparison] = useState(false);
   const [editingProduct, setEditingProduct] = useState<SelectedProduct | null>(null);
   const [currentView, setCurrentView] = useState<'products' | 'current-state' | 'editable-state'>('products');
   const [excelData, setExcelData] = useState<any>(null);
@@ -132,15 +131,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     onUpdateProducts([...allProducts, product]);
   };
 
-  if (showComparison) {
-    return (
-      <ComparisonView
-        currentProducts={currentProducts}
-        recommendedProducts={recommendedProducts}
-        onClose={() => setShowComparison(false)}
-      />
-    );
-  }
 
 
   if (currentView === 'current-state' && excelData) {
@@ -179,16 +169,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">ניהול מוצרים פיננסיים</h2>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setShowComparison(true)}
-            disabled={currentProducts.length === 0 && recommendedProducts.length === 0}
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            השוואת תיקים
-          </Button>
-        </div>
       </div>
 
       {/* Action Buttons */}
@@ -206,6 +186,12 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           הוסף מוצר מוצע
         </Button>
       </div>
+
+      {/* Comparison Section - Always Visible */}
+      <ComparisonSection 
+        currentProducts={currentProducts}
+        recommendedProducts={recommendedProducts}
+      />
 
       {/* Products Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

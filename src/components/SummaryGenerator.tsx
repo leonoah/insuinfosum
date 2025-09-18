@@ -98,6 +98,41 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       });
     }
 
+    // Portfolio comparison section
+    if (currentProducts.length > 0 || recommendedProducts.length > 0) {
+      summaryParts.push('השוואת תיקים:');
+      summaryParts.push('');
+      
+      const totalCurrentAmount = currentProducts.reduce((sum, p) => sum + p.amount, 0);
+      const totalRecommendedAmount = recommendedProducts.reduce((sum, p) => sum + p.amount, 0);
+      const amountDifference = totalRecommendedAmount - totalCurrentAmount;
+      
+      summaryParts.push('┌──────────────────────────────────────────────────────────────┐');
+      summaryParts.push('│                       השוואת תיקים                          │');
+      summaryParts.push('├──────────────────────────────────────────────────────────────┤');
+      summaryParts.push(`│ מצב קיים:        ₪${totalCurrentAmount.toLocaleString().padStart(20)} │`);
+      summaryParts.push(`│ מצב מוצע:        ₪${totalRecommendedAmount.toLocaleString().padStart(20)} │`);
+      summaryParts.push(`│ הפרש:           ${amountDifference >= 0 ? '+' : ''}₪${amountDifference.toLocaleString().padStart(20)} │`);
+      summaryParts.push('├──────────────────────────────────────────────────────────────┤');
+      summaryParts.push(`│ מוצרים קיימים:                                     ${currentProducts.length.toString().padStart(2)} │`);
+      summaryParts.push(`│ מוצרים מוצעים:                                     ${recommendedProducts.length.toString().padStart(2)} │`);
+      
+      if (currentProducts.length > 0) {
+        const avgCurrentDepositFee = currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length;
+        const avgCurrentAccumulationFee = currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length;
+        summaryParts.push(`│ ממוצע דמי ניהול קיימים:       ${avgCurrentDepositFee.toFixed(2)}% / ${avgCurrentAccumulationFee.toFixed(2)}% │`);
+      }
+      
+      if (recommendedProducts.length > 0) {
+        const avgRecommendedDepositFee = recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length;
+        const avgRecommendedAccumulationFee = recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length;
+        summaryParts.push(`│ ממוצע דמי ניהול מוצעים:       ${avgRecommendedDepositFee.toFixed(2)}% / ${avgRecommendedAccumulationFee.toFixed(2)}% │`);
+      }
+      
+      summaryParts.push('└──────────────────────────────────────────────────────────────┘');
+      summaryParts.push('');
+    }
+
     // Agent recommendations
     if (formData.currentSituation || formData.risks || formData.recommendations.some(r => r.trim()) || recommendedProducts.length > 0) {
       summaryParts.push('המלצות הסוכן:');
@@ -279,6 +314,72 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       }
 
       yPosition += 15;
+
+      // Portfolio comparison section
+      const totalCurrentAmount = formData.products?.filter(p => p.type === 'current').reduce((sum, p) => sum + p.amount, 0) || 0;
+      const totalRecommendedAmount = formData.products?.filter(p => p.type === 'recommended').reduce((sum, p) => sum + p.amount, 0) || 0;
+      const amountDifference = totalRecommendedAmount - totalCurrentAmount;
+      
+      if (totalCurrentAmount > 0 || totalRecommendedAmount > 0) {
+        pdf.setFillColor(240, 248, 255); // Very light blue
+        pdf.rect(margin, yPosition, contentWidth, 45, 'F');  
+        yPosition += 8;
+        addHebrewText('השוואת תיקים', pageWidth - margin, yPosition, 14, true);
+        yPosition += 10;
+        
+        // Create comparison table
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.5);
+        
+        const tableY = yPosition;
+        const rowHeight = 8;
+        const colWidths = [contentWidth * 0.4, contentWidth * 0.3, contentWidth * 0.3];
+        let currentX = margin;
+        
+        // Table headers
+        pdf.rect(currentX, tableY, colWidths[0], rowHeight);
+        pdf.rect(currentX + colWidths[0], tableY, colWidths[1], rowHeight);
+        pdf.rect(currentX + colWidths[0] + colWidths[1], tableY, colWidths[2], rowHeight);
+        
+        addHebrewText('קטגוריה', currentX + colWidths[0] - 5, tableY + 5, 10, true);
+        addHebrewText('מצב קיים', currentX + colWidths[0] + colWidths[1] - 5, tableY + 5, 10, true);
+        addHebrewText('מצב מוצע', currentX + colWidths[0] + colWidths[1] + colWidths[2] - 5, tableY + 5, 10, true);
+        
+        // Row 1: Total amounts
+        yPosition = tableY + rowHeight;
+        pdf.rect(currentX, yPosition, colWidths[0], rowHeight);
+        pdf.rect(currentX + colWidths[0], yPosition, colWidths[1], rowHeight);
+        pdf.rect(currentX + colWidths[0] + colWidths[1], yPosition, colWidths[2], rowHeight);
+        
+        addHebrewText('סה"כ צבירה', currentX + colWidths[0] - 5, yPosition + 5, 9);
+        addHebrewText(`₪${totalCurrentAmount.toLocaleString()}`, currentX + colWidths[0] + colWidths[1] - 5, yPosition + 5, 9);
+        addHebrewText(`₪${totalRecommendedAmount.toLocaleString()}`, currentX + colWidths[0] + colWidths[1] + colWidths[2] - 5, yPosition + 5, 9);
+        
+        // Row 2: Number of products
+        yPosition += rowHeight;
+        pdf.rect(currentX, yPosition, colWidths[0], rowHeight);
+        pdf.rect(currentX + colWidths[0], yPosition, colWidths[1], rowHeight);
+        pdf.rect(currentX + colWidths[0] + colWidths[1], yPosition, colWidths[2], rowHeight);
+        
+        const currentCount = formData.products?.filter(p => p.type === 'current').length || 0;
+        const recommendedCount = formData.products?.filter(p => p.type === 'recommended').length || 0;
+        
+        addHebrewText('מספר מוצרים', currentX + colWidths[0] - 5, yPosition + 5, 9);
+        addHebrewText(currentCount.toString(), currentX + colWidths[0] + colWidths[1] - 5, yPosition + 5, 9);
+        addHebrewText(recommendedCount.toString(), currentX + colWidths[0] + colWidths[1] + colWidths[2] - 5, yPosition + 5, 9);
+        
+        yPosition += rowHeight + 5;
+        
+        // Difference summary
+        if (amountDifference !== 0) {
+          pdf.setFillColor(amountDifference >= 0 ? 240 : 254, amountDifference >= 0 ? 253 : 242, amountDifference >= 0 ? 244 : 242);
+          pdf.rect(margin, yPosition, contentWidth, 10, 'F');
+          yPosition += 3;
+          const differenceText = `הפרש: ${amountDifference >= 0 ? '+' : ''}₪${amountDifference.toLocaleString()}`;
+          addHebrewText(differenceText, pageWidth - margin, yPosition, 11, true);
+          yPosition += 10;
+        }
+      }
 
       // Current situation section
       if (formData.currentSituation) {
