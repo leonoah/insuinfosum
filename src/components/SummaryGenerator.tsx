@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +10,20 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { supabase } from "@/integrations/supabase/client";
 import agentLogo from "@/assets/agent-logo.png";
 import BlocksSidebar from "./blocks/BlocksSidebar";
 import BlockRenderer from "./blocks/BlockRenderer";
 import { BlockTemplate, DocumentBlock } from "@/types/blocks";
 import { blockTemplates, documentTemplates } from "@/data/blockTemplates";
 import { SelectedProduct } from "@/types/insurance";
+
+interface AgentData {
+  name: string;
+  phone: string | null;
+  email: string | null;
+  logo_url: string | null;
+}
 
 interface FormData {
   clientName: string;
@@ -47,6 +55,42 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [blocks, setBlocks] = useState<DocumentBlock[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showFinalReport, setShowFinalReport] = useState(false);
+  const [agentData, setAgentData] = useState<AgentData>({
+    name: "הסוכן שלכם",
+    phone: null,
+    email: null,
+    logo_url: null
+  });
+
+  useEffect(() => {
+    loadAgentInfo();
+  }, []);
+
+  const loadAgentInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('agent_info')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error loading agent info:', error);
+        return;
+      }
+
+      if (data) {
+        setAgentData({
+          name: data.name || "הסוכן שלכם",
+          phone: data.phone,
+          email: data.email,
+          logo_url: data.logo_url
+        });
+      }
+    } catch (error) {
+      console.error('Error loading agent info:', error);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -211,9 +255,13 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
     // Footer
     summaryParts.push('בברכה,');
-    summaryParts.push('הסוכן שלכם');
-    summaryParts.push('טלפון: [טלפון הסוכן]');
-    summaryParts.push('אימייל: [אימייל הסוכן]');
+    summaryParts.push(agentData.name);
+    if (agentData.phone) {
+      summaryParts.push(`טלפון: ${agentData.phone}`);
+    }
+    if (agentData.email) {
+      summaryParts.push(`אימייל: ${agentData.email}`);
+    }
 
     return summaryParts.join('\n');
   };
@@ -286,7 +334,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       pdf.rect(0, 0, pageWidth, 40, 'F');
       
       pdf.setTextColor(255, 255, 255); // White text
-      addHebrewText('סיכום פגישת ביטוח', pageWidth - margin, 20, 18, true);
+      addHebrewText(`סיכום פגישת ביטוח - ${agentData.name}`, pageWidth - margin, 20, 18, true);
       addHebrewText(formatDate(formData.meetingDate), pageWidth - margin, 30, 12);
 
       yPosition = 50;
@@ -492,9 +540,20 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       
       pdf.setTextColor(255, 255, 255);
       yPosition += 15;
-      addHebrewText('בברכה, הסוכן שלכם', pageWidth - margin, yPosition, 12, true);
+      addHebrewText(`בברכה, ${agentData.name}`, pageWidth - margin, yPosition, 12, true);
       yPosition += 8;
-      addHebrewText('טלפון: [טלפון הסוכן] | אימייל: [אימייל הסוכן]', pageWidth - margin, yPosition, 10);
+      
+      const contactInfo = [];
+      if (agentData.phone) {
+        contactInfo.push(`טלפון: ${agentData.phone}`);
+      }
+      if (agentData.email) {
+        contactInfo.push(`אימייל: ${agentData.email}`);
+      }
+      
+      if (contactInfo.length > 0) {
+        addHebrewText(contactInfo.join(' | '), pageWidth - margin, yPosition, 10);
+      }
 
       // Save the PDF
       const fileName = `סיכום_פגישה_${formData.clientName}_${formData.meetingDate}.pdf`;
