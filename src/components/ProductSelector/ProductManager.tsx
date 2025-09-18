@@ -63,6 +63,17 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     onUpdateProducts(updatedProducts);
   };
 
+  const handleCopyCurrentToRecommended = (product: SelectedProduct) => {
+    const copied: SelectedProduct = {
+      ...product,
+      id: `${Date.now()}`,
+      type: 'recommended',
+      notes: product.notes + ' (הועתק ממצב קיים)'
+    };
+    const updatedProducts = [...allProducts, copied];
+    onUpdateProducts(updatedProducts);
+  };
+
   const openModal = (type: 'current' | 'recommended') => {
     setModalType(type);
     setEditingProduct(null);
@@ -213,6 +224,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           onEdit={handleEditProduct}
           onDelete={handleDeleteProduct}
           onDuplicate={handleDuplicateProduct}
+          onCopyToRecommended={handleCopyCurrentToRecommended}
           title="מצב קיים"
           type="current"
         />

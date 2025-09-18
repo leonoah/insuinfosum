@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Edit, Copy } from 'lucide-react';
+import { Trash2, Edit, Copy, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
@@ -9,6 +9,7 @@ interface ProductListProps {
   onEdit: (product: SelectedProduct) => void;
   onDelete: (productId: string) => void;
   onDuplicate: (product: SelectedProduct) => void;
+  onCopyToRecommended?: (product: SelectedProduct) => void;
   title: string;
   type: 'current' | 'recommended';
 }
@@ -18,6 +19,7 @@ const ProductList: React.FC<ProductListProps> = ({
   onEdit,
   onDelete,
   onDuplicate,
+  onCopyToRecommended,
   title,
   type
 }) => {
@@ -74,6 +76,17 @@ const ProductList: React.FC<ProductListProps> = ({
                   </div>
                 </div>
                 <div className="flex gap-1">
+                  {type === 'current' && onCopyToRecommended && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onCopyToRecommended(product)}
+                      className="h-8 w-8 p-0 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
+                      title="העתק למצב מוצע"
+                    >
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
