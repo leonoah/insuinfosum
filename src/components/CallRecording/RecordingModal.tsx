@@ -48,8 +48,15 @@ interface RealtimeTranscriptionResponse {
   speaker?: string;
   timestamp?: string;
 }
+ 
+interface RealtimeTranscriptionResponse {
+  text?: string;
+  confidence?: number;
+  speaker?: string;
+  timestamp?: string;
+}
 
-const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialClientName }: RecordingModalProps) => {
+const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
  
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
@@ -67,6 +74,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const realtimeTranscriptRef = useRef<string>("");
 
   const processAudioChunk = useCallback(async (audioBlob: Blob) => {
     try {
@@ -84,7 +92,38 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
 
       const trimmedText = transcriptionData?.text?.trim();
       if (trimmedText) {
-        const transcribedText = trimmedText;
+ 
+        const previousTranscript = realtimeTranscriptRef.current;
+        let newContent = trimmedText;
+
+        if (previousTranscript) {
+          if (trimmedText === previousTranscript || previousTranscript.endsWith(trimmedText)) {
+            return;
+          }
+
+          if (trimmedText.startsWith(previousTranscript)) {
+            newContent = trimmedText.slice(previousTranscript.length).trim();
+            realtimeTranscriptRef.current = trimmedText;
+          } else if (trimmedText.includes(previousTranscript)) {
+            const overlapIndex = trimmedText.indexOf(previousTranscript) + previousTranscript.length;
+            newContent = trimmedText.slice(overlapIndex).trim();
+            realtimeTranscriptRef.current = trimmedText;
+          } else if (previousTranscript.includes(trimmedText)) {
+            return;
+          } else {
+            newContent = trimmedText;
+            realtimeTranscriptRef.current = `${previousTranscript} ${trimmedText}`.trim();
+          }
+        } else {
+          realtimeTranscriptRef.current = trimmedText;
+        }
+
+        if (!newContent) {
+          return;
+        }
+
+        const transcribedText = newContent;
+ 
 
         const speakerHintRaw = transcriptionData?.speaker?.toLowerCase();
         const speakerHint: 'agent' | 'client' | null = speakerHintRaw
@@ -175,7 +214,9 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
         // Keep the full raw transcript as well
         setTranscribedText(prev => {
           if (!prev) return transcribedText;
-          return prev.includes(transcribedText) ? prev : `${prev} ${transcribedText}`;
+ 
+          return `${prev} ${transcribedText}`.trim();
+ 
         });
       }
     } catch (error) {
@@ -309,6 +350,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
       chunkCounterRef.current = 0;
       setChatMessages([]);
       setTranscribedText("");
+      realtimeTranscriptRef.current = "";
       
       mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0) {
