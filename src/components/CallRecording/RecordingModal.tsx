@@ -40,6 +40,13 @@ interface Client {
   client_email?: string;
 }
 
+interface RealtimeTranscriptionResponse {
+  text?: string;
+  confidence?: number;
+  speaker?: string;
+  timestamp?: string;
+}
+
 const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
@@ -61,20 +68,38 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
   const processAudioChunk = useCallback(async (audioBlob: Blob) => {
     try {
       const base64Audio = await blobToBase64(audioBlob);
-      
-      // Send chunk to voice-to-text function for transcription
-      const { data: transcriptionData, error } = await supabase.functions.invoke('voice-to-text', {
-        body: { audio: base64Audio }
+
+      // Send chunk to real-time transcription function for live updates
+      const { data: transcriptionData, error } = await supabase.functions.invoke<RealtimeTranscriptionResponse>('realtime-transcription', {
+        body: { audioChunk: base64Audio, isLive: true }
       });
-      
+
       if (error) {
         console.error('Transcription error:', error);
         return;
       }
-      
-      if (transcriptionData?.text && transcriptionData.text.trim()) {
-        const transcribedText = transcriptionData.text.trim();
-        
+
+      const trimmedText = transcriptionData?.text?.trim();
+      if (trimmedText) {
+        const transcribedText = trimmedText;
+
+        const speakerHintRaw = transcriptionData?.speaker?.toLowerCase();
+        const speakerHint: 'agent' | 'client' | null = speakerHintRaw
+          ? ['agent', 'סוכן', 'סוכנת'].includes(speakerHintRaw)
+            ? 'agent'
+            : ['client', 'לקוח', 'לקוחה'].includes(speakerHintRaw)
+              ? 'client'
+              : null
+          : null;
+
+        const chunkTimestamp = transcriptionData?.timestamp
+          ? new Date(transcriptionData.timestamp).toISOString()
+          : new Date().toISOString();
+
+        const chunkConfidence = typeof transcriptionData?.confidence === 'number'
+          ? transcriptionData.confidence
+          : undefined;
+
         // Enhanced speaker detection with scoring
         const agentKeywords = [
           'שלום', 'איך אפשר לעזור', 'אני רוצה להמליץ', 'נראה לי', 'מה דעתך',
@@ -93,37 +118,10 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           'תמיד רציתי', 'חשבתי על זה', 'שמעתי על זה', 'מה הדעה שלך',
           'איך תעצור לי', 'אני מפחד', 'זה נשמע מעניין', 'רוצה לשמוע עוד'
         ];
-        
-        const lowerText = transcribedText.toLowerCase();
-        
-        // Score-based detection
-        let agentScore = 0;
-        let clientScore = 0;
-        
-        agentKeywords.forEach(keyword => {
-          if (lowerText.includes(keyword)) agentScore++;
-        });
-        
-        clientKeywords.forEach(keyword => {
-          if (lowerText.includes(keyword)) clientScore++;
-        });
-        
-        // Alternate between speakers if no clear winner
-        let speaker: 'agent' | 'client';
-        if (agentScore > clientScore) {
-          speaker = 'agent';
-        } else if (clientScore > agentScore) {
-          speaker = 'client';
-        } else {
-          // If no keywords or tie, use callback to get latest state
-          speaker = 'agent'; // Default first speaker
-        }
-        
-        console.log(`Speaker detection: "${transcribedText.substring(0, 50)}..." - Agent: ${agentScore}, Client: ${clientScore}, Result: ${speaker}`);
-        
+
         // Split into shorter sentences to show multiple chat bubbles
         const sentences = transcribedText
-          .split(/(?<=[\.!?…])\s+|\n+/)
+          .split(/(?<=[.!?…])\s+|\n+/)
           .map(s => s.trim())
           .filter(s => s.length > 0);
 
@@ -137,17 +135,32 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
             agentKeywords.forEach(k => { if (sLower.includes(k)) aScore2++; });
             clientKeywords.forEach(k => { if (sLower.includes(k)) cScore2++; });
             let sp: 'agent' | 'client';
-            if (aScore2 > cScore2) sp = 'agent';
+            if (speakerHint) {
+              sp = speakerHint;
+            } else if (aScore2 > cScore2) sp = 'agent';
             else if (cScore2 > aScore2) sp = 'client';
             else sp = lastSpeaker === 'agent' ? 'client' : 'agent';
+
+            const lastMessage = updated[updated.length - 1];
+            if (lastMessage && lastMessage.text === sentence) {
+              updated[updated.length - 1] = {
+                ...lastMessage,
+                speaker: sp,
+                speakerName: sp === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח'),
+                timestamp: chunkTimestamp,
+                confidence: chunkConfidence ?? lastMessage.confidence
+              };
+              lastSpeaker = sp;
+              return;
+            }
 
             const msg: ChatMessage = {
               id: `${Date.now()}-${Math.random()}`,
               text: sentence,
               speaker: sp,
               speakerName: sp === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח'),
-              timestamp: new Date().toISOString(),
-              confidence: 0.8
+              timestamp: chunkTimestamp,
+              confidence: chunkConfidence ?? 0.8
             };
             updated.push(msg);
             lastSpeaker = sp;
@@ -157,7 +170,10 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         });
 
         // Keep the full raw transcript as well
-        setTranscribedText(prev => (prev ? prev + ' ' : '') + transcribedText);
+        setTranscribedText(prev => {
+          if (!prev) return transcribedText;
+          return prev.includes(transcribedText) ? prev : `${prev} ${transcribedText}`;
+        });
       }
     } catch (error) {
       console.error('Error processing audio chunk:', error);
