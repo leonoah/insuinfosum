@@ -104,11 +104,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
           
-          // Process chunk for real-time transcription every 3 seconds
-          chunkCounterRef.current++;
-          if (chunkCounterRef.current % 3 === 0 && event.data.size > 1000) {
-            await processAudioChunk(event.data);
-          }
+          // Don't process chunks in real-time - wait for complete recording
+          // This prevents "Invalid file format" errors from OpenAI
         }
       };
       
@@ -379,13 +376,22 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <MessageCircle className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-lg text-foreground">שיחה בזמן אמת</h3>
+                  <h3 className="font-semibold text-lg text-foreground">מצב הקלטה</h3>
                 </div>
                 
                 <div className="space-y-3 max-h-96 overflow-y-auto bg-muted/30 p-4 rounded-lg">
-                  {chatMessages.length === 0 && isRecording && (
+                  {isRecording && (
                     <div className="text-center text-muted-foreground py-8">
-                      מתחיל להאזין לשיחה...
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                        <span>מקליט... השיחה תתומלל בסיום ההקלטה</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!isRecording && chatMessages.length === 0 && (
+                    <div className="text-center text-muted-foreground py-8">
+                      לא נמצאו הודעות
                     </div>
                   )}
                   
