@@ -1,8 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mic, Square, Play, CheckCircle, Loader2, MessageCircle, User, Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Mic, Square, Play, CheckCircle, Loader2, MessageCircle, User, Upload, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SelectedProduct } from "@/types/insurance";
@@ -24,9 +26,18 @@ interface ExtractedData {
 interface ChatMessage {
   id: string;
   text: string;
-  speaker: 'סוכן' | 'לקוח';
+  speaker: 'agent' | 'client';
+  speakerName: string;
   timestamp: string;
   confidence?: number;
+}
+
+interface Client {
+  id: string;
+  client_id: string;
+  client_name: string;
+  client_phone?: string;
+  client_email?: string;
 }
 
 const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
@@ -37,6 +48,9 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [agentName, setAgentName] = useState<string>("סוכן ביטוח");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const chunkCounterRef = useRef(0);
@@ -61,7 +75,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         const transcribedText = transcriptionData.text.trim();
         
         // Simple speaker detection
-        let speaker: 'סוכן' | 'לקוח' = 'לקוח'; // Default to client
+        let speaker: 'agent' | 'client' = 'client'; // Default to client
         const agentKeywords = [
           'שלום', 'איך אפשר לעזור', 'אני רוצה להמליץ', 'נראה לי', 'מה דעתך',
           'אני חושב', 'לפי הניסיון שלי', 'אני מציע', 'בואו נבדוק', 'אני יכול להציע'
@@ -75,15 +89,16 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         const lowerText = transcribedText.toLowerCase();
         
         if (agentKeywords.some(keyword => lowerText.includes(keyword))) {
-          speaker = 'סוכן';
+          speaker = 'agent';
         } else if (clientKeywords.some(keyword => lowerText.includes(keyword))) {
-          speaker = 'לקוח';
+          speaker = 'client';
         }
         
         const newMessage: ChatMessage = {
           id: `${Date.now()}-${Math.random()}`,
           text: transcribedText,
           speaker: speaker,
+          speakerName: speaker === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח'),
           timestamp: new Date().toISOString(),
           confidence: 0.8
         };
@@ -94,9 +109,50 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     } catch (error) {
       console.error('Error processing audio chunk:', error);
     }
-  }, []);
+  }, [agentName, selectedClient]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadAgentAndClients();
+    }
+  }, [isOpen]);
+
+  const loadAgentAndClients = async () => {
+    try {
+      // Load agent info
+      const { data: agentData } = await supabase
+        .from('agent_info')
+        .select('name')
+        .single();
+      
+      if (agentData?.name) {
+        setAgentName(agentData.name);
+      }
+
+      // Load clients
+      const { data: clientsData } = await supabase
+        .from('clients')
+        .select('*')
+        .order('client_name');
+      
+      if (clientsData) {
+        setClients(clientsData);
+      }
+    } catch (error) {
+      console.error('Error loading agent and clients:', error);
+    }
+  };
 
   const startRecording = async () => {
+    if (!selectedClient) {
+      toast({
+        title: "שגיאה",
+        description: "אנא בחר לקוח מהרשימה",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
@@ -207,7 +263,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         const { data: extractionData, error: extractionError } = await supabase.functions.invoke('analyze-call-transcript', {
           body: { 
             transcript: fullTranscript,
-            agentName: "סוכן ביטוח"
+            agentName: agentName
           }
         });
         
@@ -298,7 +354,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       const { data: extractionData, error: extractionError } = await supabase.functions.invoke('analyze-call-transcript', {
         body: { 
           transcript: fullTranscript,
-          agentName: "סוכן ביטוח"
+          agentName: agentName
         }
       });
 
@@ -335,6 +391,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     setTranscribedText("");
     setExtractedData(null);
     setChatMessages([]);
+    setSelectedClient(null);
     audioChunksRef.current = [];
     chunkCounterRef.current = 0;
   };
@@ -358,13 +415,49 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Client Selection */}
+          {!isRecording && !isAnalyzing && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-primary" />
+                    <Label className="text-base font-medium">בחירת לקוח</Label>
+                  </div>
+                  <Select value={selectedClient?.id || ""} onValueChange={(value) => {
+                    const client = clients.find(c => c.id === value);
+                    setSelectedClient(client || null);
+                  }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="בחר לקוח מהרשימה" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.client_name} ({client.client_id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedClient && (
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                      <p><strong>לקוח:</strong> {selectedClient.client_name}</p>
+                      <p><strong>ת״ז:</strong> {selectedClient.client_id}</p>
+                      <p><strong>סוכן:</strong> {agentName}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Recording Status */}
           {isRecording && (
             <Card className="border-red-500 bg-red-50 animate-pulse">
               <CardContent className="flex items-center justify-center py-4">
                 <div className="flex items-center gap-4">
                   <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-red-700 font-semibold">מקליט ומתמלל בזמן אמת...</span>
+                  <span className="text-red-700 font-semibold">מקליט שיחה עם {selectedClient?.client_name}...</span>
                   <Mic className="w-6 h-6 text-red-500" />
                 </div>
               </CardContent>
@@ -389,7 +482,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
               <>
                 <Button 
                   onClick={startRecording}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg"
+                  disabled={!selectedClient}
+                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg disabled:opacity-50"
                 >
                   <Mic className="w-6 h-6 ml-2" />
                   התחל הקלטת שיחה
@@ -461,19 +555,19 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                     <div
                       key={message.id}
                       className={`flex items-start gap-3 ${
-                        message.speaker === 'סוכן' ? 'justify-end' : 'justify-start'
+                        message.speaker === 'agent' ? 'justify-end' : 'justify-start'
                       }`}
                     >
                       <div
                         className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
-                          message.speaker === 'סוכן'
+                          message.speaker === 'agent'
                             ? 'bg-blue-500 text-white ml-auto'
                             : 'bg-gray-100 text-gray-900 mr-auto'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <User className="w-4 h-4" />
-                          <span className="text-sm font-semibold">{message.speaker}</span>
+                          <span className="text-sm font-semibold">{message.speakerName}</span>
                           {message.confidence && message.confidence < 0.7 && (
                             <span className="text-xs opacity-70">(איכות נמוכה)</span>
                           )}
