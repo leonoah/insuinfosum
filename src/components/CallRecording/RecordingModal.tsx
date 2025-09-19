@@ -155,6 +155,41 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     }
   }, [isOpen]);
 
+  // Realtime updates for clients list while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    console.log('Subscribing to clients realtime...');
+    const channel = supabase
+      .channel('clients-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, (payload) => {
+        const newClient = (payload as any).new as Client;
+        console.log('Realtime INSERT client:', newClient);
+        setClients((prev) => {
+          const exists = prev.some(c => c.id === newClient.id);
+          const updated = exists ? prev.map(c => c.id === newClient.id ? newClient : c) : [...prev, newClient];
+          return updated.sort((a,b)=>a.client_name.localeCompare(b.client_name, 'he'));
+        });
+        setSelectedClient((curr) => curr ?? newClient);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' }, (payload) => {
+        const updatedClient = (payload as any).new as Client;
+        console.log('Realtime UPDATE client:', updatedClient);
+        setClients((prev) => prev.map(c => c.id === updatedClient.id ? updatedClient : c)
+          .sort((a,b)=>a.client_name.localeCompare(b.client_name, 'he')));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' }, (payload) => {
+        const oldId = (payload as any)?.old?.id as string;
+        console.log('Realtime DELETE client id:', oldId);
+        setClients((prev) => prev.filter(c => c.id !== oldId));
+      })
+      .subscribe();
+
+    return () => {
+      console.log('Unsubscribing clients realtime');
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen]);
+
   const loadAgentAndClients = async () => {
     try {
       console.log('Loading agent and clients...');
@@ -182,6 +217,9 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       
       if (clientsData && clientsData.length > 0) {
         setClients(clientsData);
+        if (!selectedClient) {
+          setSelectedClient(clientsData[0]);
+        }
         console.log('Clients set:', clientsData.length, 'clients loaded');
       } else {
         console.log('No clients found or empty array');
@@ -472,6 +510,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                   <div className="flex items-center gap-2">
                     <UserCheck className="w-5 h-5 text-primary" />
                     <Label className="text-base font-medium">בחירת לקוח</Label>
+                    <Button variant="outline" size="sm" className="ml-auto" onClick={loadAgentAndClients}>רענן</Button>
                   </div>
                   <Select value={selectedClient?.id || ""} onValueChange={(value) => {
                     const client = clients.find(c => c.id === value);
@@ -480,7 +519,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="בחר לקוח מהרשימה" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
                       {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.client_name} ({client.client_id})
