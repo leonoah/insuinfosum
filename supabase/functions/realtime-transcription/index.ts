@@ -28,10 +28,24 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
     
+    // Check if chunk is too small (less than 1KB) - skip transcription
+    if (bytes.length < 1024) {
+      console.log('Audio chunk too small, skipping transcription');
+      return new Response(
+        JSON.stringify({ 
+          text: '',
+          speaker: 'לקוח',
+          timestamp: new Date().toISOString(),
+          confidence: 0
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Prepare form data for OpenAI Whisper
     const formData = new FormData();
-    const blob = new Blob([bytes], { type: 'audio/webm' });
-    formData.append('file', blob, 'audio.webm');
+    const blob = new Blob([bytes], { type: 'audio/webm; codecs=opus' });
+    formData.append('file', blob, 'chunk.webm');
     formData.append('model', 'whisper-1');
     formData.append('language', 'he'); // Hebrew language
     formData.append('response_format', 'json');
