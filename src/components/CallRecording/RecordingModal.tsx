@@ -13,6 +13,8 @@ interface RecordingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApprove: (currentProducts: SelectedProduct[], suggestedProducts: SelectedProduct[]) => void;
+  initialClientId?: string;
+  initialClientName?: string;
 }
 
 interface ExtractedData {
@@ -40,7 +42,7 @@ interface Client {
   client_email?: string;
 }
 
-const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
+const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialClientName }: RecordingModalProps) => {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -238,7 +240,15 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       if (clientsData && clientsData.length > 0) {
         setClients(clientsData);
         if (!selectedClient) {
-          setSelectedClient(clientsData[0]);
+          let defaultClient: Client | undefined;
+          if (initialClientId) {
+            defaultClient = clientsData.find(c => c.client_id === initialClientId || c.id === initialClientId);
+          }
+          if (!defaultClient && initialClientName) {
+            const targetName = initialClientName.trim();
+            defaultClient = clientsData.find(c => c.client_name.trim() === targetName);
+          }
+          setSelectedClient(defaultClient || clientsData[0]);
         }
         console.log('Clients set:', clientsData.length, 'clients loaded');
       } else {

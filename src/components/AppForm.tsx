@@ -94,6 +94,13 @@ const AppForm = () => {
     approvals: ""
   });
 
+  // Required fields: name, phone, current situation
+  const isSummaryEligible = Boolean(
+    formData.clientName.trim() &&
+    formData.clientPhone.trim() &&
+    formData.currentSituation.trim()
+  );
+
   // Load clients on component mount
   useEffect(() => {
     loadClients();
@@ -788,11 +795,17 @@ const AppForm = () => {
           <Button 
             onClick={generateSummary}
             size="lg"
+            disabled={!isSummaryEligible}
             className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow text-lg min-w-[200px] glass-hover"
           >
             <FileText className="h-5 w-5 ml-2" />
             ייצר סיכום
           </Button>
+          {!isSummaryEligible && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              נדרש למלא: שם לקוח, טלפון ומצב קיים לפני יצירת הסיכום
+            </p>
+          )}
         </div>
       </div>
 
@@ -801,6 +814,8 @@ const AppForm = () => {
         isOpen={showRecordingModal}
         onClose={() => setShowRecordingModal(false)}
         onApprove={handleRecordingApproval}
+        initialClientId={formData.clientId}
+        initialClientName={formData.clientName}
       />
 
       {showSummary && (
