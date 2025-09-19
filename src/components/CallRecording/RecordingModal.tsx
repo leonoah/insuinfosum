@@ -49,7 +49,7 @@ interface RealtimeTranscriptionResponse {
   timestamp?: string;
 }
 
-const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
+const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialClientName }: RecordingModalProps) => {
  
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
