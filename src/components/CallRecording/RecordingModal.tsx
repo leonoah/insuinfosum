@@ -223,9 +223,9 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           {transcribedText && (
             <Card>
               <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-3">תמליל השיחה:</h3>
-                <div className="bg-gray-50 p-4 rounded-lg max-h-40 overflow-y-auto text-right">
-                  <p className="whitespace-pre-wrap">{transcribedText}</p>
+                <h3 className="font-semibold text-lg mb-3 text-foreground">תמליל השיחה:</h3>
+                <div className="bg-muted p-4 rounded-lg max-h-40 overflow-y-auto text-right">
+                  <p className="whitespace-pre-wrap text-foreground">{transcribedText}</p>
                 </div>
               </CardContent>
             </Card>
@@ -236,28 +236,28 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
             <div className="space-y-4">
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-3">מצב הלקוח הנוכחי:</h3>
-                  <p className="text-gray-700">{extractedData.customerStatus}</p>
+                  <h3 className="font-semibold text-lg mb-3 text-foreground">מצב הלקוח הנוכחי:</h3>
+                  <p className="text-muted-foreground">{extractedData.customerStatus}</p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-3">סיכום השיחה:</h3>
-                  <p className="text-gray-700">{extractedData.summary}</p>
+                  <h3 className="font-semibold text-lg mb-3 text-foreground">סיכום השיחה:</h3>
+                  <p className="text-muted-foreground">{extractedData.summary}</p>
                 </CardContent>
               </Card>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg mb-3">מוצרי ביטוח נוכחיים:</h3>
+                    <h3 className="font-semibold text-lg mb-3 text-foreground">מוצרי ביטוח נוכחיים:</h3>
                     <div className="space-y-2">
                       {extractedData.currentProducts.map((product, index) => (
-                        <div key={index} className="bg-blue-50 p-3 rounded-lg">
-                          <p className="font-medium">{product.company} - {product.productName}</p>
-                          <p className="text-sm text-gray-600">{product.subType}</p>
-                          <p className="text-sm">סכום: ₪{product.amount.toLocaleString()}</p>
+                        <div key={index} className="bg-accent/30 border border-border p-3 rounded-lg">
+                          <p className="font-medium text-foreground">{product.company} - {product.productName}</p>
+                          <p className="text-sm text-muted-foreground">{product.subType}</p>
+                          <p className="text-sm text-foreground">סכום: ₪{product.amount.toLocaleString()}</p>
                         </div>
                       ))}
                     </div>
@@ -266,13 +266,13 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                 
                 <Card>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg mb-3">מוצרים מומלצים:</h3>
+                    <h3 className="font-semibold text-lg mb-3 text-foreground">מוצרים מומלצים:</h3>
                     <div className="space-y-2">
                       {extractedData.suggestedProducts.map((product, index) => (
-                        <div key={index} className="bg-green-50 p-3 rounded-lg">
-                          <p className="font-medium">{product.company} - {product.productName}</p>
-                          <p className="text-sm text-gray-600">{product.subType}</p>
-                          <p className="text-sm">סכום: ₪{product.amount.toLocaleString()}</p>
+                        <div key={index} className="bg-primary/20 border border-primary/30 p-3 rounded-lg">
+                          <p className="font-medium text-foreground">{product.company} - {product.productName}</p>
+                          <p className="text-sm text-muted-foreground">{product.subType}</p>
+                          <p className="text-sm text-foreground">סכום: ₪{product.amount.toLocaleString()}</p>
                         </div>
                       ))}
                     </div>
