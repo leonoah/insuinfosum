@@ -74,25 +74,52 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       if (transcriptionData?.text && transcriptionData.text.trim()) {
         const transcribedText = transcriptionData.text.trim();
         
-        // Simple speaker detection
-        let speaker: 'agent' | 'client' = 'client'; // Default to client
+        // Enhanced speaker detection with scoring
         const agentKeywords = [
           'שלום', 'איך אפשר לעזור', 'אני רוצה להמליץ', 'נראה לי', 'מה דעתך',
-          'אני חושב', 'לפי הניסיון שלי', 'אני מציע', 'בואו נבדוק', 'אני יכול להציע'
+          'אני חושב', 'לפי הניסיון שלי', 'אני מציע', 'בואו נבדוק', 'אני יכול להציע',
+          'המלצה שלי', 'לפי הניסיון', 'אני ממליץ', 'כדאי לכם', 'התוכנית הכי טובה',
+          'עבור אותך', 'בשבילך', 'זה מתאים לך', 'אני אבדוק', 'נסתכל על זה',
+          'תעשה כך', 'הכי חשוב', 'שים לב', 'חשוב להבין', 'המטרה שלנו',
+          'נבדוק יחד', 'אסביר לך', 'כמו סוכן', 'הניסיון שלי', 'אני כאן בשביל'
         ];
         
         const clientKeywords = [
           'אני מעוניין', 'כמה זה עולה', 'מה זה אומר', 'לא הבנתי', 
-          'אני רוצה', 'איך זה עובד', 'תוכל להסביר', 'אני צריך'
+          'אני רוצה', 'איך זה עובד', 'תוכל להסביר', 'אני צריך',
+          'מה זה כולל', 'כמה אני אשלם', 'זה יקר', 'זה זול', 'יש לי כסף',
+          'אני מתלבט', 'לא בטוח', 'צריך לחשוב', 'אשמח לשמוע', 'מה אתה חושב',
+          'תמיד רציתי', 'חשבתי על זה', 'שמעתי על זה', 'מה הדעה שלך',
+          'איך תעצור לי', 'אני מפחד', 'זה נשמע מעניין', 'רוצה לשמוע עוד'
         ];
         
         const lowerText = transcribedText.toLowerCase();
         
-        if (agentKeywords.some(keyword => lowerText.includes(keyword))) {
+        // Score-based detection
+        let agentScore = 0;
+        let clientScore = 0;
+        
+        agentKeywords.forEach(keyword => {
+          if (lowerText.includes(keyword)) agentScore++;
+        });
+        
+        clientKeywords.forEach(keyword => {
+          if (lowerText.includes(keyword)) clientScore++;
+        });
+        
+        // Alternate between speakers if no clear winner
+        let speaker: 'agent' | 'client';
+        if (agentScore > clientScore) {
           speaker = 'agent';
-        } else if (clientKeywords.some(keyword => lowerText.includes(keyword))) {
+        } else if (clientScore > agentScore) {
           speaker = 'client';
+        } else {
+          // If no keywords or tie, alternate based on previous message
+          const lastMessage = chatMessages[chatMessages.length - 1];
+          speaker = lastMessage?.speaker === 'agent' ? 'client' : 'agent';
         }
+        
+        console.log(`Speaker detection: "${transcribedText.substring(0, 50)}..." - Agent: ${agentScore}, Client: ${clientScore}, Result: ${speaker}`);
         
         const newMessage: ChatMessage = {
           id: `${Date.now()}-${Math.random()}`,
