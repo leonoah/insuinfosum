@@ -21,16 +21,33 @@ serve(async (req) => {
 
     console.log('Processing real-time audio transcription...');
     
-    // Convert base64 to binary
-    const binaryString = atob(audioChunk);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    // Helper to process base64 in chunks for reliability
+    function processBase64Chunks(base64String: string, chunkSize = 32768) {
+      // Strip potential data URL prefix
+      const clean = base64String.includes(',') ? base64String.split(',')[1] : base64String;
+      const chunks: Uint8Array[] = [];
+      let position = 0;
+      while (position < clean.length) {
+        const piece = clean.slice(position, position + chunkSize);
+        const binary = atob(piece);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        chunks.push(bytes);
+        position += chunkSize;
+      }
+      const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+      const result = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const c of chunks) { result.set(c, offset); offset += c.length; }
+      return result;
     }
+
+    // Convert base64 to binary (chunked)
+    const bytes = processBase64Chunks(audioChunk);
     
-    // Check if chunk is too small (less than 1KB) - skip transcription
-    if (bytes.length < 1024) {
-      console.log('Audio chunk too small, skipping transcription');
+    // Require a reasonable size (>= 8KB) to avoid malformed containers
+    if (bytes.length < 8192) {
+      console.log(`Audio chunk too small (${bytes.length} bytes), skipping transcription`);
       return new Response(
         JSON.stringify({ 
           text: '',
@@ -44,8 +61,8 @@ serve(async (req) => {
     
     // Prepare form data for OpenAI Whisper
     const formData = new FormData();
-    const blob = new Blob([bytes], { type: 'audio/webm; codecs=opus' });
-    formData.append('file', blob, 'chunk.webm');
+    const file = new File([bytes], 'chunk.webm', { type: 'audio/webm' });
+    formData.append('file', file);
     formData.append('model', 'whisper-1');
     formData.append('language', 'he'); // Hebrew language
     formData.append('response_format', 'json');
