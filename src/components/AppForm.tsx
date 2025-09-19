@@ -94,6 +94,13 @@ const AppForm = () => {
     approvals: ""
   });
 
+  // Required fields: name, phone, current situation
+  const isSummaryEligible = Boolean(
+    formData.clientName.trim() &&
+    formData.clientPhone.trim() &&
+    formData.currentSituation.trim()
+  );
+
   // Load clients on component mount
   useEffect(() => {
     loadClients();
@@ -339,16 +346,62 @@ const AppForm = () => {
   // Handle call recording approval
   const handleRecordingApproval = (currentProducts: SelectedProduct[], suggestedProducts: SelectedProduct[]) => {
     const allProducts = [...currentProducts, ...suggestedProducts];
-    setFormData(prev => ({ 
-      ...prev, 
-      products: [...prev.products, ...allProducts] 
-    }));
-    
-    toast({
-      title: "המוצרים נוספו בהצלחה",
-      description: `נוספו ${allProducts.length} מוצרים מניתוח השיחה`,
+
+    if (allProducts.length === 0) {
+      toast({
+        title: "לא זוהו מוצרים",
+        description: "הניתוח הסתיים אך לא נמצאו מוצרים להוספה",
+      });
+      return;
+    }
+
+    const createProductKey = (product: SelectedProduct) => (
+      `${product.type}|${product.company.trim().toLowerCase()}|${product.productName.trim().toLowerCase()}`
+    );
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    setFormData(prev => {
+      const productMap = new Map(prev.products.map(product => [createProductKey(product), product]));
+      const processedKeys = new Set<string>();
+
+      allProducts.forEach(product => {
+        const key = createProductKey(product);
+
+        if (!processedKeys.has(key)) {
+          if (productMap.has(key)) {
+            updatedCount++;
+          } else {
+            addedCount++;
+          }
+          processedKeys.add(key);
+        }
+
+        productMap.set(key, product);
+      });
+
+      return {
+        ...prev,
+        products: Array.from(productMap.values()),
+      };
     });
-    
+
+    const descriptionParts = [];
+    if (addedCount > 0) {
+      descriptionParts.push(`נוספו ${addedCount} מוצרים חדשים`);
+    }
+    if (updatedCount > 0) {
+      descriptionParts.push(`עודכנו ${updatedCount} מוצרים קיימים`);
+    }
+
+    toast({
+      title: "הנתונים עודכנו בהצלחה",
+      description: descriptionParts.length > 0
+        ? `${descriptionParts.join(" ו")} מניתוח השיחה`
+        : "הנתונים נותרו ללא שינוי",
+    });
+
     // Switch to products tab to show the new products
     setActiveTab("products");
   };
@@ -763,24 +816,6 @@ const AppForm = () => {
             </Card>
           </TabsContent>
 
-          {/* Products */}
-          <TabsContent value="products">
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  ניהול מוצרים פיננסיים
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProductManager
-                  currentProducts={formData.products.filter(p => p.type === 'current')}
-                  recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
-                  onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Generate Button */}
@@ -788,11 +823,17 @@ const AppForm = () => {
           <Button 
             onClick={generateSummary}
             size="lg"
+            disabled={!isSummaryEligible}
             className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow text-lg min-w-[200px] glass-hover"
           >
             <FileText className="h-5 w-5 ml-2" />
             ייצר סיכום
           </Button>
+          {!isSummaryEligible && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              נדרש למלא: שם לקוח, טלפון ומצב קיים לפני יצירת הסיכום
+            </p>
+          )}
         </div>
       </div>
 
@@ -801,6 +842,8 @@ const AppForm = () => {
         isOpen={showRecordingModal}
         onClose={() => setShowRecordingModal(false)}
         onApprove={handleRecordingApproval}
+        initialClientId={formData.clientId}
+        initialClientName={formData.clientName}
       />
 
       {showSummary && (
