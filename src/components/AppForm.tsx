@@ -346,16 +346,62 @@ const AppForm = () => {
   // Handle call recording approval
   const handleRecordingApproval = (currentProducts: SelectedProduct[], suggestedProducts: SelectedProduct[]) => {
     const allProducts = [...currentProducts, ...suggestedProducts];
-    setFormData(prev => ({ 
-      ...prev, 
-      products: [...prev.products, ...allProducts] 
-    }));
-    
-    toast({
-      title: "המוצרים נוספו בהצלחה",
-      description: `נוספו ${allProducts.length} מוצרים מניתוח השיחה`,
+
+    if (allProducts.length === 0) {
+      toast({
+        title: "לא זוהו מוצרים",
+        description: "הניתוח הסתיים אך לא נמצאו מוצרים להוספה",
+      });
+      return;
+    }
+
+    const createProductKey = (product: SelectedProduct) => (
+      `${product.type}|${product.company.trim().toLowerCase()}|${product.productName.trim().toLowerCase()}`
+    );
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    setFormData(prev => {
+      const productMap = new Map(prev.products.map(product => [createProductKey(product), product]));
+      const processedKeys = new Set<string>();
+
+      allProducts.forEach(product => {
+        const key = createProductKey(product);
+
+        if (!processedKeys.has(key)) {
+          if (productMap.has(key)) {
+            updatedCount++;
+          } else {
+            addedCount++;
+          }
+          processedKeys.add(key);
+        }
+
+        productMap.set(key, product);
+      });
+
+      return {
+        ...prev,
+        products: Array.from(productMap.values()),
+      };
     });
-    
+
+    const descriptionParts = [];
+    if (addedCount > 0) {
+      descriptionParts.push(`נוספו ${addedCount} מוצרים חדשים`);
+    }
+    if (updatedCount > 0) {
+      descriptionParts.push(`עודכנו ${updatedCount} מוצרים קיימים`);
+    }
+
+    toast({
+      title: "הנתונים עודכנו בהצלחה",
+      description: descriptionParts.length > 0
+        ? `${descriptionParts.join(" ו")} מניתוח השיחה`
+        : "הנתונים נותרו ללא שינוי",
+    });
+
     // Switch to products tab to show the new products
     setActiveTab("products");
   };
