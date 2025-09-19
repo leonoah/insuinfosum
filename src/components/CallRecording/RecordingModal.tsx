@@ -56,6 +56,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
   const chunkCounterRef = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const processAudioChunk = useCallback(async (audioBlob: Blob) => {
     try {
@@ -120,29 +121,43 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         
         console.log(`Speaker detection: "${transcribedText.substring(0, 50)}..." - Agent: ${agentScore}, Client: ${clientScore}, Result: ${speaker}`);
         
-        const newMessage: ChatMessage = {
-          id: `${Date.now()}-${Math.random()}`,
-          text: transcribedText,
-          speaker: speaker,
-          speakerName: speaker === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח'),
-          timestamp: new Date().toISOString(),
-          confidence: 0.8
-        };
-        
-        console.log('Adding new message:', newMessage);
+        // Split into shorter sentences to show multiple chat bubbles
+        const sentences = transcribedText
+          .split(/(?<=[\.!?…])\s+|\n+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+
         setChatMessages(prev => {
-          console.log('Current messages before adding:', prev.length);
-          // If no clear speaker winner, alternate based on last message
-          if (agentScore === clientScore) {
-            const lastMessage = prev[prev.length - 1];
-            newMessage.speaker = lastMessage?.speaker === 'agent' ? 'client' : 'agent';
-            newMessage.speakerName = newMessage.speaker === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח');
-          }
-          const updated = [...prev, newMessage];
-          console.log('Updated messages after adding:', updated.length, 'Speaker:', newMessage.speaker);
+          const updated = [...prev];
+          let lastSpeaker = updated[updated.length - 1]?.speaker;
+
+          sentences.forEach((sentence) => {
+            const sLower = sentence.toLowerCase();
+            let aScore2 = 0; let cScore2 = 0;
+            agentKeywords.forEach(k => { if (sLower.includes(k)) aScore2++; });
+            clientKeywords.forEach(k => { if (sLower.includes(k)) cScore2++; });
+            let sp: 'agent' | 'client';
+            if (aScore2 > cScore2) sp = 'agent';
+            else if (cScore2 > aScore2) sp = 'client';
+            else sp = lastSpeaker === 'agent' ? 'client' : 'agent';
+
+            const msg: ChatMessage = {
+              id: `${Date.now()}-${Math.random()}`,
+              text: sentence,
+              speaker: sp,
+              speakerName: sp === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח'),
+              timestamp: new Date().toISOString(),
+              confidence: 0.8
+            };
+            updated.push(msg);
+            lastSpeaker = sp;
+          });
+          console.log('Added', sentences.length, 'messages. Total now:', updated.length);
           return updated;
         });
-        setTranscribedText(prev => prev + ' ' + transcribedText);
+
+        // Keep the full raw transcript as well
+        setTranscribedText(prev => (prev ? prev + ' ' : '') + transcribedText);
       }
     } catch (error) {
       console.error('Error processing audio chunk:', error);
@@ -154,6 +169,11 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       loadAgentAndClients();
     }
   }, [isOpen]);
+
+  // Auto-scroll chat to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   // Realtime updates for clients list while modal is open
   useEffect(() => {
@@ -667,6 +687,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
               </CardContent>
             </Card>
