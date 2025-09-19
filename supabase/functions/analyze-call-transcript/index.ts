@@ -24,19 +24,30 @@ serve(async (req) => {
     const systemPrompt = `אתה מומחה לניתוח שיחות ביטוח ולהפקת מידע מובנה. 
     מתפקידך לנתח תמליל של שיחה בין סוכן ביטוח ללקוח ולחלץ את המידע הבא:
     
+    חברות ביטוח מוכרות בישראל:
+    - מגדל, כלל, הפניקס, מנורה מבטחים, הכשרה, איילון, מגדלור, AIG, הלמן אלדובי, 
+    - עמיתים, אלטשולר שחם, הראל, ביטוח ישיר, לאומי, בנק הפועלים, מזרחי טפחות,
+    - כלל פנסיה וגמל, מנורה פנסיה, מגדל פנסיה, הפניקס פנסיה, הכשרה פנסיה
+    
+    מוצרי ביטוח נפוצים:
+    - פנסיה תקציבית, פנסיה כללית, ביטוח מנהלים, קופת גמל להשקעה,
+    - ביטוח חיים, בריאות פרטית, ביטוח סיעוד, ביטוח אובדן כושר עבודה,
+    - ביטוח רכב, ביטוח דירה, ביטוח נסיעות לחו"ל, ביטוח אחריות מקצועית
+    
     1. מצב הלקוח הנוכחי - תיאור קצר של מצבו הכלכלי והביטוחי
-    2. מוצרי ביטוח קיימים של הלקוח
-    3. מוצרי ביטוח מומלצים על בסיס השיחה
-    4. סיכום השיחה
+    2. מוצרי ביטוח קיימים של הלקוח (השתמש רק בחברות מהרשימה)
+    3. מוצרי ביטוח מומלצים על בסיס השיחה (השתמש רק בחברות מהרשימה)
+    4. סיכום השיחה עם הדגשות צבעוניות
     
     החזר תשובה בפורמט JSON בלבד עם המבנה הבא:
     {
       "customerStatus": "תיאור מצב הלקוח",
       "summary": "סיכום השיחה",
+      "highlightedTranscript": "תמליל עם הדגשות HTML - שם מוצר ב-<span class='product-name'>שם מוצר</span>, חברה ב-<span class='company-name'>שם חברה</span>, מספרים ב-<span class='numbers'>מספר</span>",
       "currentProducts": [
         {
           "id": "unique-id",
-          "company": "שם חברת הביטוח",
+          "company": "שם חברת הביטוח מהרשימה בלבד",
           "productName": "שם המוצר",
           "subType": "תת סוג",
           "amount": מספר,
@@ -50,7 +61,7 @@ serve(async (req) => {
       "suggestedProducts": [
         {
           "id": "unique-id",
-          "company": "שם חברת הביטוח",
+          "company": "שם חברת הביטוח מהרשימה בלבד",
           "productName": "שם המוצר",
           "subType": "תת סוג", 
           "amount": מספר,
@@ -63,7 +74,7 @@ serve(async (req) => {
       ]
     }
     
-    אם לא מוזכרים מוצרי ביטוח ספציפיים, צור מוצרים הגיוניים על בסיס ההקשר.`;
+    חשוב: השתמש אך ורק בחברות ביטוח מהרשימה שלמעלה. אם מוזכרת חברה שלא ברשימה, מצא את החברה הקרובה ביותר או השתמש ב"מגדל" כברירת מחדל.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -72,7 +83,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           { 
             role: 'system', 
@@ -111,6 +122,7 @@ serve(async (req) => {
       analysisData = {
         customerStatus: "לא ניתן היה לזהות את מצב הלקוח מהתמליל",
         summary: "התמליל עובד אך לא ניתן היה לחלץ מידע מובנה",
+        highlightedTranscript: transcript,
         currentProducts: [],
         suggestedProducts: []
       };
@@ -135,6 +147,7 @@ serve(async (req) => {
     const finalData = {
       customerStatus: analysisData.customerStatus || "מצב לקוח לא זוהה",
       summary: analysisData.summary || "סיכום לא זמין",
+      highlightedTranscript: analysisData.highlightedTranscript || transcript,
       currentProducts: processProducts(analysisData.currentProducts || [], 'current'),
       suggestedProducts: processProducts(analysisData.suggestedProducts || [], 'recommended')
     };

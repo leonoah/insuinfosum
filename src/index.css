@@ -181,3 +181,46 @@
     margin-bottom: 0.75rem;
   }
 }
+
+/* Transcript highlighting styles */
+.transcript-highlights .product-name {
+  color: hsl(142, 76%, 36%); /* Green for products */
+  font-weight: 600;
+  background-color: hsl(142, 76%, 90%);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.transcript-highlights .company-name {
+  color: hsl(262, 83%, 58%); /* Purple for companies */
+  font-weight: 600;
+  background-color: hsl(262, 83%, 95%);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.transcript-highlights .numbers {
+  color: hsl(0, 84%, 60%); /* Red for numbers */
+  font-weight: 600;
+  background-color: hsl(0, 84%, 95%);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .transcript-highlights .product-name {
+    color: hsl(142, 76%, 60%);
+    background-color: hsl(142, 76%, 15%);
+  }
+  
+  .transcript-highlights .company-name {
+    color: hsl(262, 83%, 75%);
+    background-color: hsl(262, 83%, 15%);
+  }
+  
+  .transcript-highlights .numbers {
+    color: hsl(0, 84%, 70%);
+    background-color: hsl(0, 84%, 15%);
+  }
+}

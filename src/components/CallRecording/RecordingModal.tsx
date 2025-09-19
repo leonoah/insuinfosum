@@ -18,6 +18,7 @@ interface ExtractedData {
   suggestedProducts: SelectedProduct[];
   customerStatus: string;
   summary: string;
+  highlightedTranscript?: string;
 }
 
 const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
@@ -224,9 +225,18 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-semibold text-lg mb-3 text-foreground">תמליל השיחה:</h3>
-                <div className="bg-muted p-4 rounded-lg max-h-40 overflow-y-auto text-right">
-                  <p className="whitespace-pre-wrap text-foreground">{transcribedText}</p>
-                </div>
+                {extractedData?.highlightedTranscript ? (
+                  <div className="bg-muted p-4 rounded-lg max-h-60 overflow-y-auto text-right">
+                    <div 
+                      className="whitespace-pre-wrap text-foreground transcript-highlights"
+                      dangerouslySetInnerHTML={{ __html: extractedData.highlightedTranscript }}
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-muted p-4 rounded-lg max-h-40 overflow-y-auto text-right">
+                    <p className="whitespace-pre-wrap text-foreground">{transcribedText}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
