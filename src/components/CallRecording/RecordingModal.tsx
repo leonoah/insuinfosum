@@ -157,24 +157,34 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
 
   const loadAgentAndClients = async () => {
     try {
+      console.log('Loading agent and clients...');
+      
       // Load agent info
-      const { data: agentData } = await supabase
+      const { data: agentData, error: agentError } = await supabase
         .from('agent_info')
         .select('name')
         .single();
       
+      console.log('Agent data:', agentData, 'Agent error:', agentError);
+      
       if (agentData?.name) {
         setAgentName(agentData.name);
+        console.log('Agent name set:', agentData.name);
       }
 
       // Load clients
-      const { data: clientsData } = await supabase
+      const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('*')
         .order('client_name');
       
-      if (clientsData) {
+      console.log('Clients data:', clientsData, 'Clients error:', clientsError);
+      
+      if (clientsData && clientsData.length > 0) {
         setClients(clientsData);
+        console.log('Clients set:', clientsData.length, 'clients loaded');
+      } else {
+        console.log('No clients found or empty array');
       }
     } catch (error) {
       console.error('Error loading agent and clients:', error);
