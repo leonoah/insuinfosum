@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mic, Square, Play, CheckCircle, Loader2 } from "lucide-react";
+import { Mic, Square, Play, CheckCircle, Loader2, MessageCircle, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SelectedProduct } from "@/types/insurance";
@@ -21,14 +21,60 @@ interface ExtractedData {
   highlightedTranscript?: string;
 }
 
+interface ChatMessage {
+  id: string;
+  text: string;
+  speaker: 'סוכן' | 'לקוח';
+  timestamp: string;
+  confidence?: number;
+}
+
 const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcribedText, setTranscribedText] = useState("");
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const chunkCounterRef = useRef(0);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const processAudioChunk = useCallback(async (audioBlob: Blob) => {
+    try {
+      const base64Audio = await blobToBase64(audioBlob);
+      
+      // Send chunk to realtime transcription
+      const { data: transcriptionData, error } = await supabase.functions.invoke('realtime-transcription', {
+        body: { 
+          audioChunk: base64Audio,
+          isLive: true
+        }
+      });
+      
+      if (error) {
+        console.error('Transcription error:', error);
+        return;
+      }
+      
+      if (transcriptionData.text && transcriptionData.text.trim()) {
+        const newMessage: ChatMessage = {
+          id: `${Date.now()}-${Math.random()}`,
+          text: transcriptionData.text.trim(),
+          speaker: transcriptionData.speaker || 'לקוח',
+          timestamp: transcriptionData.timestamp || new Date().toISOString(),
+          confidence: transcriptionData.confidence || 0.8
+        };
+        
+        setChatMessages(prev => [...prev, newMessage]);
+        setTranscribedText(prev => prev + transcriptionData.text + ' ');
+      }
+    } catch (error) {
+      console.error('Error processing audio chunk:', error);
+    }
+  }, []);
 
   const startRecording = async () => {
     try {
@@ -41,16 +87,27 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         } 
       });
       
+      streamRef.current = stream;
+      
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm'
       });
       
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+      chunkCounterRef.current = 0;
+      setChatMessages([]);
+      setTranscribedText("");
       
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          
+          // Process chunk for real-time transcription every 3 seconds
+          chunkCounterRef.current++;
+          if (chunkCounterRef.current % 3 === 0 && event.data.size > 1000) {
+            await processAudioChunk(event.data);
+          }
         }
       };
       
@@ -59,7 +116,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       
       toast({
         title: "הקלטה החלה",
-        description: "השיחה מוקלטת כעת",
+        description: "השיחה מוקלטת ומתומללת בזמן אמת",
       });
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -75,26 +132,27 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     if (!mediaRecorderRef.current) return;
     
     setIsRecording(false);
-    setIsProcessing(true);
+    setIsAnalyzing(true);
     
     mediaRecorderRef.current.onstop = async () => {
       try {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const base64Audio = await blobToBase64(audioBlob);
+        // Combine all transcript text
+        const fullTranscript = transcribedText.trim();
         
-        // Convert audio to text
-        const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('voice-to-text', {
-          body: { audio: base64Audio }
-        });
+        if (!fullTranscript) {
+          setIsAnalyzing(false);
+          toast({
+            title: "אין תמליל",
+            description: "לא זוהה דיבור בהקלטה",
+            variant: "destructive"
+          });
+          return;
+        }
         
-        if (transcriptionError) throw transcriptionError;
-        
-        setTranscribedText(transcriptionData.text);
-        
-        // Extract policy information from text
+        // Extract policy information from full transcript
         const { data: extractionData, error: extractionError } = await supabase.functions.invoke('analyze-call-transcript', {
           body: { 
-            transcript: transcriptionData.text,
+            transcript: fullTranscript,
             agentName: "סוכן ביטוח"
           }
         });
@@ -102,16 +160,16 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         if (extractionError) throw extractionError;
         
         setExtractedData(extractionData);
-        setIsProcessing(false);
+        setIsAnalyzing(false);
         
         toast({
-          title: "ההקלטה עובדה בהצלחה",
+          title: "ניתוח הושלם בהצלחה",
           description: "נתוני הביטוח חולצו מהשיחה",
         });
         
       } catch (error) {
         console.error('Error processing recording:', error);
-        setIsProcessing(false);
+        setIsAnalyzing(false);
         toast({
           title: "שגיאה",
           description: "לא ניתן לעבד את ההקלטה",
@@ -123,8 +181,10 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     mediaRecorderRef.current.stop();
     
     // Stop all tracks
-    const stream = mediaRecorderRef.current.stream;
-    stream?.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
   };
 
   const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -150,14 +210,20 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
   const resetModal = () => {
     setIsRecording(false);
     setIsProcessing(false);
+    setIsAnalyzing(false);
     setTranscribedText("");
     setExtractedData(null);
+    setChatMessages([]);
     audioChunksRef.current = [];
+    chunkCounterRef.current = 0;
   };
 
   const handleClose = () => {
     if (isRecording) {
       stopRecording();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
     }
     onClose();
     resetModal();
@@ -165,32 +231,32 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">הקלטת שיחה עם לקוח</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Recording Animation */}
+          {/* Recording Status */}
           {isRecording && (
             <Card className="border-red-500 bg-red-50 animate-pulse">
-              <CardContent className="flex items-center justify-center py-8">
+              <CardContent className="flex items-center justify-center py-4">
                 <div className="flex items-center gap-4">
                   <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-red-700 font-semibold text-lg">מקליט שיחה...</span>
+                  <span className="text-red-700 font-semibold">מקליט ומתמלל בזמן אמת...</span>
                   <Mic className="w-6 h-6 text-red-500" />
                 </div>
               </CardContent>
             </Card>
           )}
           
-          {/* Processing Animation */}
-          {isProcessing && (
+          {/* Analyzing Status */}
+          {isAnalyzing && (
             <Card className="border-blue-500 bg-blue-50">
-              <CardContent className="flex items-center justify-center py-8">
+              <CardContent className="flex items-center justify-center py-4">
                 <div className="flex items-center gap-4">
                   <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-                  <span className="text-blue-700 font-semibold text-lg">מעבד הקלטה ומחלץ נתונים...</span>
+                  <span className="text-blue-700 font-semibold">מנתח את השיחה ומחלץ נתונים...</span>
                 </div>
               </CardContent>
             </Card>
@@ -198,13 +264,13 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           
           {/* Recording Controls */}
           <div className="flex justify-center gap-4">
-            {!isRecording && !isProcessing && (
+            {!isRecording && !isAnalyzing && (
               <Button 
                 onClick={startRecording}
                 className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg"
               >
                 <Mic className="w-6 h-6 ml-2" />
-                התחל הקלטה
+                התחל הקלטת שיחה
               </Button>
             )}
             
@@ -215,13 +281,62 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                 className="px-8 py-3 text-lg"
               >
                 <Square className="w-6 h-6 ml-2" />
-                עצור הקלטה
+                עצור והתחל ניתוח
               </Button>
             )}
           </div>
+
+          {/* Real-time Chat Window */}
+          {(isRecording || chatMessages.length > 0) && (
+            <Card className="bg-background border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageCircle className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-lg text-foreground">שיחה בזמן אמת</h3>
+                </div>
+                
+                <div className="space-y-3 max-h-96 overflow-y-auto bg-muted/30 p-4 rounded-lg">
+                  {chatMessages.length === 0 && isRecording && (
+                    <div className="text-center text-muted-foreground py-8">
+                      מתחיל להאזין לשיחה...
+                    </div>
+                  )}
+                  
+                  {chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex items-start gap-3 ${
+                        message.speaker === 'סוכן' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[70%] p-3 rounded-lg ${
+                          message.speaker === 'סוכן'
+                            ? 'bg-primary text-primary-foreground ml-auto'
+                            : 'bg-secondary text-secondary-foreground mr-auto'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <User className="w-4 h-4" />
+                          <span className="text-sm font-medium">{message.speaker}</span>
+                          {message.confidence && message.confidence < 0.7 && (
+                            <span className="text-xs opacity-70">(איכות נמוכה)</span>
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed">{message.text}</p>
+                        <div className="text-xs opacity-70 mt-1">
+                          {new Date(message.timestamp).toLocaleTimeString('he-IL')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
-          {/* Transcribed Text */}
-          {transcribedText && (
+          {/* Full Transcript - only show if not real-time or after completion */}
+          {transcribedText && !isRecording && chatMessages.length === 0 && (
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-semibold text-lg mb-3 text-foreground">תמליל השיחה:</h3>
