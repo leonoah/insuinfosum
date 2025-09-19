@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
+import RecordingModal from "./CallRecording/RecordingModal";
 import { SelectedProduct } from "@/types/insurance";
 // Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +75,7 @@ const AppForm = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState("");
+  const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
     clientId: "",
@@ -334,6 +336,23 @@ const AppForm = () => {
     }
   };
 
+  // Handle call recording approval
+  const handleRecordingApproval = (currentProducts: SelectedProduct[], suggestedProducts: SelectedProduct[]) => {
+    const allProducts = [...currentProducts, ...suggestedProducts];
+    setFormData(prev => ({ 
+      ...prev, 
+      products: [...prev.products, ...allProducts] 
+    }));
+    
+    toast({
+      title: "המוצרים נוספו בהצלחה",
+      description: `נוספו ${allProducts.length} מוצרים מניתוח השיחה`,
+    });
+    
+    // Switch to products tab to show the new products
+    setActiveTab("products");
+  };
+
   if (showSummary) {
     return <SummaryGenerator formData={formData} onBack={() => setShowSummary(false)} />;
   }
@@ -361,7 +380,7 @@ const AppForm = () => {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-4 justify-center mb-8">
+        <div className="flex flex-wrap gap-4 justify-center mb-8">
           <Button 
             variant="outline" 
             onClick={saveDraft}
@@ -376,6 +395,14 @@ const AppForm = () => {
             className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
           >
             טען טיוטה
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowRecordingModal(true)}
+            className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
+          >
+            <Phone className="h-4 w-4 ml-2" />
+            הקלט שיחה עם לקוח
           </Button>
         </div>
 
@@ -768,6 +795,17 @@ const AppForm = () => {
           </Button>
         </div>
       </div>
+
+      {/* Recording Modal */}
+      <RecordingModal
+        isOpen={showRecordingModal}
+        onClose={() => setShowRecordingModal(false)}
+        onApprove={handleRecordingApproval}
+      />
+
+      {showSummary && (
+        <SummaryGenerator formData={formData} onBack={() => setShowSummary(false)} />
+      )}
     </div>
   );
 };
