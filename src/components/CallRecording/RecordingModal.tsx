@@ -114,9 +114,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         } else if (clientScore > agentScore) {
           speaker = 'client';
         } else {
-          // If no keywords or tie, alternate based on previous message
-          const lastMessage = chatMessages[chatMessages.length - 1];
-          speaker = lastMessage?.speaker === 'agent' ? 'client' : 'agent';
+          // If no keywords or tie, use callback to get latest state
+          speaker = 'agent'; // Default first speaker
         }
         
         console.log(`Speaker detection: "${transcribedText.substring(0, 50)}..." - Agent: ${agentScore}, Client: ${clientScore}, Result: ${speaker}`);
@@ -130,7 +129,19 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           confidence: 0.8
         };
         
-        setChatMessages(prev => [...prev, newMessage]);
+        console.log('Adding new message:', newMessage);
+        setChatMessages(prev => {
+          console.log('Current messages before adding:', prev.length);
+          // If no clear speaker winner, alternate based on last message
+          if (agentScore === clientScore) {
+            const lastMessage = prev[prev.length - 1];
+            newMessage.speaker = lastMessage?.speaker === 'agent' ? 'client' : 'agent';
+            newMessage.speakerName = newMessage.speaker === 'agent' ? agentName : (selectedClient?.client_name || 'לקוח');
+          }
+          const updated = [...prev, newMessage];
+          console.log('Updated messages after adding:', updated.length, 'Speaker:', newMessage.speaker);
+          return updated;
+        });
         setTranscribedText(prev => prev + ' ' + transcribedText);
       }
     } catch (error) {
@@ -212,6 +223,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           // Process chunk for real-time transcription every 2 seconds
           chunkCounterRef.current++;
           if (chunkCounterRef.current % 2 === 0 && event.data.size > 1000) {
+            console.log('Processing chunk for transcription, current messages:', chatMessages.length);
             // Create a blob from the last few chunks for better audio quality
             const recentChunks = audioChunksRef.current.slice(-3);
             const combinedBlob = new Blob(recentChunks, { type: 'audio/webm' });
