@@ -47,12 +47,9 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     try {
       const base64Audio = await blobToBase64(audioBlob);
       
-      // Send chunk to realtime transcription
-      const { data: transcriptionData, error } = await supabase.functions.invoke('realtime-transcription', {
-        body: { 
-          audioChunk: base64Audio,
-          isLive: true
-        }
+      // Send chunk to voice-to-text function for transcription
+      const { data: transcriptionData, error } = await supabase.functions.invoke('voice-to-text', {
+        body: { audio: base64Audio }
       });
       
       if (error) {
@@ -60,17 +57,39 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         return;
       }
       
-      if (transcriptionData.text && transcriptionData.text.trim()) {
+      if (transcriptionData?.text && transcriptionData.text.trim()) {
+        const transcribedText = transcriptionData.text.trim();
+        
+        // Simple speaker detection
+        let speaker: 'סוכן' | 'לקוח' = 'לקוח'; // Default to client
+        const agentKeywords = [
+          'שלום', 'איך אפשר לעזור', 'אני רוצה להמליץ', 'נראה לי', 'מה דעתך',
+          'אני חושב', 'לפי הניסיון שלי', 'אני מציע', 'בואו נבדוק', 'אני יכול להציע'
+        ];
+        
+        const clientKeywords = [
+          'אני מעוניין', 'כמה זה עולה', 'מה זה אומר', 'לא הבנתי', 
+          'אני רוצה', 'איך זה עובד', 'תוכל להסביר', 'אני צריך'
+        ];
+        
+        const lowerText = transcribedText.toLowerCase();
+        
+        if (agentKeywords.some(keyword => lowerText.includes(keyword))) {
+          speaker = 'סוכן';
+        } else if (clientKeywords.some(keyword => lowerText.includes(keyword))) {
+          speaker = 'לקוח';
+        }
+        
         const newMessage: ChatMessage = {
           id: `${Date.now()}-${Math.random()}`,
-          text: transcriptionData.text.trim(),
-          speaker: transcriptionData.speaker || 'לקוח',
-          timestamp: transcriptionData.timestamp || new Date().toISOString(),
-          confidence: transcriptionData.confidence || 0.8
+          text: transcribedText,
+          speaker: speaker,
+          timestamp: new Date().toISOString(),
+          confidence: 0.8
         };
         
         setChatMessages(prev => [...prev, newMessage]);
-        setTranscribedText(prev => prev + transcriptionData.text + ' ');
+        setTranscribedText(prev => prev + ' ' + transcribedText);
       }
     } catch (error) {
       console.error('Error processing audio chunk:', error);
@@ -107,8 +126,14 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           console.log('Audio chunk received:', event.data.size, 'bytes');
           audioChunksRef.current.push(event.data);
           
-          // Don't process chunks in real-time - wait for complete recording
-          // This prevents "Invalid file format" errors from OpenAI
+          // Process chunk for real-time transcription every 5 seconds
+          chunkCounterRef.current++;
+          if (chunkCounterRef.current % 5 === 0 && event.data.size > 5000) {
+            // Create a blob from the last few chunks for better audio quality
+            const recentChunks = audioChunksRef.current.slice(-5);
+            const combinedBlob = new Blob(recentChunks, { type: 'audio/webm' });
+            await processAudioChunk(combinedBlob);
+          }
         }
       };
       
@@ -117,7 +142,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       
       toast({
         title: "הקלטה החלה",
-        description: "השיחה מוקלטת ותתומלל בסיום ההקלטה",
+        description: "השיחה מוקלטת ומתומללת בזמן אמת",
       });
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -407,15 +432,21 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <MessageCircle className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-lg text-foreground">מצב הקלטה</h3>
+                  <h3 className="font-semibold text-lg text-foreground">שיחה בזמן אמת</h3>
+                  {isRecording && (
+                    <div className="flex items-center gap-2 text-red-600">
+                      <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
+                      <span className="text-sm">מתמלל...</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-3 max-h-96 overflow-y-auto bg-muted/30 p-4 rounded-lg">
-                  {isRecording && (
+                  {chatMessages.length === 0 && isRecording && (
                     <div className="text-center text-muted-foreground py-8">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                        <span>מקליט... השיחה תתומלל בסיום ההקלטה</span>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>מתחיל להאזין לשיחה...</span>
                       </div>
                     </div>
                   )}
@@ -434,15 +465,15 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
                       }`}
                     >
                       <div
-                        className={`max-w-[70%] p-3 rounded-lg ${
+                        className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
                           message.speaker === 'סוכן'
-                            ? 'bg-primary text-primary-foreground ml-auto'
-                            : 'bg-secondary text-secondary-foreground mr-auto'
+                            ? 'bg-blue-500 text-white ml-auto'
+                            : 'bg-gray-100 text-gray-900 mr-auto'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <User className="w-4 h-4" />
-                          <span className="text-sm font-medium">{message.speaker}</span>
+                          <span className="text-sm font-semibold">{message.speaker}</span>
                           {message.confidence && message.confidence < 0.7 && (
                             <span className="text-xs opacity-70">(איכות נמוכה)</span>
                           )}
