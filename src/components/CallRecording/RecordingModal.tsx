@@ -126,11 +126,11 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           console.log('Audio chunk received:', event.data.size, 'bytes');
           audioChunksRef.current.push(event.data);
           
-          // Process chunk for real-time transcription every 5 seconds
+          // Process chunk for real-time transcription every 2 seconds
           chunkCounterRef.current++;
-          if (chunkCounterRef.current % 5 === 0 && event.data.size > 5000) {
+          if (chunkCounterRef.current % 2 === 0 && event.data.size > 1000) {
             // Create a blob from the last few chunks for better audio quality
-            const recentChunks = audioChunksRef.current.slice(-5);
+            const recentChunks = audioChunksRef.current.slice(-3);
             const combinedBlob = new Blob(recentChunks, { type: 'audio/webm' });
             await processAudioChunk(combinedBlob);
           }
