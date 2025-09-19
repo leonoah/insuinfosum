@@ -94,6 +94,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
         mimeType: 'audio/webm'
       });
       
+      console.log('MediaRecorder created with mimeType:', mediaRecorder.mimeType);
+      
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       chunkCounterRef.current = 0;
@@ -102,6 +104,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       
       mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0) {
+          console.log('Audio chunk received:', event.data.size, 'bytes');
           audioChunksRef.current.push(event.data);
           
           // Don't process chunks in real-time - wait for complete recording
@@ -114,7 +117,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
       
       toast({
         title: "הקלטה החלה",
-        description: "השיחה מוקלטת ומתומללת בזמן אמת",
+        description: "השיחה מוקלטת ותתומלל בסיום ההקלטה",
       });
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -134,13 +137,41 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     
     mediaRecorderRef.current.onstop = async () => {
       try {
-        // Combine all transcript text
-        const fullTranscript = transcribedText.trim();
+        // Create complete audio blob from all chunks
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
-        if (!fullTranscript) {
+        if (audioBlob.size === 0) {
           setIsAnalyzing(false);
           toast({
-            title: "אין תמליל",
+            title: "שגיאה",
+            description: "לא נוצר קובץ אודיו תקין",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        console.log(`Processing audio blob of size: ${audioBlob.size} bytes`);
+        
+        // Convert to base64 for transmission
+        const base64Audio = await blobToBase64(audioBlob);
+        
+        // Send to voice-to-text function for full transcription
+        const { data: transcriptionData, error } = await supabase.functions.invoke('voice-to-text', {
+          body: { audio: base64Audio }
+        });
+        
+        if (error) {
+          console.error('Transcription error:', error);
+          throw error;
+        }
+
+        const fullTranscript = transcriptionData?.text || '';
+        setTranscribedText(fullTranscript);
+        
+        if (!fullTranscript || fullTranscript.trim().length === 0) {
+          setIsAnalyzing(false);
+          toast({
+            title: "אין תמלל",
             description: "לא זוהה דיבור בהקלטה",
             variant: "destructive"
           });
