@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, FileText, AlertTriangle, CheckCircle, Clock, Shield, Layers, Layout } from "lucide-react";
+import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, FileText, AlertTriangle, CheckCircle, Clock, Shield, Layers, Layout, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -693,11 +693,137 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-lg max-w-none">
-                  <div className="bg-background border border-border p-8 rounded-2xl shadow-lg">
-                    <pre className="whitespace-pre-wrap font-sans text-foreground leading-[1.8] text-right text-base font-normal">
-                      {summaryText}
-                    </pre>
+                <div className="space-y-6">
+                  {/* Client Information Section */}
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      פרטי הלקוח
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-right">
+                      <div>
+                        <span className="font-semibold text-blue-800 dark:text-blue-200">שם: </span>
+                        <span className="text-blue-700 dark:text-blue-300">{formData.clientName}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-blue-800 dark:text-blue-200">טלפון: </span>
+                        <span className="text-blue-700 dark:text-blue-300">{formData.clientPhone}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-blue-800 dark:text-blue-200">תאריך פגישה: </span>
+                        <span className="text-blue-700 dark:text-blue-300">{formatDate(formData.meetingDate)}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-blue-800 dark:text-blue-200">סוכן: </span>
+                        <span className="text-blue-700 dark:text-blue-300">{agentData?.name || 'לא צוין'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Situation Section */}
+                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 p-6 rounded-2xl border border-amber-200 dark:border-amber-800">
+                    <h3 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      מצב קיים
+                    </h3>
+                    <p className="text-amber-800 dark:text-amber-200 leading-relaxed text-right">
+                      {formData.currentSituation}
+                    </p>
+                  </div>
+
+                  {/* Portfolio Comparison Table */}
+                  {(() => {
+                    const currentProducts = formData.products.filter(p => p.type === 'current');
+                    const recommendedProducts = formData.products.filter(p => p.type === 'recommended');
+                    
+                    if (currentProducts.length > 0 && recommendedProducts.length > 0) {
+                      return (
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 p-6 rounded-2xl border border-green-200 dark:border-green-800">
+                          <h3 className="text-xl font-bold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5" />
+                            השוואת תיקים
+                          </h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg">
+                              <thead>
+                                <tr className="bg-green-600 dark:bg-green-700 text-white">
+                                  <th className="p-4 text-right font-bold border-r border-green-500 dark:border-green-600">השוואת תיקים</th>
+                                  <th className="p-4 text-center font-bold border-r border-green-500 dark:border-green-600">מצב קיים</th>
+                                  <th className="p-4 text-center font-bold">מצב מומלץ</th>
+                                  <th className="p-4 text-center font-bold">הפרש</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                  <td className="p-4 font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">סכום צבירה</td>
+                                  <td className="p-4 text-center text-blue-600 dark:text-blue-400 font-bold">₪{currentProducts.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}</td>
+                                  <td className="p-4 text-center text-green-600 dark:text-green-400 font-bold">₪{recommendedProducts.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}</td>
+                                  <td className="p-4 text-center">
+                                    {(() => {
+                                      const diff = recommendedProducts.reduce((sum, p) => sum + p.amount, 0) - currentProducts.reduce((sum, p) => sum + p.amount, 0);
+                                      return (
+                                        <span className={`font-bold ${diff > 0 ? 'text-green-600 dark:text-green-400' : diff < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                          {diff > 0 ? '+' : ''}₪{diff.toLocaleString()}
+                                        </span>
+                                      );
+                                    })()}
+                                  </td>
+                                </tr>
+                                <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                  <td className="p-4 font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">מוצרים קיימים</td>
+                                  <td className="p-4 text-center text-blue-600 dark:text-blue-400 font-bold">{currentProducts.length}</td>
+                                  <td className="p-4 text-center text-green-600 dark:text-green-400 font-bold">{recommendedProducts.length}</td>
+                                  <td className="p-4 text-center">
+                                    <span className={`font-bold ${recommendedProducts.length - currentProducts.length > 0 ? 'text-green-600 dark:text-green-400' : recommendedProducts.length - currentProducts.length < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                      {recommendedProducts.length - currentProducts.length > 0 ? '+' : ''}{recommendedProducts.length - currentProducts.length}
+                                    </span>
+                                  </td>
+                                </tr>
+                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                  <td className="p-4 font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">ממוצע דמי ניהול מהפקדות</td>
+                                  <td className="p-4 text-center text-blue-600 dark:text-blue-400 font-bold">
+                                    {currentProducts.length > 0 ? 
+                                      `${(currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length).toFixed(2)}%` : 
+                                      '0%'
+                                    }
+                                  </td>
+                                  <td className="p-4 text-center text-green-600 dark:text-green-400 font-bold">
+                                    {recommendedProducts.length > 0 ? 
+                                      `${(recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length).toFixed(2)}%` : 
+                                      '0%'
+                                    }
+                                  </td>
+                                  <td className="p-4 text-center">
+                                    {(() => {
+                                      const currentAvg = currentProducts.length > 0 ? currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length : 0;
+                                      const recommendedAvg = recommendedProducts.length > 0 ? recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length : 0;
+                                      const diff = recommendedAvg - currentAvg;
+                                      return (
+                                        <span className={`font-bold ${diff < 0 ? 'text-green-600 dark:text-green-400' : diff > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                          {diff > 0 ? '+' : ''}{diff.toFixed(2)}%
+                                        </span>
+                                      );
+                                    })()}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Recommendations Section */}
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 p-6 rounded-2xl border border-purple-200 dark:border-purple-800">
+                    <h3 className="text-xl font-bold text-purple-900 dark:text-purple-100 mb-4 flex items-center gap-2">
+                      <MessageCircle className="h-5 w-5" />
+                      המליצות
+                    </h3>
+                    <p className="text-purple-800 dark:text-purple-200 leading-relaxed text-right">
+                      {formData.recommendations || 'לא צוינו המליצות'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
