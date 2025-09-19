@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mic, Square, Play, CheckCircle, Loader2, MessageCircle, User } from "lucide-react";
+import { Mic, Square, Play, CheckCircle, Loader2, MessageCircle, User, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SelectedProduct } from "@/types/insurance";
@@ -41,6 +41,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
   const audioChunksRef = useRef<Blob[]>([]);
   const chunkCounterRef = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const processAudioChunk = useCallback(async (audioBlob: Blob) => {
     try {
@@ -207,6 +208,73 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is audio
+    if (!file.type.startsWith('audio/')) {
+      toast({
+        title: "שגיאה",
+        description: "אנא בחר קובץ אודיו בלבד",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setChatMessages([]);
+    setTranscribedText("");
+    setExtractedData(null);
+
+    try {
+      // Convert file to base64
+      const base64Audio = await blobToBase64(file);
+      
+      // Send to voice-to-text function for full transcription
+      const { data: transcriptionData, error } = await supabase.functions.invoke('voice-to-text', {
+        body: { audio: base64Audio }
+      });
+
+      if (error) throw error;
+
+      const fullTranscript = transcriptionData.text;
+      setTranscribedText(fullTranscript);
+
+      // Extract policy information from transcript
+      const { data: extractionData, error: extractionError } = await supabase.functions.invoke('analyze-call-transcript', {
+        body: { 
+          transcript: fullTranscript,
+          agentName: "סוכן ביטוח"
+        }
+      });
+
+      if (extractionError) throw extractionError;
+
+      setExtractedData(extractionData);
+      setIsAnalyzing(false);
+
+      toast({
+        title: "העלאה הושלמה בהצלחה",
+        description: "נתוני הביטוח חולצו מקובץ האודיו",
+      });
+
+    } catch (error) {
+      console.error('Error processing uploaded file:', error);
+      setIsAnalyzing(false);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לעבד את קובץ האודיו",
+        variant: "destructive"
+      });
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const resetModal = () => {
     setIsRecording(false);
     setIsProcessing(false);
@@ -263,15 +331,34 @@ const RecordingModal = ({ isOpen, onClose, onApprove }: RecordingModalProps) => 
           )}
           
           {/* Recording Controls */}
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 flex-wrap">
             {!isRecording && !isAnalyzing && (
-              <Button 
-                onClick={startRecording}
-                className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg"
-              >
-                <Mic className="w-6 h-6 ml-2" />
-                התחל הקלטת שיחה
-              </Button>
+              <>
+                <Button 
+                  onClick={startRecording}
+                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg"
+                >
+                  <Mic className="w-6 h-6 ml-2" />
+                  התחל הקלטת שיחה
+                </Button>
+                
+                <Button 
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  className="px-8 py-3 text-lg"
+                >
+                  <Upload className="w-6 h-6 ml-2" />
+                  העלה קובץ אודיו
+                </Button>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </>
             )}
             
             {isRecording && (
