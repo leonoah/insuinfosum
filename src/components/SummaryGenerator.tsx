@@ -1,9 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { createRoot } from "react-dom/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, FileText, AlertTriangle, CheckCircle, Clock, Shield, Layers, Layout, BarChart3 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -19,6 +25,93 @@ import { BlockTemplate, DocumentBlock } from "@/types/blocks";
 import { blockTemplates, documentTemplates } from "@/data/blockTemplates";
 import { SelectedProduct } from "@/types/insurance";
 
+const REPORT_SECTION_KEYS = [
+  "personalInfo",
+  "executiveSummary",
+  "detailedBreakdown",
+  "additionalNotes",
+  "disclosures",
+  "nextSteps",
+] as const;
+
+type ReportSectionKey = typeof REPORT_SECTION_KEYS[number];
+
+const REPORT_SECTIONS_DEFAULT: Record<ReportSectionKey, boolean> = {
+  personalInfo: true,
+  executiveSummary: true,
+  detailedBreakdown: true,
+  additionalNotes: true,
+  disclosures: true,
+  nextSteps: true,
+};
+
+const REPORT_SECTION_LABELS: Record<ReportSectionKey, { title: string; description: string; }> = {
+  personalInfo: {
+    title: "פרטים אישיים",
+    description: "שם הלקוח, פרטי קשר, מיקום ותאריך הפגישה",
+  },
+  executiveSummary: {
+    title: "תקציר מנהלים",
+    description: "תמונה מרוכזת של השינויים המרכזיים בתיק",
+  },
+  detailedBreakdown: {
+    title: "פירוט שינויים",
+    description: "טבלאות, גרפים והשוואות בין התיק הקיים למוצע",
+  },
+  additionalNotes: {
+    title: "הרחבות והערות",
+    description: "מצב קיים, סיכונים ותובנות חשובות מהפגישה",
+  },
+  disclosures: {
+    title: "גילוי נאות",
+    description: "הבהרות מקצועיות והסברים רגולטוריים",
+  },
+  nextSteps: {
+    title: "סיכום ומשימות",
+    description: "החלטות, משימות להמשך ולוחות זמנים",
+  },
+};
+
+const REPORT_TEMPLATES: Array<{
+  id: string;
+  name: string;
+  description: string;
+  sections: Record<ReportSectionKey, boolean>;
+}> = [
+  {
+    id: "full",
+    name: "דוח מלא",
+    description: "כולל את כל פרקי הסיכום, הגרפים וההרחבות.",
+    sections: { ...REPORT_SECTIONS_DEFAULT },
+  },
+  {
+    id: "executive",
+    name: "תקציר מנהלים",
+    description: "ממוקד בשינויים המרכזיים והמלצות על המוצרים.",
+    sections: {
+      personalInfo: true,
+      executiveSummary: true,
+      detailedBreakdown: true,
+      additionalNotes: false,
+      disclosures: true,
+      nextSteps: true,
+    },
+  },
+  {
+    id: "actions",
+    name: "פוקוס משימות",
+    description: "מדגיש הערות, גילוי נאות ומשימות המשך ללקוח.",
+    sections: {
+      personalInfo: true,
+      executiveSummary: true,
+      detailedBreakdown: false,
+      additionalNotes: true,
+      disclosures: true,
+      nextSteps: true,
+    },
+  },
+];
+
 interface AgentData {
   name: string;
   phone: string | null;
@@ -32,6 +125,7 @@ interface FormData {
   clientPhone: string;
   clientEmail: string;
   meetingDate: string;
+  meetingLocation?: string;
   topics: string[];
   currentSituation: string;
   risks: string;
@@ -56,6 +150,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [blocks, setBlocks] = useState<DocumentBlock[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showFinalReport, setShowFinalReport] = useState(false);
+  const [showSectionsDialog, setShowSectionsDialog] = useState(false);
+  const [selectedSections, setSelectedSections] = useState<Record<ReportSectionKey, boolean>>({ ...REPORT_SECTIONS_DEFAULT });
+  const [isExpandedMode, setIsExpandedMode] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [agentData, setAgentData] = useState<AgentData>({
     name: "הסוכן שלכם",
     phone: null,
@@ -65,6 +163,31 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
   useEffect(() => {
     loadAgentInfo();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const savedTemplate = localStorage.getItem('insurNote-report-template');
+      if (!savedTemplate) return;
+
+      const parsed = JSON.parse(savedTemplate) as {
+        sections?: Record<string, boolean>;
+        isExpanded?: boolean;
+        templateId?: string | null;
+      };
+
+      if (parsed.sections) {
+        setSelectedSections(prev => ({ ...prev, ...parsed.sections }));
+      }
+      if (typeof parsed.isExpanded === 'boolean') {
+        setIsExpandedMode(parsed.isExpanded);
+      }
+      if (parsed.templateId) {
+        setSelectedTemplateId(parsed.templateId);
+      }
+    } catch (error) {
+      console.error('Error loading saved report template:', error);
+    }
   }, []);
 
   const loadAgentInfo = async () => {
@@ -102,169 +225,318 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     });
   };
 
-  const generateSummaryText = () => {
-    const summaryParts = [];
-    const currentProducts = formData.products?.filter(p => p.type === 'current') || [];
-    const recommendedProducts = formData.products?.filter(p => p.type === 'recommended') || [];
+  const stripHtml = (value: string) => {
+    if (!value) return "";
+    return value
+      .replace(/<br\s*\/?>(?=\s)/gi, '\n')
+      .replace(/<br\s*\/?>(?!\s)/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<li>/gi, '• ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\u00A0/g, ' ')
+      .replace(/\s+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
 
-    // Header
-    summaryParts.push(`נושא: סיכום פגישת ביטוח – ${formData.clientName} – ${formatDate(formData.meetingDate)}`);
-    summaryParts.push('');
-    summaryParts.push(`שלום ${formData.clientName},`);
-    summaryParts.push('');
-    summaryParts.push('להלן סיכום הפגישה שלנו:');
-    summaryParts.push('');
+  const productStats = useMemo(() => {
+    const currentProducts = (formData.products || []).filter(p => p.type === 'current');
+    const recommendedProducts = (formData.products || []).filter(p => p.type === 'recommended');
 
-    // Client details
-    summaryParts.push('פרטי הלקוח:');
-    summaryParts.push(`• שם: ${formData.clientName}`);
-    summaryParts.push(`• טלפון: ${formData.clientPhone}`);
-    summaryParts.push(`• אימייל: ${formData.clientEmail}`);
-    if (formData.topics.length > 0) {
-      summaryParts.push(`• נושאים שנדונו: ${formData.topics.join(', ')}`);
+    const totalCurrentAmount = currentProducts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalRecommendedAmount = recommendedProducts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const amountDifference = totalRecommendedAmount - totalCurrentAmount;
+    const productCountDifference = recommendedProducts.length - currentProducts.length;
+
+    const avgCurrentDeposit = currentProducts.length > 0
+      ? currentProducts.reduce((sum, p) => sum + (p.managementFeeOnDeposit || 0), 0) / currentProducts.length
+      : 0;
+    const avgRecommendedDeposit = recommendedProducts.length > 0
+      ? recommendedProducts.reduce((sum, p) => sum + (p.managementFeeOnDeposit || 0), 0) / recommendedProducts.length
+      : 0;
+    const avgCurrentAccumulation = currentProducts.length > 0
+      ? currentProducts.reduce((sum, p) => sum + (p.managementFeeOnAccumulation || 0), 0) / currentProducts.length
+      : 0;
+    const avgRecommendedAccumulation = recommendedProducts.length > 0
+      ? recommendedProducts.reduce((sum, p) => sum + (p.managementFeeOnAccumulation || 0), 0) / recommendedProducts.length
+      : 0;
+
+    const depositScale = Math.max(avgCurrentDeposit, avgRecommendedDeposit, 0.1);
+    const accumulationScale = Math.max(avgCurrentAccumulation, avgRecommendedAccumulation, 0.1);
+
+    const depositCurrentBar = depositScale ? Math.round((avgCurrentDeposit / depositScale) * 100) : 0;
+    const depositRecommendedBar = depositScale ? Math.round((avgRecommendedDeposit / depositScale) * 100) : 0;
+    const accumulationCurrentBar = accumulationScale ? Math.round((avgCurrentAccumulation / accumulationScale) * 100) : 0;
+    const accumulationRecommendedBar = accumulationScale ? Math.round((avgRecommendedAccumulation / accumulationScale) * 100) : 0;
+
+    const riskShiftCount = recommendedProducts.filter(p => p.riskLevelChange && p.riskLevelChange !== 'no-change' && p.riskLevelChange.trim() !== '').length;
+
+    const highlightBullets: string[] = [];
+
+    if (recommendedProducts.length === 0 && currentProducts.length === 0) {
+      highlightBullets.push('לא הוזנו נתוני מוצרים להשוואה בשלב זה.');
+    } else {
+      if (recommendedProducts.length > 0 && currentProducts.length === 0) {
+        highlightBullets.push(`נבנה תיק מוצע חדש הכולל ${recommendedProducts.length} מוצרים מותאמים.`);
+      }
+
+      if (amountDifference > 0) {
+        highlightBullets.push(`הגדלת היקף החיסכון המצטבר ב-₪${amountDifference.toLocaleString()}.`);
+      } else if (amountDifference < 0) {
+        highlightBullets.push(`הפחתת היקף החיסכון המצטבר ב-₪${Math.abs(amountDifference).toLocaleString()} לטובת איזון או נזילות.`);
+      }
+
+      if (productCountDifference > 0) {
+        highlightBullets.push(`נוספו ${productCountDifference} מוצרים חדשים לפיזור ולהעמקת הכיסוי.`);
+      } else if (productCountDifference < 0) {
+        highlightBullets.push(`צומצמו ${Math.abs(productCountDifference)} מוצרים לצורך ייעול וחיסכון בדמי ניהול.`);
+      }
+
+      const depositDelta = avgRecommendedDeposit - avgCurrentDeposit;
+      if (depositDelta < 0) {
+        highlightBullets.push(`שיפור דמי הניהול הממוצעים מהפקדה ב-${Math.abs(depositDelta).toFixed(2)}%.`);
+      } else if (depositDelta > 0) {
+        highlightBullets.push(`דמי הניהול הממוצעים מהפקדה עלו ב-${depositDelta.toFixed(2)}% עבור פתרון מקצועי יותר.`);
+      }
+
+      const accumulationDelta = avgRecommendedAccumulation - avgCurrentAccumulation;
+      if (accumulationDelta < 0) {
+        highlightBullets.push(`הפחתת דמי הניהול מהצבירה ב-${Math.abs(accumulationDelta).toFixed(2)}%.`);
+      } else if (accumulationDelta > 0) {
+        highlightBullets.push(`דמי הניהול מהצבירה עלו ב-${accumulationDelta.toFixed(2)}% לטובת מסלול בעל פוטנציאל תשואה גבוה יותר.`);
+      }
+
+      if (riskShiftCount > 0) {
+        highlightBullets.push(`בוצעו ${riskShiftCount} התאמות ברמות הסיכון של התיק.`);
+      }
     }
-    summaryParts.push('');
 
-    // Current products
-    if (currentProducts.length > 0) {
-      summaryParts.push('מצב קיים - מוצרים פיננסיים:');
-      currentProducts.forEach((product, index) => {
-        summaryParts.push(`${index + 1}. ${product.productName} - ${product.company}`);
-        summaryParts.push(`   • סוג מסלול: ${product.subType}`);
-        summaryParts.push(`   • סכום צבירה: ₪${product.amount.toLocaleString()}`);
-        summaryParts.push(`   • דמי ניהול: ${product.managementFeeOnDeposit}% מהפקדה, ${product.managementFeeOnAccumulation}% מצבירה`);
-        if (product.investmentTrack) {
-          summaryParts.push(`   • מסלול השקעה: ${product.investmentTrack}`);
-        }
-        if (product.notes) {
-          summaryParts.push(`   • הערות: ${product.notes}`);
-        }
-        summaryParts.push('');
+    if (highlightBullets.length === 0) {
+      highlightBullets.push('לא זוהו שינויים מהותיים בין התיק הקיים למוצע בשלב זה.');
+    }
+
+    return {
+      currentProducts,
+      recommendedProducts,
+      totalCurrentAmount,
+      totalRecommendedAmount,
+      amountDifference,
+      productCountDifference,
+      avgCurrentDeposit,
+      avgRecommendedDeposit,
+      avgCurrentAccumulation,
+      avgRecommendedAccumulation,
+      depositCurrentBar,
+      depositRecommendedBar,
+      accumulationCurrentBar,
+      accumulationRecommendedBar,
+      riskShiftCount,
+      highlightBullets,
+    };
+  }, [formData.products]);
+
+  const sanitizedDecisions = useMemo(() => {
+    return stripHtml(formData.decisions || "");
+  }, [formData.decisions]);
+
+  const decisionsList = useMemo(() => {
+    return sanitizedDecisions
+      ? sanitizedDecisions.split('\n').map(item => item.trim()).filter(Boolean)
+      : [];
+  }, [sanitizedDecisions]);
+
+  const validRecommendations = useMemo(() => {
+    return formData.recommendations.filter(rec => rec && rec.trim());
+  }, [formData.recommendations]);
+
+  const generateSummaryText = (config?: Record<ReportSectionKey, boolean>) => {
+    const appliedConfig = config ?? (isExpandedMode ? selectedSections : REPORT_SECTIONS_DEFAULT);
+    const lines: string[] = [];
+    const locationDisplay = formData.meetingLocation?.trim() ? formData.meetingLocation.trim() : 'לא צויין (ניתן לעדכן)';
+
+    lines.push(`נושא: דוח בחינת מוצרים – ${formData.clientName} – ${formatDate(formData.meetingDate)}`);
+    lines.push('');
+    lines.push(`שלום ${formData.clientName},`);
+    lines.push('');
+    lines.push('להלן הדוח המסכם את שלב בחינת המוצרים וההמלצות שסיכמנו בפגישה:');
+    lines.push('');
+
+    if (appliedConfig.personalInfo) {
+      lines.push('שלב 1 – פרטים אישיים והקשר הפגישה:');
+      lines.push(`• שם הלקוח: ${formData.clientName}`);
+      lines.push(`• טלפון: ${formData.clientPhone}`);
+      lines.push(`• אימייל: ${formData.clientEmail || 'לא צויין'}`);
+      lines.push(`• תאריך השיחה: ${formatDate(formData.meetingDate)}`);
+      lines.push(`• מיקום/אופי הפגישה: ${locationDisplay}`);
+      if (formData.topics.length > 0) {
+        lines.push(`• נושאים מרכזיים: ${formData.topics.join(', ')}`);
+      }
+      lines.push('');
+    }
+
+    if (appliedConfig.executiveSummary) {
+      lines.push('שלב 2 – תקציר מנהלים של בחירת המוצרים:');
+      productStats.highlightBullets.forEach(highlight => {
+        lines.push(`• ${highlight}`);
       });
+      lines.push('');
     }
 
-    // Portfolio comparison section
-    if (currentProducts.length > 0 || recommendedProducts.length > 0) {
-      summaryParts.push('השוואת תיקים:');
-      summaryParts.push('');
-      
-      const totalCurrentAmount = currentProducts.reduce((sum, p) => sum + p.amount, 0);
-      const totalRecommendedAmount = recommendedProducts.reduce((sum, p) => sum + p.amount, 0);
-      const amountDifference = totalRecommendedAmount - totalCurrentAmount;
-      
-      summaryParts.push('┌──────────────────────────────────────────────────────────────┐');
-      summaryParts.push('│                       השוואת תיקים                          │');
-      summaryParts.push('├──────────────────────────────────────────────────────────────┤');
-      summaryParts.push(`│ מצב קיים:        ₪${totalCurrentAmount.toLocaleString().padStart(20)} │`);
-      summaryParts.push(`│ מצב מוצע:        ₪${totalRecommendedAmount.toLocaleString().padStart(20)} │`);
-      summaryParts.push(`│ הפרש:           ${amountDifference >= 0 ? '+' : ''}₪${amountDifference.toLocaleString().padStart(20)} │`);
-      summaryParts.push('├──────────────────────────────────────────────────────────────┤');
-      summaryParts.push(`│ מוצרים קיימים:                                     ${currentProducts.length.toString().padStart(2)} │`);
-      summaryParts.push(`│ מוצרים מוצעים:                                     ${recommendedProducts.length.toString().padStart(2)} │`);
-      
-      if (currentProducts.length > 0) {
-        const avgCurrentDepositFee = currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length;
-        const avgCurrentAccumulationFee = currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / currentProducts.length;
-        summaryParts.push(`│ ממוצע דמי ניהול קיימים:       ${avgCurrentDepositFee.toFixed(2)}% / ${avgCurrentAccumulationFee.toFixed(2)}% │`);
-      }
-      
-      if (recommendedProducts.length > 0) {
-        const avgRecommendedDepositFee = recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length;
-        const avgRecommendedAccumulationFee = recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / recommendedProducts.length;
-        summaryParts.push(`│ ממוצע דמי ניהול מוצעים:       ${avgRecommendedDepositFee.toFixed(2)}% / ${avgRecommendedAccumulationFee.toFixed(2)}% │`);
-      }
-      
-      summaryParts.push('└──────────────────────────────────────────────────────────────┘');
-      summaryParts.push('');
-    }
-
-    // Agent recommendations
-    if (formData.currentSituation || formData.risks || formData.recommendations.some(r => r.trim()) || recommendedProducts.length > 0) {
-      summaryParts.push('המלצות הסוכן:');
-      
-      if (formData.currentSituation) {
-        summaryParts.push(`• מצב קיים כללי: ${formData.currentSituation}`);
-      }
-      
-      if (formData.risks) {
-        summaryParts.push(`• פערים/סיכונים: ${formData.risks}`);
+    if (appliedConfig.detailedBreakdown) {
+      lines.push('שלב 3 – פירוט מלא של השינויים:');
+      lines.push(`• סך צבירה במצב קיים: ₪${productStats.totalCurrentAmount.toLocaleString()}`);
+      lines.push(`• סך צבירה במצב מוצע: ₪${productStats.totalRecommendedAmount.toLocaleString()}`);
+      const diffSign = productStats.amountDifference >= 0 ? '+' : '-';
+      lines.push(`• שינוי מצטבר: ${diffSign}₪${Math.abs(productStats.amountDifference).toLocaleString()}`);
+      lines.push(`• כמות מוצרים: ${productStats.currentProducts.length} קיימים לעומת ${productStats.recommendedProducts.length} מוצעים`);
+      lines.push(`• דמי ניהול מהפקדה: ${productStats.avgCurrentDeposit.toFixed(2)}% ➜ ${productStats.avgRecommendedDeposit.toFixed(2)}%`);
+      lines.push(`• דמי ניהול מצבירה: ${productStats.avgCurrentAccumulation.toFixed(2)}% ➜ ${productStats.avgRecommendedAccumulation.toFixed(2)}%`);
+      if (productStats.riskShiftCount > 0) {
+        lines.push(`• התאמות רמת סיכון: ${productStats.riskShiftCount}`);
       }
 
-      // Recommended products
-      if (recommendedProducts.length > 0) {
-        summaryParts.push('• המלצות מוצרים חדשים:');
-        recommendedProducts.forEach((product, index) => {
-          summaryParts.push(`  ${index + 1}. ${product.productName} - ${product.company}`);
-          summaryParts.push(`     - סוג מסלול: ${product.subType}`);
-          summaryParts.push(`     - סכום צבירה: ₪${product.amount.toLocaleString()}`);
-          summaryParts.push(`     - דמי ניהול: ${product.managementFeeOnDeposit}% מהפקדה, ${product.managementFeeOnAccumulation}% מצבירה`);
+      if (productStats.recommendedProducts.length > 0) {
+        lines.push('• מוצרים מוצעים לשינוי:');
+        productStats.recommendedProducts.forEach((product, index) => {
+          lines.push(`  ${index + 1}. ${product.productName} (${product.company})`);
+          lines.push(`     - מסלול: ${product.subType}`);
+          lines.push(`     - סכום צבירה: ₪${product.amount.toLocaleString()}`);
+          lines.push(`     - דמי ניהול: ${product.managementFeeOnDeposit}% מהפקדה | ${product.managementFeeOnAccumulation}% מצבירה`);
           if (product.investmentTrack) {
-            summaryParts.push(`     - מסלול השקעה: ${product.investmentTrack}`);
+            lines.push(`     - מסלול השקעה: ${product.investmentTrack}`);
           }
-          if (product.riskLevelChange) {
-            summaryParts.push(`     - שינוי רמת סיכון: ${product.riskLevelChange}`);
+          if (product.riskLevelChange && product.riskLevelChange !== 'no-change') {
+            lines.push(`     - שינוי רמת סיכון: ${product.riskLevelChange}`);
           }
           if (product.notes) {
-            summaryParts.push(`     - הערות: ${product.notes}`);
+            lines.push(`     - הערות נוספות: ${product.notes}`);
           }
         });
       }
-      
-      const validRecommendations = formData.recommendations.filter(r => r.trim());
+
+      if (productStats.currentProducts.length > 0) {
+        lines.push('• מוצרים קיימים שנבדקו:');
+        productStats.currentProducts.forEach((product, index) => {
+          lines.push(`  ${index + 1}. ${product.productName} (${product.company}) – ₪${product.amount.toLocaleString()}`);
+        });
+      }
+
+      lines.push('');
+    }
+
+    if (appliedConfig.additionalNotes) {
+      lines.push('שלב 4 – הרחבות, הערות ותובנות:');
+      if (formData.currentSituation) {
+        lines.push(`• מצב קיים בקצרה: ${formData.currentSituation}`);
+      }
+      if (formData.risks) {
+        lines.push(`• פערים או סיכונים שזוהו: ${formData.risks}`);
+      }
       if (validRecommendations.length > 0) {
-        summaryParts.push('• המלצות נוספות:');
-        validRecommendations.forEach(rec => {
-          summaryParts.push(`  - ${rec}`);
-        });
+        lines.push('• המלצות המשך:');
+        validRecommendations.forEach(rec => lines.push(`  - ${rec}`));
       }
-      
       if (formData.estimatedCost) {
-        summaryParts.push(`• הערכת עלות: ${formData.estimatedCost}`);
+        lines.push(`• הערכת עלות משוערת: ${formData.estimatedCost}`);
       }
-      
-      summaryParts.push('');
+      lines.push('');
     }
 
-    // Decisions
-    if (formData.decisions) {
-      summaryParts.push('החלטות שהתקבלו:');
-      summaryParts.push(`${formData.decisions}`);
-      summaryParts.push('');
+    if (appliedConfig.disclosures) {
+      lines.push('שלב 5 – גילוי נאות:');
+      lines.push('• ההמלצות מבוססות על הנתונים שסופקו ועל מידע עדכני מהגופים המוסדיים.');
+      lines.push('• ייתכנו שינויים במדיניות ההשקעה או בדמי הניהול מצד החברות לאחר מועד הפגישה.');
+      lines.push('• יש לוודא שהמידע במסמך תואם את הצרכים האישיים והעדפות הסיכון של הלקוח.');
+      lines.push('');
     }
 
-    // Documents and actions
-    if (formData.documents.length > 0 || formData.timeframes || formData.approvals) {
-      summaryParts.push('פעולות נדרשות:');
-      
+    if (appliedConfig.nextSteps) {
+      lines.push('שלב 6 – סיכום ומשימות להמשך:');
+      if (decisionsList.length > 0) {
+        lines.push('• החלטות שהתקבלו:');
+        decisionsList.forEach(item => lines.push(`  - ${item}`));
+      }
       if (formData.documents.length > 0) {
-        summaryParts.push('• מסמכים להכנה:');
-        formData.documents.forEach(doc => {
-          summaryParts.push(`  - ${doc}`);
-        });
+        lines.push('• מסמכים/אישורים לאיסוף:');
+        formData.documents.forEach(doc => lines.push(`  - ${doc}`));
       }
-      
       if (formData.timeframes) {
-        summaryParts.push(`• לוח זמנים: ${formData.timeframes}`);
+        lines.push(`• לוחות זמנים לביצוע: ${formData.timeframes}`);
       }
-      
       if (formData.approvals) {
-        summaryParts.push(`• אישורים נדרשים: ${formData.approvals}`);
+        lines.push(`• אישורים נדרשים: ${formData.approvals}`);
       }
-      
-      summaryParts.push('');
+      lines.push('');
     }
 
-    // Footer
-    summaryParts.push('בברכה,');
-    summaryParts.push(agentData.name);
+    lines.push('בברכה,');
+    lines.push(agentData.name);
     if (agentData.phone) {
-      summaryParts.push(`טלפון: ${agentData.phone}`);
+      lines.push(`טלפון: ${agentData.phone}`);
     }
     if (agentData.email) {
-      summaryParts.push(`אימייל: ${agentData.email}`);
+      lines.push(`אימייל: ${agentData.email}`);
     }
 
-    return summaryParts.join('\n');
+    return lines.join('\n');
+  };
+
+  const handleSectionToggle = (key: ReportSectionKey, checked: boolean | "indeterminate") => {
+    const value = checked === true;
+    setSelectedSections(prev => ({ ...prev, [key]: value }));
+    setSelectedTemplateId('custom');
+  };
+
+  const applyTemplate = (templateId: string) => {
+    if (templateId === 'custom') {
+      setSelectedTemplateId('custom');
+      setIsExpandedMode(true);
+      return;
+    }
+
+    const template = REPORT_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+
+    setSelectedSections({ ...REPORT_SECTIONS_DEFAULT, ...template.sections });
+    setSelectedTemplateId(templateId);
+    setIsExpandedMode(true);
+  };
+
+  const resetSectionsToDefault = () => {
+    setSelectedSections({ ...REPORT_SECTIONS_DEFAULT });
+    setIsExpandedMode(false);
+    setSelectedTemplateId(null);
+    localStorage.removeItem('insurNote-report-template');
+
+    toast({
+      title: "הגדרות אופסו",
+      description: "הדוח חזר לתצוגת ברירת המחדל.",
+    });
+  };
+
+  const handleSaveTemplate = () => {
+    try {
+      localStorage.setItem('insurNote-report-template', JSON.stringify({
+        sections: selectedSections,
+        isExpanded: isExpandedMode,
+        templateId: selectedTemplateId,
+      }));
+
+      toast({
+        title: "התבנית נשמרה",
+        description: "הגדרות הדוח המורחב ישמרו לשימוש הבא.",
+      });
+      setShowSectionsDialog(false);
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה לשמור את התבנית.",
+        variant: "destructive",
+      });
+    }
   };
 
   const copyToClipboard = async (text: string, itemId: string) => {
@@ -307,70 +579,107 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
   const downloadPDF = async () => {
     try {
-      // Create HTML content for better Hebrew support
-      const reportContent = document.createElement('div');
-      reportContent.style.cssText = `
-        width: 800px;
-        padding: 40px;
-        font-family: 'Assistant', 'Heebo', Arial, sans-serif;
-        background: white;
-        direction: rtl;
-        text-align: right;
-        color: #333;
-        line-height: 1.6;
-        position: absolute;
-        top: -10000px;
-        left: -10000px;
-      `;
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.top = '-10000px';
+      container.style.left = '-10000px';
+      container.style.width = '900px';
+      container.style.padding = '40px';
+      container.style.background = 'transparent';
+      container.style.zIndex = '-1';
+      container.setAttribute('dir', 'rtl');
 
-      const currentProducts = formData.products?.filter(p => p.type === 'current') || [];
-      const recommendedProducts = formData.products?.filter(p => p.type === 'recommended') || [];
-      
-      reportContent.innerHTML = `
-        <div style="background: #3b82f6; color: white; padding: 30px; text-align: center;">
-          <h1>דוח ייעוץ פיננסי - ${agentData.name}</h1>
-          <p>${formatDate(formData.meetingDate)}</p>
-        </div>
-        <div style="padding: 25px; background: #f8fafc; margin: 20px 0;">
-          <h2>פרטי הלקוח</h2>
-          <p><strong>שם:</strong> ${formData.clientName}</p>
-          <p><strong>טלפון:</strong> ${formData.clientPhone}</p>
-          <p><strong>אימייל:</strong> ${formData.clientEmail}</p>
-        </div>
-        ${formData.decisions ? `<div style="padding: 25px; background: #fffbeb; margin: 20px 0;">
-          <h2>החלטות</h2><div>${formData.decisions.replace(/\n/g, '<br>')}</div></div>` : ''}
-        <div style="background: #3b82f6; color: white; padding: 20px; text-align: center;">
-          <p>בברכה, ${agentData.name}</p>
-          ${agentData.phone ? `<p>טלפון: ${agentData.phone}</p>` : ''}
-        </div>
-      `;
+      document.body.appendChild(container);
 
-      document.body.appendChild(reportContent);
-      
-      const canvas = await html2canvas(reportContent, {
+      const root = createRoot(container);
+      root.render(
+        <div className="w-[820px] max-w-[820px] rounded-[32px] bg-white text-right text-slate-900 shadow-2xl" dir="rtl">
+          <div className="rounded-t-[32px] bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-10 text-white">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-1 text-right">
+                  <p className="text-sm font-medium text-white/80">דוח בחירת מוצרים</p>
+                  <h1 className="text-3xl font-bold">{formData.clientName || 'ללא שם'}</h1>
+                  <p className="text-sm text-white/90">
+                    {formatDate(formData.meetingDate)} {locationDisplay ? `| ${locationDisplay}` : ''}
+                  </p>
+                </div>
+                {agentData?.logo_url ? (
+                  <img
+                    src={agentData.logo_url}
+                    alt="לוגו הסוכן"
+                    className="h-16 w-16 rounded-full border border-white/40 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/40 bg-white/20 text-2xl font-semibold">
+                    {(agentData?.name || 'הסוכן שלכם').charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-white/80">
+                <span>סוכן מלווה: {agentData?.name || 'הסוכן שלכם'}</span>
+                {agentData?.phone && <span>טלפון: {agentData.phone}</span>}
+                {agentData?.email && <span>אימייל: {agentData.email}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-10">
+            {renderReportSections('modal')}
+          </div>
+
+          <div className="rounded-b-[32px] bg-slate-900 p-8 text-slate-100">
+            <h2 className="text-xl font-semibold">סיכום ותודה</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              נשמח להמשיך וללוות אותך בכל שאלה או בקשה נוספת.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+              <span>הוכן על ידי {agentData?.name || 'הסוכן שלכם'}</span>
+              <span>{formatDate(new Date().toISOString())}</span>
+            </div>
+          </div>
+        </div>
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const captureElement = (container.firstElementChild as HTMLElement) ?? container;
+      const canvas = await html2canvas(captureElement, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff'
       });
 
-      document.body.removeChild(reportContent);
+      root.unmount();
+      document.body.removeChild(container);
 
       const pdf = new jsPDF('portrait', 'mm', 'a4');
       const imgData = canvas.toDataURL('image/png');
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = 297;
+      let heightLeft = imgHeight - pageHeight;
+      let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
       pdf.save(`דוח_${formData.clientName}_${formData.meetingDate}.pdf`);
 
       toast({
         title: "PDF נוצר בהצלחה",
-        description: "הדוח הורד עם תמיכה מלאה בעברית",
+        description: "הדוח הופק בהתאם לעיצוב החדש",
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
-        title: "שגיאה", 
+        title: "שגיאה",
         description: "לא ניתן ליצור את קובץ ה-PDF",
         variant: "destructive"
       });
@@ -529,11 +838,543 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     );
   };
 
-  const summaryText = generateSummaryText();
+  const effectiveSections = isExpandedMode ? selectedSections : REPORT_SECTIONS_DEFAULT;
+  const summaryText = generateSummaryText(effectiveSections);
+  const templateValue = selectedTemplateId ?? (isExpandedMode ? 'custom' : 'full');
+  const locationDisplay = formData.meetingLocation?.trim() ? formData.meetingLocation.trim() : 'לא צויין';
+  const amountDifference = productStats.amountDifference;
+  const depositDelta = productStats.avgRecommendedDeposit - productStats.avgCurrentDeposit;
+  const accumulationDelta = productStats.avgRecommendedAccumulation - productStats.avgCurrentAccumulation;
+
+
+  const renderReportSections = (mode: 'inline' | 'modal' = 'inline') => (
+
+                <div className={mode === 'modal' ? 'space-y-8 text-right' : 'space-y-6'}>
+                  {effectiveSections.personalInfo && (
+                    <section className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/60 p-6 shadow-inner">
+                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-blue-900">
+                          <User className="h-5 w-5" />
+                          <h3 className="text-xl font-bold">שלב 1: פרטים אישיים</h3>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="rounded-full border-blue-200 bg-white/80 text-blue-700">
+                            {formatDate(formData.meetingDate)}
+                          </Badge>
+                          <Badge variant="secondary" className="rounded-full border-blue-200 bg-blue-600/10 text-blue-700">
+                            {isExpandedMode ? 'מצב מורחב פעיל' : 'תצוגה מלאה'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="grid gap-4 text-right md:grid-cols-2 xl:grid-cols-3">
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase text-blue-500">שם הלקוח</span>
+                            <User className="h-4 w-4 text-blue-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-blue-900">{formData.clientName || 'לא צויין'}</p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase text-blue-500">טלפון</span>
+                            <Phone className="h-4 w-4 text-blue-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-blue-900">{formData.clientPhone || 'לא צויין'}</p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase text-blue-500">אימייל</span>
+                            <Mail className="h-4 w-4 text-blue-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-blue-900">{formData.clientEmail || 'לא צויין'}</p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase text-blue-500">מיקום הפגישה</span>
+                            <MapPin className="h-4 w-4 text-blue-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-blue-900">{locationDisplay}</p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase text-blue-500">סוכן מלווה</span>
+                            <Shield className="h-4 w-4 text-blue-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-blue-900">{agentData?.name || 'הסוכן שלכם'}</p>
+                          {agentData?.phone && (
+                            <p className="text-sm text-blue-700">{agentData.phone}</p>
+                          )}
+                        </div>
+                      </div>
+                      {formData.topics.length > 0 && (
+                        <div className="mt-4 flex flex-wrap justify-end gap-2">
+                          {formData.topics.map((topic) => (
+                            <Badge key={topic} className="rounded-full border-blue-200 bg-blue-600/10 px-4 py-1 text-blue-800">
+                              {topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  )}
+
+                  {effectiveSections.executiveSummary && (
+                    <section className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-100/50 p-6 shadow-inner">
+                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-amber-900">
+                          <Sparkles className="h-5 w-5" />
+                          <h3 className="text-xl font-bold">שלב 2: תקציר מנהלים – בחירת המוצרים</h3>
+                        </div>
+                        <Badge variant="outline" className="rounded-full border-amber-200 bg-white/80 text-amber-700">
+                          שינויים מרכזיים
+                        </Badge>
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <p className="text-sm font-medium text-amber-600">סה״כ צבירה</p>
+                          <p className="mt-2 text-lg font-bold text-amber-900">
+                            ₪{productStats.totalCurrentAmount.toLocaleString()} → ₪{productStats.totalRecommendedAmount.toLocaleString()}
+                          </p>
+                          <p className={`text-sm font-semibold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                            {amountDifference === 0 ? 'ללא שינוי' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <p className="text-sm font-medium text-amber-600">מספר מוצרים</p>
+                          <p className="mt-2 text-lg font-bold text-amber-900">
+                            {productStats.currentProducts.length} → {productStats.recommendedProducts.length}
+                          </p>
+                          <p className={`text-sm font-semibold ${productStats.productCountDifference > 0 ? 'text-green-600' : productStats.productCountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                            {productStats.productCountDifference === 0 ? 'ללא שינוי' : `${productStats.productCountDifference > 0 ? '+' : ''}${productStats.productCountDifference}`}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <p className="text-sm font-medium text-amber-600">דמי ניהול ממוצעים</p>
+                          <p className="mt-2 text-lg font-bold text-amber-900">
+                            {productStats.avgCurrentDeposit.toFixed(2)}% → {productStats.avgRecommendedDeposit.toFixed(2)}%
+                          </p>
+                          <p className={`text-sm font-semibold ${depositDelta < 0 ? 'text-green-600' : depositDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                            {depositDelta === 0 ? 'ללא שינוי בדמי ניהול' : depositDelta < 0 ? `הפחתה של ${Math.abs(depositDelta).toFixed(2)}%` : `עלייה של ${depositDelta.toFixed(2)}%`}
+                          </p>
+                        </div>
+                      </div>
+                      <ul className="mt-6 space-y-2 text-right">
+                        {productStats.highlightBullets.map((highlight, index) => (
+                          <li key={index} className="flex items-start justify-end gap-2 text-sm text-amber-900">
+                            <span className="mt-1 h-2 w-2 rounded-full bg-amber-500" />
+                            <span>{highlight}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {effectiveSections.detailedBreakdown && (
+                    <section className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 via-white to-emerald-100/60 p-6 shadow-inner">
+                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-green-900">
+                          <FileSpreadsheet className="h-5 w-5" />
+                          <h3 className="text-xl font-bold">שלב 3: פירוט מלא של השינוי</h3>
+                        </div>
+                        <Badge variant="outline" className="rounded-full border-green-200 bg-white/80 text-green-700">
+                          השוואת תיק קיים מול מוצע
+                        </Badge>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <p className="text-sm font-medium text-green-600">צבירה כוללת</p>
+                          <p className="mt-2 text-lg font-bold text-green-900">
+                            ₪{productStats.totalCurrentAmount.toLocaleString()} → ₪{productStats.totalRecommendedAmount.toLocaleString()}
+                          </p>
+                          <p className={`text-sm font-semibold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                            {amountDifference === 0 ? 'ללא שינוי' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <p className="text-sm font-medium text-green-600">התאמות ברמת הסיכון</p>
+                          <p className="mt-2 text-lg font-bold text-green-900">{productStats.riskShiftCount}</p>
+                          <p className="text-sm text-muted-foreground">מספר המוצרים שעברו התאמת סיכון</p>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <p className="text-sm font-medium text-green-600">דמי ניהול מצבירה</p>
+                          <p className="mt-2 text-lg font-bold text-green-900">
+                            {productStats.avgCurrentAccumulation.toFixed(2)}% → {productStats.avgRecommendedAccumulation.toFixed(2)}%
+                          </p>
+                          <p className={`text-sm font-semibold ${accumulationDelta < 0 ? 'text-green-600' : accumulationDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                            {accumulationDelta === 0 ? 'ללא שינוי' : accumulationDelta < 0 ? `חיסכון של ${Math.abs(accumulationDelta).toFixed(2)}%` : `תוספת של ${accumulationDelta.toFixed(2)}%`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 grid gap-6 md:grid-cols-2">
+                        <div className="rounded-2xl bg-white/80 p-5 shadow-sm">
+                          <div className="mb-4 flex items-center justify-between">
+                            <div className="text-right">
+                              <h4 className="text-lg font-semibold text-green-900">דמי ניהול מהפקדה</h4>
+                              <p className="text-sm text-muted-foreground">ממוצע משוקלל</p>
+                            </div>
+                            <PieChart className="h-6 w-6 text-green-500" />
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                                <span>מצב קיים</span>
+                                <span>{productStats.avgCurrentDeposit.toFixed(2)}%</span>
+                              </div>
+                              <div className="h-2.5 rounded-full bg-green-100">
+                                <div className="h-full rounded-full bg-green-500" style={{ width: `${productStats.depositCurrentBar || 0}%` }} />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                                <span>מצב מוצע</span>
+                                <span>{productStats.avgRecommendedDeposit.toFixed(2)}%</span>
+                              </div>
+                              <div className="h-2.5 rounded-full bg-green-100">
+                                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${productStats.depositRecommendedBar || 0}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-white/80 p-5 shadow-sm">
+                          <div className="mb-4 flex items-center justify-between">
+                            <div className="text-right">
+                              <h4 className="text-lg font-semibold text-green-900">דמי ניהול מצבירה</h4>
+                              <p className="text-sm text-muted-foreground">ממוצע משוקלל</p>
+                            </div>
+                            <BarChart3 className="h-6 w-6 text-green-500" />
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                                <span>מצב קיים</span>
+                                <span>{productStats.avgCurrentAccumulation.toFixed(2)}%</span>
+                              </div>
+                              <div className="h-2.5 rounded-full bg-green-100">
+                                <div className="h-full rounded-full bg-green-500" style={{ width: `${productStats.accumulationCurrentBar || 0}%` }} />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                                <span>מצב מוצע</span>
+                                <span>{productStats.avgRecommendedAccumulation.toFixed(2)}%</span>
+                              </div>
+                              <div className="h-2.5 rounded-full bg-green-100">
+                                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${productStats.accumulationRecommendedBar || 0}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 overflow-x-auto rounded-2xl border border-green-200 bg-white/80 shadow-sm">
+                        <table className="w-full border-collapse text-right">
+                          <thead>
+                            <tr className="bg-green-500/90 text-white">
+                              <th className="p-4 text-right font-semibold">מדד להשוואה</th>
+                              <th className="p-4 text-center font-semibold">מצב קיים</th>
+                              <th className="p-4 text-center font-semibold">מצב מוצע</th>
+                              <th className="p-4 text-center font-semibold">שינוי</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-sm text-foreground">
+                            <tr className="border-b border-green-100">
+                              <td className="p-4 font-semibold text-green-900">סכום צבירה</td>
+                              <td className="p-4 text-center font-bold text-green-800">₪{productStats.totalCurrentAmount.toLocaleString()}</td>
+                              <td className="p-4 text-center font-bold text-green-800">₪{productStats.totalRecommendedAmount.toLocaleString()}</td>
+                              <td className={`p-4 text-center font-bold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                {amountDifference === 0 ? '0' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
+                              </td>
+                            </tr>
+                            <tr className="border-b border-green-100">
+                              <td className="p-4 font-semibold text-green-900">מספר מוצרים</td>
+                              <td className="p-4 text-center font-bold text-green-800">{productStats.currentProducts.length}</td>
+                              <td className="p-4 text-center font-bold text-green-800">{productStats.recommendedProducts.length}</td>
+                              <td className={`p-4 text-center font-bold ${productStats.productCountDifference > 0 ? 'text-green-600' : productStats.productCountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                {productStats.productCountDifference === 0 ? '0' : `${productStats.productCountDifference > 0 ? '+' : ''}${productStats.productCountDifference}`}
+                              </td>
+                            </tr>
+                            <tr className="border-b border-green-100">
+                              <td className="p-4 font-semibold text-green-900">דמי ניהול מהפקדה</td>
+                              <td className="p-4 text-center text-green-800">{productStats.avgCurrentDeposit.toFixed(2)}%</td>
+                              <td className="p-4 text-center text-green-800">{productStats.avgRecommendedDeposit.toFixed(2)}%</td>
+                              <td className={`p-4 text-center font-bold ${depositDelta < 0 ? 'text-green-600' : depositDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                {depositDelta === 0 ? '0%' : `${depositDelta > 0 ? '+' : ''}${depositDelta.toFixed(2)}%`}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-4 font-semibold text-green-900">דמי ניהול מצבירה</td>
+                              <td className="p-4 text-center text-green-800">{productStats.avgCurrentAccumulation.toFixed(2)}%</td>
+                              <td className="p-4 text-center text-green-800">{productStats.avgRecommendedAccumulation.toFixed(2)}%</td>
+                              <td className={`p-4 text-center font-bold ${accumulationDelta < 0 ? 'text-green-600' : accumulationDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                                {accumulationDelta === 0 ? '0%' : `${accumulationDelta > 0 ? '+' : ''}${accumulationDelta.toFixed(2)}%`}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {productStats.recommendedProducts.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="mb-3 text-lg font-semibold text-green-900">מוצרים מומלצים</h4>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {productStats.recommendedProducts.map((product) => (
+                              <div key={product.id} className="rounded-2xl border border-green-200 bg-gradient-to-br from-white via-green-50 to-green-100/60 p-5 shadow-sm">
+                                <div className="mb-3 flex items-center justify-between">
+                                  <p className="text-lg font-bold text-green-900">{product.productName}</p>
+                                  <Badge variant="outline" className="rounded-full border-green-300 bg-white/70 text-green-700">
+                                    {product.company}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-2 text-sm text-green-900">
+                                  <p>מסלול: <span className="font-semibold">{product.subType}</span></p>
+                                  <p>צבירה: <span className="font-semibold">₪{product.amount.toLocaleString()}</span></p>
+                                  <p>דמי ניהול: <span className="font-semibold">{product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה</span></p>
+                                  {product.investmentTrack && <p>מסלול השקעה: <span className="font-semibold">{product.investmentTrack}</span></p>}
+                                  {product.riskLevelChange && product.riskLevelChange !== 'no-change' && (
+                                    <p>שינוי רמת סיכון: <span className="font-semibold">{product.riskLevelChange}</span></p>
+                                  )}
+                                </div>
+                                {product.notes && (
+                                  <p className="mt-3 rounded-xl bg-green-600/10 p-3 text-sm text-green-800">{product.notes}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {productStats.currentProducts.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="mb-3 text-lg font-semibold text-green-900">מוצרים קיימים שנבדקו</h4>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {productStats.currentProducts.map((product) => (
+                              <div key={product.id} className="rounded-2xl border border-green-100 bg-white/70 p-4 text-right shadow-sm">
+                                <p className="text-base font-semibold text-green-900">{product.productName}</p>
+                                <p className="text-sm text-muted-foreground">{product.company}</p>
+                                <p className="mt-2 text-sm text-green-800">₪{product.amount.toLocaleString()}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  )}
+
+                  {effectiveSections.additionalNotes && (
+                    <section className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-purple-100/60 p-6 shadow-inner">
+                      <div className="mb-4 flex items-center gap-2 text-purple-900">
+                        <NotebookPen className="h-5 w-5" />
+                        <h3 className="text-xl font-bold">שלב 4: הרחבות והערות</h3>
+                      </div>
+                      <div className="space-y-4 text-right">
+                        {formData.currentSituation ? (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-purple-900">מצב קיים</h4>
+                            <p className="text-sm leading-relaxed text-purple-800">{formData.currentSituation}</p>
+                          </div>
+                        ) : null}
+                        {formData.risks ? (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-purple-900">פערים וסיכונים</h4>
+                            <p className="text-sm leading-relaxed text-purple-800">{formData.risks}</p>
+                          </div>
+                        ) : null}
+                        {validRecommendations.length > 0 && (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-purple-900">המלצות להמשך</h4>
+                            <ul className="space-y-2 text-sm text-purple-800">
+                              {validRecommendations.map((rec, index) => (
+                                <li key={index} className="flex items-start justify-end gap-2">
+                                  <span className="mt-1 h-2 w-2 rounded-full bg-purple-500" />
+                                  <span>{rec}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {formData.estimatedCost && (
+                          <div className="rounded-2xl border border-purple-200 bg-purple-600/10 p-4 text-purple-900 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold">הערכת עלות</h4>
+                            <p className="text-sm">{formData.estimatedCost}</p>
+                          </div>
+                        )}
+                        {!formData.currentSituation && !formData.risks && validRecommendations.length === 0 && !formData.estimatedCost && (
+                          <p className="text-sm text-muted-foreground">לא הוזנו הרחבות נוספות לדוח זה.</p>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {effectiveSections.disclosures && (
+                    <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100/70 p-6 shadow-inner">
+                      <div className="mb-4 flex items-center gap-2 text-slate-900">
+                        <ShieldAlert className="h-5 w-5" />
+                        <h3 className="text-xl font-bold">שלב 5: גילוי נאות</h3>
+                      </div>
+                      <ul className="space-y-2 text-right text-sm text-slate-700">
+                        <li className="flex items-start justify-end gap-2">
+                          <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
+                          <span>הנתונים מבוססים על המידע שנמסר לנו ועל עדכונים אחרונים מהחברות המוסדיות.</span>
+                        </li>
+                        <li className="flex items-start justify-end gap-2">
+                          <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
+                          <span>דמי ניהול, מסלולים ומדיניות השקעה עשויים להשתנות לאחר מועד הכנת הדוח.</span>
+                        </li>
+                        <li className="flex items-start justify-end gap-2">
+                          <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
+                          <span>מומלץ לוודא שההמלצות תואמות את צרכי הלקוח, רמת הסיכון הרצויה והגדרת היעדים האישיים.</span>
+                        </li>
+                      </ul>
+                    </section>
+                  )}
+
+                  {effectiveSections.nextSteps && (
+                    <section className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-100/60 p-6 shadow-inner">
+                      <div className="mb-4 flex items-center gap-2 text-orange-900">
+                        <Flag className="h-5 w-5" />
+                        <h3 className="text-xl font-bold">שלב 6: סיכום ומשימות להמשך</h3>
+                      </div>
+                      <div className="space-y-4 text-right">
+                        {formData.decisions && (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-orange-900">החלטות שהתקבלו</h4>
+                            <div className="ai-content text-right text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: formData.decisions }} />
+                          </div>
+                        )}
+                        {formData.documents.length > 0 && (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-orange-900">מסמכים ואישורים</h4>
+                            <ul className="space-y-2 text-sm text-orange-900">
+                              {formData.documents.map((doc, index) => (
+                                <li key={index} className="flex items-start justify-end gap-2">
+                                  <span className="mt-1 h-2 w-2 rounded-full bg-orange-500" />
+                                  <span>{doc}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {formData.timeframes && (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-orange-900">לוחות זמנים</h4>
+                            <p className="text-sm text-orange-900">{formData.timeframes}</p>
+                          </div>
+                        )}
+                        {formData.approvals && (
+                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                            <h4 className="mb-2 text-lg font-semibold text-orange-900">אישורים נדרשים</h4>
+                            <p className="text-sm text-orange-900">{formData.approvals}</p>
+                          </div>
+                        )}
+                        {!formData.decisions && formData.documents.length === 0 && !formData.timeframes && !formData.approvals && (
+                          <p className="text-sm text-muted-foreground">לא הוגדרו משימות להמשך בשלב זה.</p>
+                        )}
+                      </div>
+                    </section>
+                  )}
+                </div>
+  );
+
 
   return (
     <div className="min-h-screen pt-20 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
+        <Dialog open={showSectionsDialog} onOpenChange={setShowSectionsDialog}>
+          <DialogContent className="max-w-2xl rounded-3xl">
+            <DialogHeader className="text-right">
+              <DialogTitle className="text-2xl font-semibold">התאמת דוח מורחב</DialogTitle>
+              <DialogDescription>
+                בחרו את הפרקים שיופיעו בדוח הסופי, השתמשו בתבניות מוכנות ושמרו את ההגדרות לפעם הבאה.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 text-right">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4">
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">מצב דוח מורחב</p>
+                  <p className="text-sm text-muted-foreground">
+                    הפעלה תאפשר לבחור אילו פרקים יוצגו בדוח ולהתאים אותו ללקוח הבא בקלות.
+                  </p>
+                </div>
+                <Switch checked={isExpandedMode} onCheckedChange={(checked) => setIsExpandedMode(!!checked)} />
+              </div>
+
+              <div>
+                <h4 className="mb-3 text-lg font-semibold text-foreground">תבניות מהירות</h4>
+                <RadioGroup value={templateValue} onValueChange={applyTemplate} className="space-y-3">
+                  {REPORT_TEMPLATES.map((template) => (
+                    <Label
+                      key={template.id}
+                      className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition ${templateValue === template.id ? 'border-primary bg-primary/10 shadow-sm' : 'border-border hover:border-primary/50 hover:bg-muted/40'}`}
+                    >
+                      <div className="flex-1 pr-4">
+                        <p className="font-semibold text-foreground">{template.name}</p>
+                        <p className="text-sm text-muted-foreground">{template.description}</p>
+                      </div>
+                      <RadioGroupItem value={template.id} className="ml-4" />
+                    </Label>
+                  ))}
+                  <Label
+                    className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition ${templateValue === 'custom' ? 'border-primary bg-primary/10 shadow-sm' : 'border-border hover:border-primary/50 hover:bg-muted/40'}`}
+                  >
+                    <div className="flex-1 pr-4">
+                      <p className="font-semibold text-foreground">בחירה ידנית</p>
+                      <p className="text-sm text-muted-foreground">בנו דוח מותאם אישית באמצעות סימון הפרקים הרצויים.</p>
+                    </div>
+                    <RadioGroupItem value="custom" className="ml-4" />
+                  </Label>
+                </RadioGroup>
+              </div>
+
+              <Separator className="my-2" />
+
+              <div className="grid gap-3">
+                {REPORT_SECTION_KEYS.map((key) => (
+                  <div
+                    key={key}
+                    className={`flex items-center justify-between gap-4 rounded-2xl border p-4 transition ${selectedSections[key] ? 'border-primary/50 bg-primary/10' : 'border-border bg-muted/20'}`}
+                  >
+                    <div className="flex-1 text-right">
+                      <p className="font-semibold text-foreground">{REPORT_SECTION_LABELS[key].title}</p>
+                      <p className="text-sm text-muted-foreground">{REPORT_SECTION_LABELS[key].description}</p>
+                    </div>
+                    <Checkbox
+                      checked={selectedSections[key]}
+                      onCheckedChange={(checked) => handleSectionToggle(key, checked)}
+                      disabled={!isExpandedMode}
+                      className="ml-2"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter className="flex flex-col items-stretch gap-3 pt-4 sm:flex-row sm:justify-between">
+              <Button
+                variant="outline"
+                onClick={resetSectionsToDefault}
+                className="rounded-xl"
+              >
+                איפוס לברירת מחדל
+              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSectionsDialog(false)}
+                  className="rounded-xl"
+                >
+                  ביטול
+                </Button>
+                <Button onClick={handleSaveTemplate} className="rounded-xl">
+                  שמור והחל הגדרות
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button 
@@ -575,8 +1416,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <Button 
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+          <Button
             onClick={() => copyToClipboard(summaryText, 'summary')}
             className="bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
           >
@@ -590,7 +1431,16 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
             </span>
           </Button>
 
-          <Button 
+          <Button
+            onClick={() => setShowSectionsDialog(true)}
+            variant="outline"
+            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+            <span className="text-sm">התאם דוח מורחב</span>
+          </Button>
+
+          <Button
             onClick={() => setShowFinalReport(true)}
             className="bg-gradient-to-r from-primary to-primary-hover text-primary-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2 shadow-glow"
           >
@@ -693,140 +1543,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Client Information Section */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800">
-                    <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      פרטי הלקוח
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 text-right">
-                      <div>
-                        <span className="font-semibold text-blue-800 dark:text-blue-200">שם: </span>
-                        <span className="text-blue-700 dark:text-blue-300">{formData.clientName}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-blue-800 dark:text-blue-200">טלפון: </span>
-                        <span className="text-blue-700 dark:text-blue-300">{formData.clientPhone}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-blue-800 dark:text-blue-200">תאריך פגישה: </span>
-                        <span className="text-blue-700 dark:text-blue-300">{formatDate(formData.meetingDate)}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-blue-800 dark:text-blue-200">סוכן: </span>
-                        <span className="text-blue-700 dark:text-blue-300">{agentData?.name || 'לא צוין'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Current Situation Section */}
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 p-6 rounded-2xl border border-amber-200 dark:border-amber-800">
-                    <h3 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      מצב קיים
-                    </h3>
-                    <p className="text-amber-800 dark:text-amber-200 leading-relaxed text-right">
-                      {formData.currentSituation}
-                    </p>
-                  </div>
-
-                  {/* Portfolio Comparison Table */}
-                  {(() => {
-                    const currentProducts = formData.products.filter(p => p.type === 'current');
-                    const recommendedProducts = formData.products.filter(p => p.type === 'recommended');
-                    
-                    if (currentProducts.length > 0 && recommendedProducts.length > 0) {
-                      return (
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 p-6 rounded-2xl border border-green-200 dark:border-green-800">
-                          <h3 className="text-xl font-bold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5" />
-                            השוואת תיקים
-                          </h3>
-                          <div className="overflow-x-auto">
-                            <table className="w-full border-collapse bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg">
-                              <thead>
-                                <tr className="bg-green-600 dark:bg-green-700 text-white">
-                                  <th className="p-4 text-right font-bold border-r border-green-500 dark:border-green-600">השוואת תיקים</th>
-                                  <th className="p-4 text-center font-bold border-r border-green-500 dark:border-green-600">מצב קיים</th>
-                                  <th className="p-4 text-center font-bold">מצב מומלץ</th>
-                                  <th className="p-4 text-center font-bold">הפרש</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                  <td className="p-4 font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">סכום צבירה</td>
-                                  <td className="p-4 text-center text-blue-600 dark:text-blue-400 font-bold">₪{currentProducts.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}</td>
-                                  <td className="p-4 text-center text-green-600 dark:text-green-400 font-bold">₪{recommendedProducts.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}</td>
-                                  <td className="p-4 text-center">
-                                    {(() => {
-                                      const diff = recommendedProducts.reduce((sum, p) => sum + p.amount, 0) - currentProducts.reduce((sum, p) => sum + p.amount, 0);
-                                      return (
-                                        <span className={`font-bold ${diff > 0 ? 'text-green-600 dark:text-green-400' : diff < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                                          {diff > 0 ? '+' : ''}₪{diff.toLocaleString()}
-                                        </span>
-                                      );
-                                    })()}
-                                  </td>
-                                </tr>
-                                <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                  <td className="p-4 font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">מוצרים קיימים</td>
-                                  <td className="p-4 text-center text-blue-600 dark:text-blue-400 font-bold">{currentProducts.length}</td>
-                                  <td className="p-4 text-center text-green-600 dark:text-green-400 font-bold">{recommendedProducts.length}</td>
-                                  <td className="p-4 text-center">
-                                    <span className={`font-bold ${recommendedProducts.length - currentProducts.length > 0 ? 'text-green-600 dark:text-green-400' : recommendedProducts.length - currentProducts.length < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                                      {recommendedProducts.length - currentProducts.length > 0 ? '+' : ''}{recommendedProducts.length - currentProducts.length}
-                                    </span>
-                                  </td>
-                                </tr>
-                                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                  <td className="p-4 font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700">ממוצע דמי ניהול מהפקדות</td>
-                                  <td className="p-4 text-center text-blue-600 dark:text-blue-400 font-bold">
-                                    {currentProducts.length > 0 ? 
-                                      `${(currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length).toFixed(2)}%` : 
-                                      '0%'
-                                    }
-                                  </td>
-                                  <td className="p-4 text-center text-green-600 dark:text-green-400 font-bold">
-                                    {recommendedProducts.length > 0 ? 
-                                      `${(recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length).toFixed(2)}%` : 
-                                      '0%'
-                                    }
-                                  </td>
-                                  <td className="p-4 text-center">
-                                    {(() => {
-                                      const currentAvg = currentProducts.length > 0 ? currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length : 0;
-                                      const recommendedAvg = recommendedProducts.length > 0 ? recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / recommendedProducts.length : 0;
-                                      const diff = recommendedAvg - currentAvg;
-                                      return (
-                                        <span className={`font-bold ${diff < 0 ? 'text-green-600 dark:text-green-400' : diff > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                                          {diff > 0 ? '+' : ''}{diff.toFixed(2)}%
-                                        </span>
-                                      );
-                                    })()}
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
-                  {/* Recommendations Section */}
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 p-6 rounded-2xl border border-purple-200 dark:border-purple-800">
-                    <h3 className="text-xl font-bold text-purple-900 dark:text-purple-100 mb-4 flex items-center gap-2">
-                      <MessageCircle className="h-5 w-5" />
-                      המליצות
-                    </h3>
-                    <p className="text-purple-800 dark:text-purple-200 leading-relaxed text-right">
-                      {formData.recommendations || 'לא צוינו המליצות'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
+                {renderReportSections('inline')}
+</CardContent>
             </Card>
           </div>
         )}
@@ -860,200 +1578,37 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
             </div>
             
             <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6">
-              {/* Header Section */}
-              <div className="text-center mb-8 p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <Shield className="h-10 w-10 text-primary" />
-                  <h1 className="text-3xl font-bold text-foreground">סיכום פגישת ביטוח</h1>
-                </div>
-                <p className="text-lg text-muted-foreground">
-                  {formData.clientName} • {formatDate(formData.meetingDate)}
-                </p>
-              </div>
-
-              {/* Client Details */}
-              <div className="mb-8 p-6 bg-glass/30 rounded-2xl border border-glass-border">
-                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
-                  פרטי הלקוח
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2 text-foreground">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">שם:</span> {formData.clientName}
+              <div className="space-y-8 text-right">
+                <section className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-primary/5 p-6 shadow-inner">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-3xl font-bold text-foreground">דוח סיכום פגישה</h1>
+                      <p className="mt-2 text-sm text-muted-foreground">{formData.clientName} • {formatDate(formData.meetingDate)} • {locationDisplay}</p>
+                    </div>
+                    <Badge variant="outline" className="rounded-full border-primary/30 bg-white/80 text-primary">
+                      בחירת מוצרים והמלצות
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-foreground">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">טלפון:</span> {formData.clientPhone}
-                  </div>
-                  <div className="flex items-center gap-2 text-foreground">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">אימייל:</span> {formData.clientEmail}
-                  </div>
-                  <div className="flex items-center gap-2 text-foreground">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">תאריך פגישה:</span> {formatDate(formData.meetingDate)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Current Products */}
-              {formData.products?.filter(p => p.type === 'current').length > 0 && (
-                <div className="mb-8 p-6 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-blue-500" />
-                    מצב קיים - מוצרים פיננסיים
-                  </h3>
-                  <div className="space-y-4">
-                    {formData.products?.filter(p => p.type === 'current').map((product, index) => (
-                      <div key={index} className="p-4 bg-background/50 rounded-xl border border-border">
-                        <h4 className="font-semibold text-foreground mb-2">{product.productName} - {product.company}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                          <span>סוג מסלול: {product.subType}</span>
-                          <span>סכום צבירה: ₪{product.amount.toLocaleString()}</span>
-                          <span>דמי ניהול: {product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
-                          {product.investmentTrack && <span>מסלול השקעה: {product.investmentTrack}</span>}
-                        </div>
-                        {product.notes && (
-                          <p className="mt-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded">{product.notes}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Current Situation & Risks */}
-              {(formData.currentSituation || formData.risks) && (
-                <div className="mb-8 p-6 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    ניתוח מצב וסיכונים
-                  </h3>
-                  {formData.currentSituation && (
-                    <div className="mb-4 p-4 bg-background/50 rounded-xl">
-                      <h4 className="font-medium text-foreground mb-2">מצב קיים כללי:</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{formData.currentSituation}</p>
+                  {formData.topics.length > 0 && (
+                    <div className="mt-4 flex flex-wrap justify-end gap-2">
+                      {formData.topics.map((topic) => (
+                        <Badge key={topic} className="rounded-full border-primary/20 bg-primary/10 px-4 py-1 text-primary">{topic}</Badge>
+                      ))}
                     </div>
                   )}
-                  {formData.risks && (
-                    <div className="p-4 bg-background/50 rounded-xl">
-                      <h4 className="font-medium text-foreground mb-2">פערים וסיכונים:</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{formData.risks}</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                </section>
 
-              {/* Recommendations */}
-              {(formData.recommendations.some(r => r.trim()) || formData.products?.filter(p => p.type === 'recommended').length > 0) && (
-                <div className="mb-8 p-6 bg-green-500/10 rounded-2xl border border-green-500/20">
-                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    המלצות הסוכן
-                  </h3>
-                  
-                  {formData.products?.filter(p => p.type === 'recommended').length > 0 && (
-                    <div className="mb-4">
-                      <h4 className="font-medium text-foreground mb-3">המלצות מוצרים חדשים:</h4>
-                      <div className="space-y-3">
-                        {formData.products?.filter(p => p.type === 'recommended').map((product, index) => (
-                          <div key={index} className="p-4 bg-background/50 rounded-xl border border-border">
-                            <h5 className="font-semibold text-foreground mb-2">{product.productName} - {product.company}</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                              <span>סוג מסלול: {product.subType}</span>
-                              <span>סכום צבירה: ₪{product.amount.toLocaleString()}</span>
-                              <span>דמי ניהול: {product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
-                              {product.investmentTrack && <span>מסלול השקעה: {product.investmentTrack}</span>}
-                              {product.riskLevelChange && <span>שינוי רמת סיכון: {product.riskLevelChange}</span>}
-                            </div>
-                            {product.notes && (
-                              <p className="mt-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded">{product.notes}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {renderReportSections('modal')}
 
-                  {formData.recommendations.some(r => r.trim()) && (
-                    <div className="p-4 bg-background/50 rounded-xl">
-                      <h4 className="font-medium text-foreground mb-2">המלצות נוספות:</h4>
-                      <ul className="space-y-1">
-                        {formData.recommendations.filter(r => r.trim()).map((rec, index) => (
-                          <li key={index} className="text-muted-foreground">• {rec}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {formData.estimatedCost && (
-                    <div className="mt-4 p-4 bg-primary/10 rounded-xl border border-primary/20">
-                      <span className="font-medium text-foreground">הערכת עלות: </span>
-                      <span className="text-primary font-semibold">{formData.estimatedCost}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Decisions */}
-              {formData.decisions && (
-                <div className="mb-8 p-6 bg-purple-500/10 rounded-2xl border border-purple-500/20">
-                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-purple-500" />
-                    החלטות שהתקבלו
-                  </h3>
-                  <div className="p-4 bg-background/50 rounded-xl">
-                    <div 
-                      className="ai-content"
-                      dangerouslySetInnerHTML={{ __html: formData.decisions }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Required Actions */}
-              {(formData.documents.length > 0 || formData.timeframes || formData.approvals) && (
-                <div className="mb-8 p-6 bg-orange-500/10 rounded-2xl border border-orange-500/20">
-                  <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-orange-500" />
-                    פעולות נדרשות
-                  </h3>
-                  
-                  {formData.documents.length > 0 && (
-                    <div className="mb-4 p-4 bg-background/50 rounded-xl">
-                      <h4 className="font-medium text-foreground mb-2">מסמכים להכנה:</h4>
-                      <ul className="space-y-1">
-                        {formData.documents.map((doc, index) => (
-                          <li key={index} className="text-muted-foreground">• {doc}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {formData.timeframes && (
-                    <div className="mb-4 p-4 bg-background/50 rounded-xl">
-                      <h4 className="font-medium text-foreground mb-2">לוח זמנים:</h4>
-                      <p className="text-muted-foreground">{formData.timeframes}</p>
-                    </div>
-                  )}
-                  
-                  {formData.approvals && (
-                    <div className="p-4 bg-background/50 rounded-xl">
-                      <h4 className="font-medium text-foreground mb-2">אישורים נדרשים:</h4>
-                      <p className="text-muted-foreground">{formData.approvals}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Footer */}
-              <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20">
-                <p className="text-lg font-semibold text-foreground mb-2">בברכה, הסוכן שלכם</p>
-                <p className="text-muted-foreground">טלפון: [טלפון הסוכן] | אימייל: [אימייל הסוכן]</p>
+                <section className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-primary/5 p-6 text-center shadow-inner">
+                  <p className="text-lg font-semibold text-foreground">בברכה, {agentData.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {agentData.phone ? `טלפון: ${agentData.phone}` : 'טלפון: ________'}
+                    {agentData.email ? ` | אימייל: ${agentData.email}` : ' | אימייל: ________'}
+                  </p>
+                </section>
               </div>
             </div>
-            
             {/* Modal Actions */}
             <div className="p-6 border-t border-glass-border bg-glass/30 flex flex-wrap gap-4 justify-center">
               <Button
