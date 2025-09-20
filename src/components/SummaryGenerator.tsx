@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart } from "lucide-react";
+import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -154,6 +154,9 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [selectedSections, setSelectedSections] = useState<Record<ReportSectionKey, boolean>>({ ...REPORT_SECTIONS_DEFAULT });
   const [isExpandedMode, setIsExpandedMode] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [aiRiskNotes, setAiRiskNotes] = useState<string>("");
+  const [isGeneratingRisks, setIsGeneratingRisks] = useState(false);
+  const [riskGeneratedAt, setRiskGeneratedAt] = useState<string | null>(null);
   const [agentData, setAgentData] = useState<AgentData>({
     name: "הסוכן שלכם",
     phone: null,
@@ -222,6 +225,14 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
+    });
+  };
+
+  const formatDateTime = (value: string) => {
+    const date = new Date(value);
+    return date.toLocaleString('he-IL', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
     });
   };
 
@@ -351,6 +362,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     return formData.recommendations.filter(rec => rec && rec.trim());
   }, [formData.recommendations]);
 
+  const sanitizedAiRiskNotes = useMemo(() => {
+    return stripHtml(aiRiskNotes);
+  }, [aiRiskNotes]);
+
   const generateSummaryText = (config?: Record<ReportSectionKey, boolean>) => {
     const appliedConfig = config ?? (isExpandedMode ? selectedSections : REPORT_SECTIONS_DEFAULT);
     const lines: string[] = [];
@@ -364,7 +379,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     lines.push('');
 
     if (appliedConfig.personalInfo) {
-      lines.push('שלב 1 – פרטים אישיים והקשר הפגישה:');
+      lines.push('חלק ראשון – מידע כללי:');
       lines.push(`• שם הלקוח: ${formData.clientName}`);
       lines.push(`• טלפון: ${formData.clientPhone}`);
       lines.push(`• אימייל: ${formData.clientEmail || 'לא צויין'}`);
@@ -377,7 +392,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
 
     if (appliedConfig.executiveSummary) {
-      lines.push('שלב 2 – תקציר מנהלים של בחירת המוצרים:');
+      lines.push('חלק שני – סיכום כללי של ההמלצות:');
       productStats.highlightBullets.forEach(highlight => {
         lines.push(`• ${highlight}`);
       });
@@ -385,7 +400,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
 
     if (appliedConfig.detailedBreakdown) {
-      lines.push('שלב 3 – פירוט מלא של השינויים:');
+      lines.push('חלק שלישי – סיכום מורחב של ההמלצות:');
       lines.push(`• סך צבירה במצב קיים: ₪${productStats.totalCurrentAmount.toLocaleString()}`);
       lines.push(`• סך צבירה במצב מוצע: ₪${productStats.totalRecommendedAmount.toLocaleString()}`);
       const diffSign = productStats.amountDifference >= 0 ? '+' : '-';
@@ -423,50 +438,58 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         });
       }
 
-      lines.push('');
-    }
+      if (appliedConfig.additionalNotes) {
+        if (formData.currentSituation) {
+          lines.push(`• הקשר מקצועי: ${formData.currentSituation}`);
+        }
+        if (validRecommendations.length > 0) {
+          lines.push('• המלצות מעשיות:');
+          validRecommendations.forEach(rec => lines.push(`  - ${rec}`));
+        }
+        if (formData.estimatedCost) {
+          lines.push(`• הערכת עלויות: ${formData.estimatedCost}`);
+        }
+      }
 
-    if (appliedConfig.additionalNotes) {
-      lines.push('שלב 4 – הרחבות, הערות ותובנות:');
-      if (formData.currentSituation) {
-        lines.push(`• מצב קיים בקצרה: ${formData.currentSituation}`);
-      }
-      if (formData.risks) {
-        lines.push(`• פערים או סיכונים שזוהו: ${formData.risks}`);
-      }
-      if (validRecommendations.length > 0) {
-        lines.push('• המלצות המשך:');
-        validRecommendations.forEach(rec => lines.push(`  - ${rec}`));
-      }
-      if (formData.estimatedCost) {
-        lines.push(`• הערכת עלות משוערת: ${formData.estimatedCost}`);
-      }
-      lines.push('');
-    }
-
-    if (appliedConfig.disclosures) {
-      lines.push('שלב 5 – גילוי נאות:');
-      lines.push('• ההמלצות מבוססות על הנתונים שסופקו ועל מידע עדכני מהגופים המוסדיים.');
-      lines.push('• ייתכנו שינויים במדיניות ההשקעה או בדמי הניהול מצד החברות לאחר מועד הפגישה.');
-      lines.push('• יש לוודא שהמידע במסמך תואם את הצרכים האישיים והעדפות הסיכון של הלקוח.');
-      lines.push('');
-    }
-
-    if (appliedConfig.nextSteps) {
-      lines.push('שלב 6 – סיכום ומשימות להמשך:');
-      if (decisionsList.length > 0) {
-        lines.push('• החלטות שהתקבלו:');
+      if (appliedConfig.nextSteps && decisionsList.length > 0) {
+        lines.push('• משימות לביצוע:');
         decisionsList.forEach(item => lines.push(`  - ${item}`));
       }
-      if (formData.documents.length > 0) {
-        lines.push('• מסמכים/אישורים לאיסוף:');
+
+      if (appliedConfig.nextSteps && formData.documents.length > 0) {
+        lines.push('• מסמכים נדרשים:');
         formData.documents.forEach(doc => lines.push(`  - ${doc}`));
       }
-      if (formData.timeframes) {
-        lines.push(`• לוחות זמנים לביצוע: ${formData.timeframes}`);
+
+      if (appliedConfig.nextSteps && formData.timeframes) {
+        lines.push(`• לו"ז מוצע: ${formData.timeframes}`);
       }
-      if (formData.approvals) {
-        lines.push(`• אישורים נדרשים: ${formData.approvals}`);
+
+      if (appliedConfig.nextSteps && formData.approvals) {
+        lines.push(`• אישורים לבקשת הלקוח: ${formData.approvals}`);
+      }
+
+      lines.push('');
+    }
+
+    const hasRiskInsights = ((appliedConfig.additionalNotes && (formData.risks || sanitizedAiRiskNotes)) || appliedConfig.disclosures || sanitizedAiRiskNotes);
+    if (hasRiskInsights) {
+      lines.push('חלק רביעי – סיכונים והסתייגויות:');
+      if (formData.risks && appliedConfig.additionalNotes) {
+        lines.push(`• סיכונים מרכזיים שזוהו: ${formData.risks}`);
+      }
+      if (sanitizedAiRiskNotes) {
+        lines.push('• ניתוח סיכונים נוסף (ChatGPT):');
+        sanitizedAiRiskNotes.split('\n').forEach(note => {
+          if (note.trim()) {
+            lines.push(`  - ${note.trim()}`);
+          }
+        });
+      }
+      if (appliedConfig.disclosures) {
+        lines.push('• ההמלצות מבוססות על הנתונים שסופקו ועל מידע עדכני מהגופים המוסדיים.');
+        lines.push('• ייתכנו שינויים במדיניות ההשקעה או בדמי הניהול מצד החברות לאחר מועד הפגישה.');
+        lines.push('• יש לוודא שהמידע במסמך תואם את הצרכים האישיים והעדפות הסיכון של הלקוח.');
       }
       lines.push('');
     }
@@ -550,7 +573,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
           return newSet;
         });
       }, 2000);
-      
+
       toast({
         title: "הועתק ללוח",
         description: "הטקסט הועתק בהצלחה",
@@ -561,6 +584,72 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         description: "לא ניתן להעתיק ללוח",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleGenerateRiskNotes = async () => {
+    const hasContext = Boolean(
+      formData.currentSituation?.trim() ||
+      formData.risks?.trim() ||
+      validRecommendations.length > 0 ||
+      productStats.currentProducts.length > 0 ||
+      productStats.recommendedProducts.length > 0
+    );
+
+    if (!hasContext) {
+      toast({
+        title: "חסר מידע",
+        description: "יש למלא נתוני מצב קיים, המלצות או מוצרים כדי להפיק הערת סיכונים.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingRisks(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-risk-notes', {
+        body: {
+          recommendations: validRecommendations,
+          manualRisks: formData.risks,
+          currentSituation: formData.currentSituation,
+          products: {
+            current: productStats.currentProducts,
+            recommended: productStats.recommendedProducts,
+          },
+          decisions: decisionsList,
+          estimatedCost: formData.estimatedCost,
+          client: {
+            name: formData.clientName,
+            meetingDate: formData.meetingDate,
+            topics: formData.topics,
+          },
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.riskNotes) {
+        setAiRiskNotes(data.riskNotes);
+        setRiskGeneratedAt(new Date().toISOString());
+        toast({
+          title: "הערת סיכונים מוכנה",
+          description: "הסיכונים נותחו והתווספו לדוח באמצעות ChatGPT.",
+        });
+      } else {
+        throw new Error('לא התקבלה תשובה מהמודל');
+      }
+    } catch (error) {
+      console.error('Error generating risk notes:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו להפיק הערת סיכונים. נסה שוב בעוד מספר רגעים.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingRisks(false);
     }
   };
 
@@ -847,437 +936,453 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const accumulationDelta = productStats.avgRecommendedAccumulation - productStats.avgCurrentAccumulation;
 
 
-  const renderReportSections = (mode: 'inline' | 'modal' = 'inline') => (
+  const renderReportSections = (mode: 'inline' | 'modal' = 'inline') => {
+    const containerClass = mode === 'modal' ? 'space-y-8 text-right' : 'space-y-6';
+    const hasManualRisk = Boolean(formData.risks && formData.risks.trim());
+    const aiRiskAvailable = Boolean(aiRiskNotes && aiRiskNotes.trim());
+    const showRiskSection = (effectiveSections.additionalNotes && (hasManualRisk || aiRiskAvailable)) || effectiveSections.disclosures || aiRiskAvailable;
 
-                <div className={mode === 'modal' ? 'space-y-8 text-right' : 'space-y-6'}>
-                  {effectiveSections.personalInfo && (
-                    <section className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/60 p-6 shadow-inner">
-                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-blue-900">
-                          <User className="h-5 w-5" />
-                          <h3 className="text-xl font-bold">שלב 1: פרטים אישיים</h3>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="outline" className="rounded-full border-blue-200 bg-white/80 text-blue-700">
-                            {formatDate(formData.meetingDate)}
-                          </Badge>
-                          <Badge variant="secondary" className="rounded-full border-blue-200 bg-blue-600/10 text-blue-700">
-                            {isExpandedMode ? 'מצב מורחב פעיל' : 'תצוגה מלאה'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="grid gap-4 text-right md:grid-cols-2 xl:grid-cols-3">
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase text-blue-500">שם הלקוח</span>
-                            <User className="h-4 w-4 text-blue-400" />
-                          </div>
-                          <p className="text-lg font-semibold text-blue-900">{formData.clientName || 'לא צויין'}</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase text-blue-500">טלפון</span>
-                            <Phone className="h-4 w-4 text-blue-400" />
-                          </div>
-                          <p className="text-lg font-semibold text-blue-900">{formData.clientPhone || 'לא צויין'}</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase text-blue-500">אימייל</span>
-                            <Mail className="h-4 w-4 text-blue-400" />
-                          </div>
-                          <p className="text-lg font-semibold text-blue-900">{formData.clientEmail || 'לא צויין'}</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase text-blue-500">מיקום הפגישה</span>
-                            <MapPin className="h-4 w-4 text-blue-400" />
-                          </div>
-                          <p className="text-lg font-semibold text-blue-900">{locationDisplay}</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase text-blue-500">סוכן מלווה</span>
-                            <Shield className="h-4 w-4 text-blue-400" />
-                          </div>
-                          <p className="text-lg font-semibold text-blue-900">{agentData?.name || 'הסוכן שלכם'}</p>
-                          {agentData?.phone && (
-                            <p className="text-sm text-blue-700">{agentData.phone}</p>
-                          )}
-                        </div>
-                      </div>
-                      {formData.topics.length > 0 && (
-                        <div className="mt-4 flex flex-wrap justify-end gap-2">
-                          {formData.topics.map((topic) => (
-                            <Badge key={topic} className="rounded-full border-blue-200 bg-blue-600/10 px-4 py-1 text-blue-800">
-                              {topic}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </section>
-                  )}
-
-                  {effectiveSections.executiveSummary && (
-                    <section className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-100/50 p-6 shadow-inner">
-                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-amber-900">
-                          <Sparkles className="h-5 w-5" />
-                          <h3 className="text-xl font-bold">שלב 2: תקציר מנהלים – בחירת המוצרים</h3>
-                        </div>
-                        <Badge variant="outline" className="rounded-full border-amber-200 bg-white/80 text-amber-700">
-                          שינויים מרכזיים
-                        </Badge>
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                          <p className="text-sm font-medium text-amber-600">סה״כ צבירה</p>
-                          <p className="mt-2 text-lg font-bold text-amber-900">
-                            ₪{productStats.totalCurrentAmount.toLocaleString()} → ₪{productStats.totalRecommendedAmount.toLocaleString()}
-                          </p>
-                          <p className={`text-sm font-semibold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                            {amountDifference === 0 ? 'ללא שינוי' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                          <p className="text-sm font-medium text-amber-600">מספר מוצרים</p>
-                          <p className="mt-2 text-lg font-bold text-amber-900">
-                            {productStats.currentProducts.length} → {productStats.recommendedProducts.length}
-                          </p>
-                          <p className={`text-sm font-semibold ${productStats.productCountDifference > 0 ? 'text-green-600' : productStats.productCountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                            {productStats.productCountDifference === 0 ? 'ללא שינוי' : `${productStats.productCountDifference > 0 ? '+' : ''}${productStats.productCountDifference}`}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                          <p className="text-sm font-medium text-amber-600">דמי ניהול ממוצעים</p>
-                          <p className="mt-2 text-lg font-bold text-amber-900">
-                            {productStats.avgCurrentDeposit.toFixed(2)}% → {productStats.avgRecommendedDeposit.toFixed(2)}%
-                          </p>
-                          <p className={`text-sm font-semibold ${depositDelta < 0 ? 'text-green-600' : depositDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                            {depositDelta === 0 ? 'ללא שינוי בדמי ניהול' : depositDelta < 0 ? `הפחתה של ${Math.abs(depositDelta).toFixed(2)}%` : `עלייה של ${depositDelta.toFixed(2)}%`}
-                          </p>
-                        </div>
-                      </div>
-                      <ul className="mt-6 space-y-2 text-right">
-                        {productStats.highlightBullets.map((highlight, index) => (
-                          <li key={index} className="flex items-start justify-end gap-2 text-sm text-amber-900">
-                            <span className="mt-1 h-2 w-2 rounded-full bg-amber-500" />
-                            <span>{highlight}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  )}
-
-                  {effectiveSections.detailedBreakdown && (
-                    <section className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 via-white to-emerald-100/60 p-6 shadow-inner">
-                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-green-900">
-                          <FileSpreadsheet className="h-5 w-5" />
-                          <h3 className="text-xl font-bold">שלב 3: פירוט מלא של השינוי</h3>
-                        </div>
-                        <Badge variant="outline" className="rounded-full border-green-200 bg-white/80 text-green-700">
-                          השוואת תיק קיים מול מוצע
-                        </Badge>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                          <p className="text-sm font-medium text-green-600">צבירה כוללת</p>
-                          <p className="mt-2 text-lg font-bold text-green-900">
-                            ₪{productStats.totalCurrentAmount.toLocaleString()} → ₪{productStats.totalRecommendedAmount.toLocaleString()}
-                          </p>
-                          <p className={`text-sm font-semibold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                            {amountDifference === 0 ? 'ללא שינוי' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                          <p className="text-sm font-medium text-green-600">התאמות ברמת הסיכון</p>
-                          <p className="mt-2 text-lg font-bold text-green-900">{productStats.riskShiftCount}</p>
-                          <p className="text-sm text-muted-foreground">מספר המוצרים שעברו התאמת סיכון</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                          <p className="text-sm font-medium text-green-600">דמי ניהול מצבירה</p>
-                          <p className="mt-2 text-lg font-bold text-green-900">
-                            {productStats.avgCurrentAccumulation.toFixed(2)}% → {productStats.avgRecommendedAccumulation.toFixed(2)}%
-                          </p>
-                          <p className={`text-sm font-semibold ${accumulationDelta < 0 ? 'text-green-600' : accumulationDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                            {accumulationDelta === 0 ? 'ללא שינוי' : accumulationDelta < 0 ? `חיסכון של ${Math.abs(accumulationDelta).toFixed(2)}%` : `תוספת של ${accumulationDelta.toFixed(2)}%`}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 grid gap-6 md:grid-cols-2">
-                        <div className="rounded-2xl bg-white/80 p-5 shadow-sm">
-                          <div className="mb-4 flex items-center justify-between">
-                            <div className="text-right">
-                              <h4 className="text-lg font-semibold text-green-900">דמי ניהול מהפקדה</h4>
-                              <p className="text-sm text-muted-foreground">ממוצע משוקלל</p>
-                            </div>
-                            <PieChart className="h-6 w-6 text-green-500" />
-                          </div>
-                          <div className="space-y-3">
-                            <div>
-                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
-                                <span>מצב קיים</span>
-                                <span>{productStats.avgCurrentDeposit.toFixed(2)}%</span>
-                              </div>
-                              <div className="h-2.5 rounded-full bg-green-100">
-                                <div className="h-full rounded-full bg-green-500" style={{ width: `${productStats.depositCurrentBar || 0}%` }} />
-                              </div>
-                            </div>
-                            <div>
-                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
-                                <span>מצב מוצע</span>
-                                <span>{productStats.avgRecommendedDeposit.toFixed(2)}%</span>
-                              </div>
-                              <div className="h-2.5 rounded-full bg-green-100">
-                                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${productStats.depositRecommendedBar || 0}%` }} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="rounded-2xl bg-white/80 p-5 shadow-sm">
-                          <div className="mb-4 flex items-center justify-between">
-                            <div className="text-right">
-                              <h4 className="text-lg font-semibold text-green-900">דמי ניהול מצבירה</h4>
-                              <p className="text-sm text-muted-foreground">ממוצע משוקלל</p>
-                            </div>
-                            <BarChart3 className="h-6 w-6 text-green-500" />
-                          </div>
-                          <div className="space-y-3">
-                            <div>
-                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
-                                <span>מצב קיים</span>
-                                <span>{productStats.avgCurrentAccumulation.toFixed(2)}%</span>
-                              </div>
-                              <div className="h-2.5 rounded-full bg-green-100">
-                                <div className="h-full rounded-full bg-green-500" style={{ width: `${productStats.accumulationCurrentBar || 0}%` }} />
-                              </div>
-                            </div>
-                            <div>
-                              <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
-                                <span>מצב מוצע</span>
-                                <span>{productStats.avgRecommendedAccumulation.toFixed(2)}%</span>
-                              </div>
-                              <div className="h-2.5 rounded-full bg-green-100">
-                                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${productStats.accumulationRecommendedBar || 0}%` }} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 overflow-x-auto rounded-2xl border border-green-200 bg-white/80 shadow-sm">
-                        <table className="w-full border-collapse text-right">
-                          <thead>
-                            <tr className="bg-green-500/90 text-white">
-                              <th className="p-4 text-right font-semibold">מדד להשוואה</th>
-                              <th className="p-4 text-center font-semibold">מצב קיים</th>
-                              <th className="p-4 text-center font-semibold">מצב מוצע</th>
-                              <th className="p-4 text-center font-semibold">שינוי</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-sm text-foreground">
-                            <tr className="border-b border-green-100">
-                              <td className="p-4 font-semibold text-green-900">סכום צבירה</td>
-                              <td className="p-4 text-center font-bold text-green-800">₪{productStats.totalCurrentAmount.toLocaleString()}</td>
-                              <td className="p-4 text-center font-bold text-green-800">₪{productStats.totalRecommendedAmount.toLocaleString()}</td>
-                              <td className={`p-4 text-center font-bold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                {amountDifference === 0 ? '0' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
-                              </td>
-                            </tr>
-                            <tr className="border-b border-green-100">
-                              <td className="p-4 font-semibold text-green-900">מספר מוצרים</td>
-                              <td className="p-4 text-center font-bold text-green-800">{productStats.currentProducts.length}</td>
-                              <td className="p-4 text-center font-bold text-green-800">{productStats.recommendedProducts.length}</td>
-                              <td className={`p-4 text-center font-bold ${productStats.productCountDifference > 0 ? 'text-green-600' : productStats.productCountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                {productStats.productCountDifference === 0 ? '0' : `${productStats.productCountDifference > 0 ? '+' : ''}${productStats.productCountDifference}`}
-                              </td>
-                            </tr>
-                            <tr className="border-b border-green-100">
-                              <td className="p-4 font-semibold text-green-900">דמי ניהול מהפקדה</td>
-                              <td className="p-4 text-center text-green-800">{productStats.avgCurrentDeposit.toFixed(2)}%</td>
-                              <td className="p-4 text-center text-green-800">{productStats.avgRecommendedDeposit.toFixed(2)}%</td>
-                              <td className={`p-4 text-center font-bold ${depositDelta < 0 ? 'text-green-600' : depositDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                {depositDelta === 0 ? '0%' : `${depositDelta > 0 ? '+' : ''}${depositDelta.toFixed(2)}%`}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="p-4 font-semibold text-green-900">דמי ניהול מצבירה</td>
-                              <td className="p-4 text-center text-green-800">{productStats.avgCurrentAccumulation.toFixed(2)}%</td>
-                              <td className="p-4 text-center text-green-800">{productStats.avgRecommendedAccumulation.toFixed(2)}%</td>
-                              <td className={`p-4 text-center font-bold ${accumulationDelta < 0 ? 'text-green-600' : accumulationDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                {accumulationDelta === 0 ? '0%' : `${accumulationDelta > 0 ? '+' : ''}${accumulationDelta.toFixed(2)}%`}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {productStats.recommendedProducts.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="mb-3 text-lg font-semibold text-green-900">מוצרים מומלצים</h4>
-                          <div className="grid gap-4 md:grid-cols-2">
-                            {productStats.recommendedProducts.map((product) => (
-                              <div key={product.id} className="rounded-2xl border border-green-200 bg-gradient-to-br from-white via-green-50 to-green-100/60 p-5 shadow-sm">
-                                <div className="mb-3 flex items-center justify-between">
-                                  <p className="text-lg font-bold text-green-900">{product.productName}</p>
-                                  <Badge variant="outline" className="rounded-full border-green-300 bg-white/70 text-green-700">
-                                    {product.company}
-                                  </Badge>
-                                </div>
-                                <div className="space-y-2 text-sm text-green-900">
-                                  <p>מסלול: <span className="font-semibold">{product.subType}</span></p>
-                                  <p>צבירה: <span className="font-semibold">₪{product.amount.toLocaleString()}</span></p>
-                                  <p>דמי ניהול: <span className="font-semibold">{product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה</span></p>
-                                  {product.investmentTrack && <p>מסלול השקעה: <span className="font-semibold">{product.investmentTrack}</span></p>}
-                                  {product.riskLevelChange && product.riskLevelChange !== 'no-change' && (
-                                    <p>שינוי רמת סיכון: <span className="font-semibold">{product.riskLevelChange}</span></p>
-                                  )}
-                                </div>
-                                {product.notes && (
-                                  <p className="mt-3 rounded-xl bg-green-600/10 p-3 text-sm text-green-800">{product.notes}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {productStats.currentProducts.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="mb-3 text-lg font-semibold text-green-900">מוצרים קיימים שנבדקו</h4>
-                          <div className="grid gap-3 md:grid-cols-2">
-                            {productStats.currentProducts.map((product) => (
-                              <div key={product.id} className="rounded-2xl border border-green-100 bg-white/70 p-4 text-right shadow-sm">
-                                <p className="text-base font-semibold text-green-900">{product.productName}</p>
-                                <p className="text-sm text-muted-foreground">{product.company}</p>
-                                <p className="mt-2 text-sm text-green-800">₪{product.amount.toLocaleString()}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </section>
-                  )}
-
-                  {effectiveSections.additionalNotes && (
-                    <section className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-purple-100/60 p-6 shadow-inner">
-                      <div className="mb-4 flex items-center gap-2 text-purple-900">
-                        <NotebookPen className="h-5 w-5" />
-                        <h3 className="text-xl font-bold">שלב 4: הרחבות והערות</h3>
-                      </div>
-                      <div className="space-y-4 text-right">
-                        {formData.currentSituation ? (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-purple-900">מצב קיים</h4>
-                            <p className="text-sm leading-relaxed text-purple-800">{formData.currentSituation}</p>
-                          </div>
-                        ) : null}
-                        {formData.risks ? (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-purple-900">פערים וסיכונים</h4>
-                            <p className="text-sm leading-relaxed text-purple-800">{formData.risks}</p>
-                          </div>
-                        ) : null}
-                        {validRecommendations.length > 0 && (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-purple-900">המלצות להמשך</h4>
-                            <ul className="space-y-2 text-sm text-purple-800">
-                              {validRecommendations.map((rec, index) => (
-                                <li key={index} className="flex items-start justify-end gap-2">
-                                  <span className="mt-1 h-2 w-2 rounded-full bg-purple-500" />
-                                  <span>{rec}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {formData.estimatedCost && (
-                          <div className="rounded-2xl border border-purple-200 bg-purple-600/10 p-4 text-purple-900 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold">הערכת עלות</h4>
-                            <p className="text-sm">{formData.estimatedCost}</p>
-                          </div>
-                        )}
-                        {!formData.currentSituation && !formData.risks && validRecommendations.length === 0 && !formData.estimatedCost && (
-                          <p className="text-sm text-muted-foreground">לא הוזנו הרחבות נוספות לדוח זה.</p>
-                        )}
-                      </div>
-                    </section>
-                  )}
-
-                  {effectiveSections.disclosures && (
-                    <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100/70 p-6 shadow-inner">
-                      <div className="mb-4 flex items-center gap-2 text-slate-900">
-                        <ShieldAlert className="h-5 w-5" />
-                        <h3 className="text-xl font-bold">שלב 5: גילוי נאות</h3>
-                      </div>
-                      <ul className="space-y-2 text-right text-sm text-slate-700">
-                        <li className="flex items-start justify-end gap-2">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
-                          <span>הנתונים מבוססים על המידע שנמסר לנו ועל עדכונים אחרונים מהחברות המוסדיות.</span>
-                        </li>
-                        <li className="flex items-start justify-end gap-2">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
-                          <span>דמי ניהול, מסלולים ומדיניות השקעה עשויים להשתנות לאחר מועד הכנת הדוח.</span>
-                        </li>
-                        <li className="flex items-start justify-end gap-2">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-slate-500" />
-                          <span>מומלץ לוודא שההמלצות תואמות את צרכי הלקוח, רמת הסיכון הרצויה והגדרת היעדים האישיים.</span>
-                        </li>
-                      </ul>
-                    </section>
-                  )}
-
-                  {effectiveSections.nextSteps && (
-                    <section className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-100/60 p-6 shadow-inner">
-                      <div className="mb-4 flex items-center gap-2 text-orange-900">
-                        <Flag className="h-5 w-5" />
-                        <h3 className="text-xl font-bold">שלב 6: סיכום ומשימות להמשך</h3>
-                      </div>
-                      <div className="space-y-4 text-right">
-                        {formData.decisions && (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-orange-900">החלטות שהתקבלו</h4>
-                            <div className="ai-content text-right text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: formData.decisions }} />
-                          </div>
-                        )}
-                        {formData.documents.length > 0 && (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-orange-900">מסמכים ואישורים</h4>
-                            <ul className="space-y-2 text-sm text-orange-900">
-                              {formData.documents.map((doc, index) => (
-                                <li key={index} className="flex items-start justify-end gap-2">
-                                  <span className="mt-1 h-2 w-2 rounded-full bg-orange-500" />
-                                  <span>{doc}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {formData.timeframes && (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-orange-900">לוחות זמנים</h4>
-                            <p className="text-sm text-orange-900">{formData.timeframes}</p>
-                          </div>
-                        )}
-                        {formData.approvals && (
-                          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-                            <h4 className="mb-2 text-lg font-semibold text-orange-900">אישורים נדרשים</h4>
-                            <p className="text-sm text-orange-900">{formData.approvals}</p>
-                          </div>
-                        )}
-                        {!formData.decisions && formData.documents.length === 0 && !formData.timeframes && !formData.approvals && (
-                          <p className="text-sm text-muted-foreground">לא הוגדרו משימות להמשך בשלב זה.</p>
-                        )}
-                      </div>
-                    </section>
-                  )}
+    return (
+      <div className={containerClass}>
+        {effectiveSections.personalInfo && (
+          <section className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100/60 p-6 shadow-inner">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-blue-900">
+                <User className="h-5 w-5" />
+                <h3 className="text-xl font-bold">חלק ראשון: מידע כללי</h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="rounded-full border-blue-200 bg-white/80 text-blue-700">
+                  {formatDate(formData.meetingDate)}
+                </Badge>
+                <Badge variant="secondary" className="rounded-full border-blue-200 bg-blue-600/10 text-blue-700">
+                  {isExpandedMode ? 'מצב מורחב פעיל' : 'תצוגה מלאה'}
+                </Badge>
+              </div>
+            </div>
+            <div className="grid gap-4 text-right md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-blue-500">שם הלקוח</span>
+                  <User className="h-4 w-4 text-blue-400" />
                 </div>
-  );
+                <p className="text-lg font-semibold text-blue-900">{formData.clientName || 'לא צויין'}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-blue-500">טלפון</span>
+                  <Phone className="h-4 w-4 text-blue-400" />
+                </div>
+                <p className="text-lg font-semibold text-blue-900">{formData.clientPhone || 'לא צויין'}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-blue-500">אימייל</span>
+                  <Mail className="h-4 w-4 text-blue-400" />
+                </div>
+                <p className="text-lg font-semibold text-blue-900">{formData.clientEmail || 'לא צויין'}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-blue-500">מיקום הפגישה</span>
+                  <MapPin className="h-4 w-4 text-blue-400" />
+                </div>
+                <p className="text-lg font-semibold text-blue-900">{locationDisplay}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-blue-500">סוכן מלווה</span>
+                  <Shield className="h-4 w-4 text-blue-400" />
+                </div>
+                <p className="text-lg font-semibold text-blue-900">{agentData?.name || 'הסוכן שלכם'}</p>
+                {agentData?.phone && (
+                  <p className="text-sm text-blue-700">{agentData.phone}</p>
+                )}
+              </div>
+            </div>
+            {formData.topics.length > 0 && (
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                {formData.topics.map((topic) => (
+                  <Badge key={topic} className="rounded-full border-blue-200 bg-blue-600/10 px-4 py-1 text-blue-800">
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
+        {effectiveSections.executiveSummary && (
+          <section className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-100/50 p-6 shadow-inner">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-amber-900">
+                <Sparkles className="h-5 w-5" />
+                <h3 className="text-xl font-bold">חלק שני: סיכום כללי של ההמלצות</h3>
+              </div>
+              <Badge variant="outline" className="rounded-full border-amber-200 bg-white/80 text-amber-700">
+                שינויים מרכזיים
+              </Badge>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-medium text-amber-600">סה״כ צבירה</p>
+                <p className="mt-2 text-lg font-bold text-amber-900">
+                  ₪{productStats.totalCurrentAmount.toLocaleString()} → ₪{productStats.totalRecommendedAmount.toLocaleString()}
+                </p>
+                <p className={`text-sm font-semibold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                  {amountDifference === 0 ? 'ללא שינוי' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-medium text-amber-600">מספר מוצרים</p>
+                <p className="mt-2 text-lg font-bold text-amber-900">
+                  {productStats.currentProducts.length} → {productStats.recommendedProducts.length}
+                </p>
+                <p className={`text-sm font-semibold ${productStats.productCountDifference > 0 ? 'text-green-600' : productStats.productCountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                  {productStats.productCountDifference === 0 ? 'ללא שינוי' : `${productStats.productCountDifference > 0 ? '+' : ''}${productStats.productCountDifference}`}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-medium text-amber-600">דמי ניהול ממוצעים</p>
+                <p className="mt-2 text-lg font-bold text-amber-900">
+                  {productStats.avgCurrentDeposit.toFixed(2)}% → {productStats.avgRecommendedDeposit.toFixed(2)}%
+                </p>
+                <p className={`text-sm font-semibold ${depositDelta < 0 ? 'text-green-600' : depositDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                  {depositDelta === 0 ? 'ללא שינוי בדמי ניהול' : depositDelta < 0 ? `הפחתה של ${Math.abs(depositDelta).toFixed(2)}%` : `עלייה של ${depositDelta.toFixed(2)}%`}
+                </p>
+              </div>
+            </div>
+            <ul className="mt-6 space-y-2 text-right">
+              {productStats.highlightBullets.map((highlight, index) => (
+                <li key={index} className="flex items-start justify-end gap-2 text-sm text-amber-900">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-amber-500" />
+                  <span>{highlight}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
+        {effectiveSections.detailedBreakdown && (
+          <section className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 via-white to-emerald-100/60 p-6 shadow-inner">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-green-900">
+                <FileSpreadsheet className="h-5 w-5" />
+                <h3 className="text-xl font-bold">חלק שלישי: סיכום מורחב של ההמלצות</h3>
+              </div>
+              <Badge variant="outline" className="rounded-full border-green-200 bg-white/80 text-green-700">
+                השוואה מעמיקה ותכנית פעולה
+              </Badge>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-medium text-green-600">צבירה כוללת</p>
+                <p className="mt-2 text-lg font-bold text-green-900">
+                  ₪{productStats.totalCurrentAmount.toLocaleString()} → ₪{productStats.totalRecommendedAmount.toLocaleString()}
+                </p>
+                <p className={`text-sm font-semibold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                  {amountDifference === 0 ? 'ללא שינוי' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-medium text-green-600">התאמות ברמת הסיכון</p>
+                <p className="mt-2 text-lg font-bold text-green-900">{productStats.riskShiftCount}</p>
+                <p className="text-sm text-muted-foreground">מספר המוצרים שעברו התאמת סיכון</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <p className="text-sm font-medium text-green-600">דמי ניהול מצבירה</p>
+                <p className="mt-2 text-lg font-bold text-green-900">
+                  {productStats.avgCurrentAccumulation.toFixed(2)}% → {productStats.avgRecommendedAccumulation.toFixed(2)}%
+                </p>
+                <p className={`text-sm font-semibold ${accumulationDelta < 0 ? 'text-green-600' : accumulationDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                  {accumulationDelta === 0 ? 'ללא שינוי' : accumulationDelta < 0 ? `חיסכון של ${Math.abs(accumulationDelta).toFixed(2)}%` : `תוספת של ${accumulationDelta.toFixed(2)}%`}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <div className="rounded-2xl bg-white/80 p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-right">
+                    <h4 className="text-lg font-semibold text-green-900">דמי ניהול מהפקדה</h4>
+                    <p className="text-sm text-muted-foreground">ממוצע משוקלל</p>
+                  </div>
+                  <PieChart className="h-6 w-6 text-green-500" />
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                      <span>מצב קיים</span>
+                      <span>{productStats.avgCurrentDeposit.toFixed(2)}%</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-green-100">
+                      <div className="h-full rounded-full bg-green-500" style={{ width: `${productStats.depositCurrentBar || 0}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                      <span>מצב מוצע</span>
+                      <span>{productStats.avgRecommendedDeposit.toFixed(2)}%</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-green-100">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${productStats.depositRecommendedBar || 0}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-right">
+                    <h4 className="text-lg font-semibold text-green-900">דמי ניהול מצבירה</h4>
+                    <p className="text-sm text-muted-foreground">ממוצע משוקלל</p>
+                  </div>
+                  <BarChart3 className="h-6 w-6 text-green-500" />
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                      <span>מצב קיים</span>
+                      <span>{productStats.avgCurrentAccumulation.toFixed(2)}%</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-green-100">
+                      <div className="h-full rounded-full bg-green-500" style={{ width: `${productStats.accumulationCurrentBar || 0}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-sm font-medium text-green-700">
+                      <span>מצב מוצע</span>
+                      <span>{productStats.avgRecommendedAccumulation.toFixed(2)}%</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-green-100">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${productStats.accumulationRecommendedBar || 0}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-green-200 bg-white/80 shadow-sm">
+              <table className="w-full border-collapse text-right">
+                <thead>
+                  <tr className="bg-green-500/90 text-white">
+                    <th className="p-4 text-right font-semibold">מדד להשוואה</th>
+                    <th className="p-4 text-center font-semibold">מצב קיים</th>
+                    <th className="p-4 text-center font-semibold">מצב מוצע</th>
+                    <th className="p-4 text-center font-semibold">שינוי</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm text-foreground">
+                  <tr className="border-b border-green-100">
+                    <td className="p-4 font-semibold text-green-900">סכום צבירה</td>
+                    <td className="p-4 text-center font-bold text-green-800">₪{productStats.totalCurrentAmount.toLocaleString()}</td>
+                    <td className="p-4 text-center font-bold text-green-800">₪{productStats.totalRecommendedAmount.toLocaleString()}</td>
+                    <td className={`p-4 text-center font-bold ${amountDifference > 0 ? 'text-green-600' : amountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {amountDifference === 0 ? '0' : `${amountDifference > 0 ? '+' : '-'}₪${Math.abs(amountDifference).toLocaleString()}`}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-green-100">
+                    <td className="p-4 font-semibold text-green-900">מספר מוצרים</td>
+                    <td className="p-4 text-center font-bold text-green-800">{productStats.currentProducts.length}</td>
+                    <td className="p-4 text-center font-bold text-green-800">{productStats.recommendedProducts.length}</td>
+                    <td className={`p-4 text-center font-bold ${productStats.productCountDifference > 0 ? 'text-green-600' : productStats.productCountDifference < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {productStats.productCountDifference === 0 ? '0' : `${productStats.productCountDifference > 0 ? '+' : ''}${productStats.productCountDifference}`}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-green-100">
+                    <td className="p-4 font-semibold text-green-900">דמי ניהול מהפקדה</td>
+                    <td className="p-4 text-center text-green-800">{productStats.avgCurrentDeposit.toFixed(2)}%</td>
+                    <td className="p-4 text-center text-green-800">{productStats.avgRecommendedDeposit.toFixed(2)}%</td>
+                    <td className={`p-4 text-center font-bold ${depositDelta < 0 ? 'text-green-600' : depositDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {depositDelta === 0 ? '0%' : `${depositDelta > 0 ? '+' : ''}${depositDelta.toFixed(2)}%`}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-semibold text-green-900">דמי ניהול מצבירה</td>
+                    <td className="p-4 text-center text-green-800">{productStats.avgCurrentAccumulation.toFixed(2)}%</td>
+                    <td className="p-4 text-center text-green-800">{productStats.avgRecommendedAccumulation.toFixed(2)}%</td>
+                    <td className={`p-4 text-center font-bold ${accumulationDelta < 0 ? 'text-green-600' : accumulationDelta > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {accumulationDelta === 0 ? '0%' : `${accumulationDelta > 0 ? '+' : ''}${accumulationDelta.toFixed(2)}%`}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {productStats.recommendedProducts.length > 0 && (
+              <div className="mt-6">
+                <h4 className="mb-3 text-lg font-semibold text-green-900">מוצרים מומלצים</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {productStats.recommendedProducts.map((product) => (
+                    <div key={product.id} className="rounded-2xl border border-green-200 bg-gradient-to-br from-white via-green-50 to-green-100/60 p-5 shadow-sm">
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="text-lg font-bold text-green-900">{product.productName}</p>
+                        <Badge variant="outline" className="rounded-full border-green-300 bg-white/70 text-green-700">
+                          {product.company}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2 text-sm text-green-900">
+                        <p>מסלול: <span className="font-semibold">{product.subType}</span></p>
+                        <p>צבירה: <span className="font-semibold">₪{product.amount.toLocaleString()}</span></p>
+                        <p>דמי ניהול: <span className="font-semibold">{product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה</span></p>
+                        {product.investmentTrack && <p>מסלול השקעה: <span className="font-semibold">{product.investmentTrack}</span></p>}
+                        {product.riskLevelChange && product.riskLevelChange !== 'no-change' && (
+                          <p>שינוי רמת סיכון: <span className="font-semibold">{product.riskLevelChange}</span></p>
+                        )}
+                      </div>
+                      {product.notes && (
+                        <p className="mt-3 rounded-xl bg-green-600/10 p-3 text-sm text-green-800">{product.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {productStats.currentProducts.length > 0 && (
+              <div className="mt-6">
+                <h4 className="mb-3 text-lg font-semibold text-green-900">מוצרים קיימים שנבדקו</h4>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {productStats.currentProducts.map((product) => (
+                    <div key={product.id} className="rounded-2xl border border-green-100 bg-white/70 p-4 text-right shadow-sm">
+                      <p className="text-base font-semibold text-green-900">{product.productName}</p>
+                      <p className="text-sm text-muted-foreground">{product.company}</p>
+                      <p className="mt-2 text-sm text-green-800">₪{product.amount.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(effectiveSections.additionalNotes || effectiveSections.nextSteps) && (
+              <div className="mt-8 space-y-6">
+                {effectiveSections.additionalNotes && (
+                  <div className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-purple-100/60 p-5 shadow-inner">
+                    <div className="mb-3 flex items-center gap-2 text-purple-900">
+                      <NotebookPen className="h-5 w-5" />
+                      <h4 className="text-lg font-bold">תמונה אסטרטגית והרחבות</h4>
+                    </div>
+                    <div className="space-y-4 text-right">
+                      {formData.currentSituation ? (
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold text-purple-900">מצב קיים ותובנות</h5>
+                          <p className="text-sm leading-relaxed text-purple-800">{formData.currentSituation}</p>
+                        </div>
+                      ) : null}
+                      {validRecommendations.length > 0 && (
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold text-purple-900">המלצות לביצוע</h5>
+                          <ul className="space-y-2 text-sm text-purple-800">
+                            {validRecommendations.map((rec, index) => (
+                              <li key={index} className="flex items-start justify-end gap-2">
+                                <span className="mt-1 h-2 w-2 rounded-full bg-purple-500" />
+                                <span>{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {formData.estimatedCost && (
+                        <div className="rounded-2xl border border-purple-200 bg-purple-600/10 p-4 text-purple-900 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold">הערכת עלויות משוערת</h5>
+                          <p className="text-sm">{formData.estimatedCost}</p>
+                        </div>
+                      )}
+                      {!formData.currentSituation && validRecommendations.length === 0 && !formData.estimatedCost && (
+                        <p className="text-sm text-muted-foreground">לא הוזנו הרחבות נוספות לדוח זה.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {effectiveSections.nextSteps && (
+                  <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-100/60 p-5 shadow-inner">
+                    <div className="mb-3 flex items-center gap-2 text-orange-900">
+                      <Flag className="h-5 w-5" />
+                      <h4 className="text-lg font-bold">צעדים ומשימות להמשך</h4>
+                    </div>
+                    <div className="space-y-4 text-right">
+                      {formData.decisions && (
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold text-orange-900">החלטות מיידיות</h5>
+                          <div className="ai-content text-right text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: formData.decisions }} />
+                        </div>
+                      )}
+                      {formData.documents.length > 0 && (
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold text-orange-900">מסמכים ואישורים</h5>
+                          <ul className="space-y-2 text-sm text-orange-900">
+                            {formData.documents.map((doc, index) => (
+                              <li key={index} className="flex items-start justify-end gap-2">
+                                <span className="mt-1 h-2 w-2 rounded-full bg-orange-500" />
+                                <span>{doc}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {formData.timeframes && (
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold text-orange-900">לוחות זמנים</h5>
+                          <p className="text-sm text-orange-900">{formData.timeframes}</p>
+                        </div>
+                      )}
+                      {formData.approvals && (
+                        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                          <h5 className="mb-2 text-base font-semibold text-orange-900">אישורים נדרשים</h5>
+                          <p className="text-sm text-orange-900">{formData.approvals}</p>
+                        </div>
+                      )}
+                      {!formData.decisions && formData.documents.length === 0 && !formData.timeframes && !formData.approvals && (
+                        <p className="text-sm text-muted-foreground">לא הוגדרו משימות נוספות לשלב זה.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {showRiskSection && (
+          <section className="rounded-3xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-rose-100/60 p-6 shadow-inner">
+            <div className="mb-4 flex items-center gap-2 text-rose-900">
+              <ShieldAlert className="h-5 w-5" />
+              <h3 className="text-xl font-bold">חלק רביעי: סיכונים והסתייגויות</h3>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <h4 className="mb-2 text-base font-semibold text-rose-900">סיכונים שעלו בשיחה</h4>
+                {hasManualRisk ? (
+                  <p className="text-sm leading-relaxed text-rose-800">{formData.risks}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">לא תועדו סיכונים ייחודיים מעבר לסטנדרט.</p>
+                )}
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
+                <h4 className="mb-2 text-base font-semibold text-rose-900">ניתוח משלים (ChatGPT)</h4>
+                {aiRiskAvailable ? (
+                  <div className="ai-content text-right text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: aiRiskNotes }} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">לחצו על כפתור "הערת סיכונים (ChatGPT)" כדי להעשיר את הניתוח האוטומטי.</p>
+                )}
+                {riskGeneratedAt && (
+                  <p className="mt-3 text-xs text-muted-foreground">עודכן באמצעות ChatGPT ב-{formatDateTime(riskGeneratedAt)}</p>
+                )}
+              </div>
+            </div>
+            {effectiveSections.disclosures && (
+              <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-900 space-y-2">
+                <p>הנתונים מבוססים על המידע שנמסר ועל פרסומי הגופים המוסדיים הנכונים למועד הפגישה.</p>
+                <p>תנאי המוצרים, דמי הניהול ומסלולי ההשקעה עשויים להשתנות לאחר מועד הכנת הדוח.</p>
+                <p>מומלץ לוודא שההמלצות מותאמות לרמת הסיכון וליעדים האישיים של הלקוח לפני יישום.</p>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    );
+  };
   return (
     <div className="min-h-screen pt-20 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -1416,7 +1521,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
           <Button
             onClick={() => copyToClipboard(summaryText, 'summary')}
             className="bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
@@ -1446,6 +1551,20 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
           >
             <Layout className="h-5 w-5" />
             <span className="text-sm">תצוגת דוח סופי</span>
+          </Button>
+
+          <Button
+            onClick={handleGenerateRiskNotes}
+            variant="outline"
+            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl h-auto p-4 flex flex-col items-center gap-2"
+            disabled={isGeneratingRisks}
+          >
+            {isGeneratingRisks ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <ShieldAlert className="h-5 w-5" />
+            )}
+            <span className="text-sm">{isGeneratingRisks ? 'מנתח סיכונים...' : 'הערת סיכונים (ChatGPT)'}</span>
           </Button>
 
           <Button 
