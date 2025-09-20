@@ -44,6 +44,7 @@ interface FormData {
   clientPhone: string;
   clientEmail: string;
   meetingDate: string;
+  meetingLocation: string;
   topics: string[];
   
   // Agent recommendations
@@ -82,6 +83,7 @@ const AppForm = () => {
     clientPhone: "",
     clientEmail: "",
     meetingDate: new Date().toISOString().split('T')[0],
+    meetingLocation: "",
     topics: [],
     currentSituation: "",
     risks: "",
@@ -598,6 +600,17 @@ const AppForm = () => {
                       value={formData.meetingDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
                       className="mt-2 bg-input rounded-xl"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label htmlFor="meetingLocation">מיקום / אופי הפגישה</Label>
+                    <Input
+                      id="meetingLocation"
+                      value={formData.meetingLocation}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl"
+                      placeholder="למשל: פגישה במשרד, זום, טלפונית"
                     />
                   </div>
                 </div>
