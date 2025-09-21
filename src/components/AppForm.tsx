@@ -606,37 +606,12 @@ const AppForm = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Action buttons */}
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={saveDraft}
-                    className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
-                  >
-                    <Save className="h-4 w-4 ml-2" />
-                    שמור טיוטה
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={loadDraft}
-                    className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
-                  >
-                    טען טיוטה
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowRecordingModal(true)}
-                    className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
-                  >
-                    <Phone className="h-4 w-4 ml-2" />
-                    הקלט שיחה עם לקוח
-                  </Button>
-                </div>
                 
                 <ProductManager
                   currentProducts={formData.products.filter(p => p.type === 'current')}
                   recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
                   onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
+                  onShowRecording={() => setShowRecordingModal(true)}
                 />
               </CardContent>
             </Card>

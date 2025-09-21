@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BarChart3, Upload, GitCompare } from 'lucide-react';
+import { Plus, BarChart3, Upload, GitCompare, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
@@ -14,12 +14,14 @@ interface ProductManagerProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
   onUpdateProducts: (products: SelectedProduct[]) => void;
+  onShowRecording?: () => void;
 }
 
 const ProductManager: React.FC<ProductManagerProps> = ({
   currentProducts,
   recommendedProducts,
-  onUpdateProducts
+  onUpdateProducts,
+  onShowRecording
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'current' | 'recommended'>('current');
@@ -195,15 +197,20 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">ניהול מוצרים פיננסיים</h2>
-      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-3">
         <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover" title="יבוא מצב קיים מאקסל">
           <Upload className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={onShowRecording}
+          className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
+          title="הקלט שיחה עם לקוח"
+        >
+          <Phone className="h-4 w-4" />
         </Button>
         <Button onClick={() => openModal('current')} className="glass-hover">
           <Plus className="h-4 w-4 mr-2" />
