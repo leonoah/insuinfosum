@@ -199,24 +199,25 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     <div className="space-y-6">
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
-        <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover" title="יבוא מצב קיים מאקסל">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
+        <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover shrink-0" title="יבוא מצב קיים מאקסל" aria-label="יבוא מצב קיים מאקסל">
           <Upload className="h-4 w-4" />
         </Button>
         <Button 
           variant="outline" 
           size="sm"
           onClick={onShowRecording}
-          className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
+          className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl shrink-0"
           title="הקלט שיחה עם לקוח"
+          aria-label="הקלט שיחה עם לקוח"
         >
           <Phone className="h-4 w-4" />
         </Button>
-        <Button onClick={() => openModal('current')} className="glass-hover">
+        <Button onClick={() => openModal('current')} className="glass-hover w-full sm:w-auto max-w-full whitespace-nowrap">
           <Plus className="h-4 w-4 mr-2" />
           הוסף מוצר קיים
         </Button>
-        <Button onClick={() => openModal('recommended')} variant="secondary" className="glass-hover">
+        <Button onClick={() => openModal('recommended')} variant="secondary" className="glass-hover w-full sm:w-auto max-w-full whitespace-nowrap">
           <Plus className="h-4 w-4 mr-2" />
           הוסף מוצר מוצע
         </Button>
