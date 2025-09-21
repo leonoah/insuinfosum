@@ -32,22 +32,22 @@ const ProductItem: React.FC<{
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="glass-hover p-4 rounded-lg">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
-            <div className="flex items-center gap-2">
+      <div className="glass-hover p-3 sm:p-4 rounded-lg">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2 sm:gap-3 flex-1">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Checkbox 
                 checked={selectedProducts.includes(product.id)}
                 onCheckedChange={(checked) => onProductSelect(product.id, checked as boolean)}
                 className="mt-1"
               />
-              <span className="text-2xl">
+              <span className="text-xl sm:text-2xl">
                 {PRODUCT_ICONS[product.productName] || '📄'}
               </span>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <div className="font-medium">{product.productName}</div>
+                <div className="font-medium text-sm sm:text-base truncate">{product.productName}</div>
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"

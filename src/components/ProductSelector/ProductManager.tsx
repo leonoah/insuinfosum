@@ -199,27 +199,31 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     <div className="space-y-6">
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
-        <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover" title="יבוא מצב קיים מאקסל">
-          <Upload className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onShowRecording}
-          className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
-          title="הקלט שיחה עם לקוח"
-        >
-          <Phone className="h-4 w-4" />
-        </Button>
-        <Button onClick={() => openModal('current')} className="glass-hover">
-          <Plus className="h-4 w-4 mr-2" />
-          הוסף מוצר קיים
-        </Button>
-        <Button onClick={() => openModal('recommended')} variant="secondary" className="glass-hover">
-          <Plus className="h-4 w-4 mr-2" />
-          הוסף מוצר מוצע
-        </Button>
+      <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
+        <div className="flex gap-2">
+          <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover" title="יבוא מצב קיים מאקסל">
+            <Upload className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onShowRecording}
+            className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
+            title="הקלט שיחה עם לקוח"
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button onClick={() => openModal('current')} className="glass-hover flex-1 sm:flex-none">
+            <Plus className="h-4 w-4 mr-2" />
+            הוסף מוצר קיים
+          </Button>
+          <Button onClick={() => openModal('recommended')} variant="secondary" className="glass-hover flex-1 sm:flex-none">
+            <Plus className="h-4 w-4 mr-2" />
+            הוסף מוצר מוצע
+          </Button>
+        </div>
       </div>
 
       {/* Comparison Section - Always Visible */}

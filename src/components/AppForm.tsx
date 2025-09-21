@@ -413,22 +413,22 @@ const AppForm = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pt-16 sm:pt-20 pb-8 px-3 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
             יצירת סיכום פגישה + מוצרים פיננסיים
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg">
             מלאו את הפרטים להכנת סיכום מקצועי
           </p>
           
           {/* Progress */}
-          <div className="mt-6 glass p-4 rounded-2xl">
+          <div className="mt-4 sm:mt-6 glass p-3 sm:p-4 rounded-2xl">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">התקדmות</span>
-              <span className="text-sm font-medium">{Math.round(calculateProgress())}%</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">התקדמות</span>
+              <span className="text-xs sm:text-sm font-medium">{Math.round(calculateProgress())}%</span>
             </div>
             <Progress value={calculateProgress()} className="h-2" />
           </div>
@@ -437,27 +437,30 @@ const AppForm = () => {
 
         {/* Form - RTL Layout */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-3 glass mb-8 p-1 rounded-2xl">
+          <TabsList className="grid w-full grid-cols-3 glass mb-6 sm:mb-8 p-1 rounded-2xl">
             <TabsTrigger 
               value="client" 
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3"
             >
-              <User className="h-4 w-4 ml-2" />
-              פרטי לקוח
+              <User className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+              <span className="hidden sm:inline">פרטי לקוח</span>
+              <span className="sm:hidden">לקוח</span>
             </TabsTrigger>
             <TabsTrigger 
               value="products"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3"
             >
-              <BarChart3 className="h-4 w-4 ml-2" />
-              מוצרים
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+              <span className="hidden sm:inline">מוצרים</span>
+              <span className="sm:hidden">מוצרים</span>
             </TabsTrigger>
             <TabsTrigger 
               value="decisions"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3"
             >
-              <CheckCircle className="h-4 w-4 ml-2" />
-              החלטות
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+              <span className="hidden sm:inline">החלטות</span>
+              <span className="sm:hidden">החלטות</span>
             </TabsTrigger>
           </TabsList>
 
