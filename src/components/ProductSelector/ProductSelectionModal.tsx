@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Copy } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Copy, Mic } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { InsuranceCompany, InsuranceProduct, SelectedProduct, ProductSelectionStep, PRODUCT_ICONS, INVESTMENT_TRACKS } from '@/types/insurance';
 import insuranceData from '@/data/insurers_products_il.json';
+import VoiceProductInput from './VoiceProductInput';
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   editingProduct = null
 }) => {
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
+  const [showVoiceInput, setShowVoiceInput] = useState(false);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
@@ -133,8 +135,35 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     handleClose();
   };
 
+  const handleVoiceProductAnalyzed = (analyzedData: any) => {
+    console.log('Voice analyzed data:', analyzedData);
+    
+    // Update form data with analyzed information
+    setFormData(prev => ({
+      ...prev,
+      company: analyzedData.company || '',
+      productName: analyzedData.productName || '',
+      subType: analyzedData.subType || '',
+      amount: analyzedData.amount || 0,
+      managementFeeOnDeposit: analyzedData.managementFeeOnDeposit || 0,
+      managementFeeOnAccumulation: analyzedData.managementFeeOnAccumulation || 0,
+      investmentTrack: analyzedData.investmentTrack || '',
+      notes: `הוקלט: ${analyzedData.transcribedText || ''}\n${analyzedData.notes || ''}`.trim()
+    }));
+
+    // Set step to final form step with analyzed data
+    setStep({
+      current: 3,
+      selectedProduct: analyzedData.productName,
+      selectedCompany: analyzedData.company
+    });
+    
+    setShowVoiceInput(false);
+  };
+
   const handleClose = () => {
     setStep({ current: 1 });
+    setShowVoiceInput(false);
     setFormData({
       type: productType,
       subType: '',
@@ -191,10 +220,34 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             <Progress value={progressValue} className="h-2" />
           </div>
 
-          {/* Step 1: Product Selection */}
-          {step.current === 1 && (
+          {/* Voice Input */}
+          {showVoiceInput && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">בחר סוג מוצר</h3>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowVoiceInput(false)}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <h3 className="text-lg font-semibold">הוספת מוצר בהקלטה</h3>
+              </div>
+              <VoiceProductInput onProductAnalyzed={handleVoiceProductAnalyzed} />
+            </div>
+          )}
+
+          {/* Step 1: Product Selection */}
+          {step.current === 1 && !showVoiceInput && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">בחר סוג מוצר</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowVoiceInput(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Mic className="h-4 w-4" />
+                  הקלטה
+                </Button>
+              </div>
               
               {/* Duplicate existing products */}
               {existingProducts.length > 0 && (
