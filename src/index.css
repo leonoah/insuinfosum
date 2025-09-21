@@ -207,52 +207,20 @@
   border-radius: 4px;
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  .glass {
-    border-radius: 1rem;
-    padding: 1rem;
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .transcript-highlights .product-name {
+    color: hsl(142, 76%, 60%);
+    background-color: hsl(142, 76%, 15%);
   }
   
-  /* Touch-friendly buttons */
-  button {
-    min-height: 44px;
-    min-width: 44px;
+  .transcript-highlights .company-name {
+    color: hsl(262, 83%, 75%);
+    background-color: hsl(262, 83%, 15%);
   }
   
-  /* Improved mobile spacing */
-  .space-y-6 > * + * {
-    margin-top: 1rem !important;
-  }
-  
-  .space-y-8 > * + * {
-    margin-top: 1.5rem !important;
-  }
-  
-  /* Better text scaling */
-  h1 {
-    font-size: 1.875rem !important;
-    line-height: 2.25rem !important;
-  }
-  
-  h2 {
-    font-size: 1.5rem !important;
-    line-height: 2rem !important;
-  }
-  
-  /* Mobile-friendly forms */
-  input, textarea, select {
-    font-size: 16px; /* Prevents zoom on iOS */
-    padding: 0.75rem;
-  }
-  
-  /* Better tab navigation */
-  .TabsList {
-    padding: 0.25rem;
-  }
-  
-  .TabsTrigger {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
+  .transcript-highlights .numbers {
+    color: hsl(0, 84%, 70%);
+    background-color: hsl(0, 84%, 15%);
   }
 }

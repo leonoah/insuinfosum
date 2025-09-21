@@ -7,13 +7,7 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: {
-        DEFAULT: "1rem",
-        sm: "2rem",
-        lg: "4rem",
-        xl: "5rem",
-        "2xl": "6rem",
-      },
+      padding: "2rem",
       screens: {
         "2xl": "1400px",
       },
@@ -96,14 +90,6 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fadeIn 0.3s ease-in-out",
-        "slide-up": "slideUp 0.3s ease-out",
-      },
-      screens: {
-        'xs': '475px',
-      },
-      spacing: {
-        'touch': '44px', // Minimum touch target size for mobile
       },
     },
   },

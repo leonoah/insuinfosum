@@ -413,62 +413,59 @@ const AppForm = () => {
   }
 
   return (
-    <div className="min-h-screen pb-20 px-3 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto pt-4 sm:pt-8">
+    <div className="min-h-screen pt-20 pb-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2 sm:mb-4 px-2">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             יצירת סיכום פגישה + מוצרים פיננסיים
           </h1>
-          <p className="text-muted-foreground text-sm sm:text-lg px-2">
+          <p className="text-muted-foreground text-lg">
             מלאו את הפרטים להכנת סיכום מקצועי
           </p>
           
           {/* Progress */}
-          <div className="mt-3 sm:mt-6 glass p-3 sm:p-4 rounded-xl sm:rounded-2xl mx-2 sm:mx-0">
+          <div className="mt-6 glass p-4 rounded-2xl">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs sm:text-sm text-muted-foreground">התקדמות</span>
-              <span className="text-xs sm:text-sm font-medium">{Math.round(calculateProgress())}%</span>
+              <span className="text-sm text-muted-foreground">התקדmות</span>
+              <span className="text-sm font-medium">{Math.round(calculateProgress())}%</span>
             </div>
             <Progress value={calculateProgress()} className="h-2" />
           </div>
         </div>
 
+
         {/* Form - RTL Layout */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <div className="mb-4 px-2 sm:px-0">
-            <TabsList className="grid w-full grid-cols-3 glass p-1 rounded-xl h-12 sm:h-14">
-              <TabsTrigger 
-                value="client" 
-                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:text-muted-foreground text-xs sm:text-sm font-medium h-10 sm:h-12 flex items-center justify-center gap-1 sm:gap-2"
-              >
-                <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden xs:inline">פרטי לקוח</span>
-                <span className="xs:hidden">לקוח</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="products"
-                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:text-muted-foreground text-xs sm:text-sm font-medium h-10 sm:h-12 flex items-center justify-center gap-1 sm:gap-2"
-              >
-                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span>מוצרים</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="decisions"
-                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:text-muted-foreground text-xs sm:text-sm font-medium h-10 sm:h-12 flex items-center justify-center gap-1 sm:gap-2"
-              >
-                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden xs:inline">החלטות</span>
-                <span className="xs:hidden">החלטות</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-3 glass mb-8 p-1 rounded-2xl">
+            <TabsTrigger 
+              value="client" 
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <User className="h-4 w-4 ml-2" />
+              פרטי לקוח
+            </TabsTrigger>
+            <TabsTrigger 
+              value="products"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <BarChart3 className="h-4 w-4 ml-2" />
+              מוצרים
+            </TabsTrigger>
+            <TabsTrigger 
+              value="decisions"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <CheckCircle className="h-4 w-4 ml-2" />
+              החלטות
+            </TabsTrigger>
+          </TabsList>
 
           {/* Client Details */}
-          <TabsContent value="client" className="px-2 sm:px-0">
-            <Card className="glass border-glass-border rounded-xl sm:rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <TabsContent value="client">
+            <Card className="glass border-glass-border rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
                   פרטי הלקוח
                 </CardTitle>
@@ -502,65 +499,61 @@ const AppForm = () => {
                           />
                           <CommandEmpty>
                             <div className="p-4 text-center">
-                              <p className="text-sm text-muted-foreground mb-2">לא נמצא לקוח</p>
-                              <Button 
-                                size="sm" 
-                                onClick={() => {
-                                  setFormData(prev => ({ 
-                                    ...prev, 
-                                    clientName: clientSearchValue,
-                                    clientId: clientSearchValue.replace(/\s+/g, '') + Date.now().toString().slice(-4)
-                                  }));
-                                  setClientSearchOpen(false);
-                                }}
-                                className="w-full"
-                              >
-                                צור לקוח חדש: {clientSearchValue}
-                              </Button>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                לא נמצא לקוח עם השם "{clientSearchValue}"
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                המשיכו למלא את הפרטים ליצירת לקוח חדש
+                              </p>
                             </div>
                           </CommandEmpty>
                           <CommandGroup>
-                            {clients.map((client) => (
-                              <CommandItem
-                                key={client.id}
-                                value={client.client_name}
-                                onSelect={() => selectClient(client)}
-                                className="flex flex-col items-start p-3 cursor-pointer"
-                              >
-                                <div className="font-medium">{client.client_name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {client.client_phone} • {client.client_email}
-                                </div>
-                              </CommandItem>
-                            ))}
+                            {clients
+                              .filter(client => 
+                                client.client_name.toLowerCase().includes(clientSearchValue.toLowerCase())
+                              )
+                              .map((client) => (
+                                <CommandItem
+                                  key={client.id}
+                                  value={client.client_name}
+                                  onSelect={() => selectClient(client)}
+                                >
+                                  <div className="flex flex-col items-start">
+                                    <span className="font-medium">{client.client_name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ת.ز: {client.client_id} | טל: {client.client_phone}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              ))}
                           </CommandGroup>
                         </Command>
                       </PopoverContent>
-                  </Popover>
+                    </Popover>
                 </div>
-                
-                {/* Client Details Form */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+
+                {/* Client Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="clientId" className="text-base font-medium">תעודת זהות *</Label>
+                    <Label htmlFor="clientId" className="text-base font-medium">תעודת זהות / ח.פ</Label>
                     <Input
                       id="clientId"
                       value={formData.clientId}
                       onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl text-base h-12"
+                      className="mt-2 bg-input rounded-xl"
                       placeholder="123456789"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="clientPhone" className="text-base font-medium">טלפון נייד *</Label>
+                    <Label htmlFor="clientPhone" className="text-base font-medium">טלפון *</Label>
                     <Input
                       id="clientPhone"
+                      type="tel"
                       value={formData.clientPhone}
                       onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl text-base h-12"
+                      className="mt-2 bg-input rounded-xl"
                       placeholder="050-1234567"
-                      type="tel"
                     />
                   </div>
                   
@@ -571,7 +564,7 @@ const AppForm = () => {
                       type="email"
                       value={formData.clientEmail}
                       onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl text-base h-12"
+                      className="mt-2 bg-input rounded-xl"
                       placeholder="client@email.com"
                     />
                   </div>
@@ -583,7 +576,7 @@ const AppForm = () => {
                       type="date"
                       value={formData.meetingDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl text-base h-12"
+                      className="mt-2 bg-input rounded-xl"
                     />
                   </div>
 
@@ -593,7 +586,7 @@ const AppForm = () => {
                       id="meetingLocation"
                       value={formData.meetingLocation}
                       onChange={(e) => setFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl text-base h-12"
+                      className="mt-2 bg-input rounded-xl"
                       placeholder="למשל: פגישה במשרד, זום, טלפונית"
                     />
                   </div>
@@ -604,15 +597,16 @@ const AppForm = () => {
           </TabsContent>
 
           {/* Products */}
-          <TabsContent value="products" className="px-2 sm:px-0">
-            <Card className="glass border-glass-border rounded-xl sm:rounded-2xl">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <TabsContent value="products">
+            <Card className="glass border-glass-border rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  מוצרים פיננסיים
+                  ניהול מוצרים פיננסיים
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 pt-0">
+              <CardContent className="space-y-6">
+                
                 <ProductManager
                   currentProducts={formData.products.filter(p => p.type === 'current')}
                   recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
@@ -624,10 +618,10 @@ const AppForm = () => {
           </TabsContent>
 
           {/* Decisions */}
-          <TabsContent value="decisions" className="px-2 sm:px-0">
-            <Card className="glass border-glass-border rounded-xl sm:rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <TabsContent value="decisions">
+            <Card className="glass border-glass-border rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
                   סיכום החלטות שהתקבלו
                 </CardTitle>
@@ -652,6 +646,56 @@ const AppForm = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, risks: e.target.value }))}
                     className="mt-2 bg-input rounded-xl min-h-[100px]"
                     placeholder="רשמו פערים וסיכונים שזוהו..."
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>המלצות מוצרים / שינויים</Label>
+                    <Button
+                      type="button" 
+                      variant="outline"
+                      size="sm"
+                      onClick={addRecommendation}
+                      className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
+                    >
+                      <Plus className="h-4 w-4 ml-1" />
+                      הוסף
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {formData.recommendations.map((rec, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={rec}
+                          onChange={(e) => updateRecommendation(index, e.target.value)}
+                          className="bg-input rounded-xl"
+                          placeholder={`המלצה ${index + 1}`}
+                        />
+                        {formData.recommendations.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeRecommendation(index)}
+                            className="border-glass-border bg-glass hover:bg-destructive rounded-xl shrink-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="estimatedCost">הערכת עלות חודשית משוערת</Label>
+                  <Input
+                    id="estimatedCost"
+                    value={formData.estimatedCost}
+                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl"
+                    placeholder="₪ 500-800 לחודש"
                   />
                 </div>
 
@@ -683,9 +727,9 @@ const AppForm = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setFormData(prev => ({ ...prev, decisions: '' }))}
-                        className="text-xs"
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        עבור לעריכה ידנית
+                        עריכה ידנית
                       </Button>
                     </div>
                   ) : (
@@ -693,35 +737,41 @@ const AppForm = () => {
                       id="decisions"
                       value={formData.decisions}
                       onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl min-h-[200px]"
+                      className="mt-2 bg-input rounded-xl min-h-[100px]"
                       placeholder="פרטו את ההחלטות שהתקבלו בפגישה..."
                     />
                   )}
                 </div>
 
                 <div>
-                  <Label>מסמכים נדרשים</Label>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Label>מסמכים / פעולות להשלמה</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                     {documentOptions.map((doc) => (
-                      <label key={doc} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
-                        <Checkbox 
+                      <div key={doc} className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id={doc}
                           checked={formData.documents.includes(doc)}
                           onCheckedChange={() => handleDocumentToggle(doc)}
                         />
-                        <span className="text-sm">{doc}</span>
-                      </label>
+                        <Label 
+                          htmlFor={doc} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {doc}
+                        </Label>
+                      </div>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="timeframes">לוחות זמנים</Label>
-                  <Textarea
+                  <Label htmlFor="timeframes">טווחי זמנים</Label>
+                  <Input
                     id="timeframes"
                     value={formData.timeframes}
                     onChange={(e) => setFormData(prev => ({ ...prev, timeframes: e.target.value }))}
                     className="mt-2 bg-input rounded-xl"
-                    placeholder="לוחות זמנים להגשת מסמכים, אישורים..."
+                    placeholder="תוך שבועיים, חודש..."
                   />
                 </div>
 
@@ -735,35 +785,43 @@ const AppForm = () => {
                     placeholder="חתימת בן/בת זוג, אישור רופא..."
                   />
                 </div>
-
-                <div className="flex justify-center pt-6 pb-4">
-                  <Button
-                    onClick={generateSummary}
-                    disabled={!isSummaryEligible}
-                    className="w-full max-w-md bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl h-12 sm:h-14 text-base sm:text-lg font-semibold shadow-lg"
-                  >
-                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 ml-2" />
-                    יוצר סיכום
-                  </Button>
-                </div>
-                
-                {!isSummaryEligible && (
-                  <p className="text-center text-sm text-muted-foreground mt-2 px-4">
-                    נדרש למלא: שם לקוח, טלפון ומצב קיים לפני יצירת הסיכום
-                  </p>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
+
         </Tabs>
 
-        {/* Recording Modal */}
-        <RecordingModal
-          isOpen={showRecordingModal}
-          onClose={() => setShowRecordingModal(false)}
-          onApprove={handleRecordingApproval}
-        />
+        {/* Generate Button */}
+        <div className="mt-8 text-center">
+          <Button 
+            onClick={generateSummary}
+            size="lg"
+            disabled={!isSummaryEligible}
+            className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow text-lg min-w-[200px] glass-hover"
+          >
+            <FileText className="h-5 w-5 ml-2" />
+            ייצר סיכום
+          </Button>
+          {!isSummaryEligible && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              נדרש למלא: שם לקוח, טלפון ומצב קיים לפני יצירת הסיכום
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* Recording Modal */}
+      <RecordingModal
+        isOpen={showRecordingModal}
+        onClose={() => setShowRecordingModal(false)}
+        onApprove={handleRecordingApproval}
+        initialClientId={formData.clientId}
+        initialClientName={formData.clientName}
+      />
+
+      {showSummary && (
+        <SummaryGenerator formData={formData} onBack={() => setShowSummary(false)} />
+      )}
     </div>
   );
 };
