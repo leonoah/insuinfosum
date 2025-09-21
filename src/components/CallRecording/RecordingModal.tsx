@@ -318,15 +318,6 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
   };
 
   const startRecording = async () => {
-    if (!selectedClient) {
-      toast({
-        title: "שגיאה",
-        description: "אנא בחר לקוח מהרשימה",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
@@ -587,7 +578,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">הקלטת שיחה עם לקוח</DialogTitle>
+          <DialogTitle className="text-2xl">הקלטת שיחה</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -598,7 +589,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <UserCheck className="w-5 h-5 text-primary" />
-                    <Label className="text-base font-medium">בחירת לקוח</Label>
+                    <Label className="text-base font-medium">בחירת לקוח (אופציונלי)</Label>
                     <Button variant="outline" size="sm" className="ml-auto" onClick={loadAgentAndClients}>רענן</Button>
                   </div>
                   <Select value={selectedClient?.id || ""} onValueChange={(value) => {
@@ -606,7 +597,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
                     setSelectedClient(client || null);
                   }}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="בחר לקוח מהרשימה" />
+                      <SelectValue placeholder="בחר לקוח מהרשימה (אופציונלי)" />
                     </SelectTrigger>
                     <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
                       {clients.map((client) => (
@@ -634,7 +625,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
               <CardContent className="flex items-center justify-center py-4">
                 <div className="flex items-center gap-4">
                   <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-red-700 font-semibold">מקליט שיחה עם {selectedClient?.client_name}...</span>
+                  <span className="text-red-700 font-semibold">מקליט שיחה{selectedClient ? ` עם ${selectedClient.client_name}` : ''}...</span>
                   <Mic className="w-6 h-6 text-red-500" />
                 </div>
               </CardContent>
@@ -659,8 +650,7 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
               <>
                 <Button 
                   onClick={startRecording}
-                  disabled={!selectedClient}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg disabled:opacity-50"
+                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg"
                 >
                   <Mic className="w-6 h-6 ml-2" />
                   התחל הקלטת שיחה
