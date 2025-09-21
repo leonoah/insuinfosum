@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Play } from "lucide-react";
 import { FallingPattern } from "@/components/ui/falling-pattern";
-import logo from "@/assets/logo-final.png";
+import logo from "@/assets/inminds-logo-new.png";
 const Hero = () => {
   return <section className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16">
       <div className="max-w-6xl mx-auto text-center">
@@ -23,7 +23,7 @@ const Hero = () => {
             <img 
               src={logo} 
               alt="InMinds" 
-              className="h-48 w-48 mx-auto mb-6 drop-shadow-glow"
+              className="h-40 w-40 mx-auto mb-6 drop-shadow-glow"
             />
           </div>
 
