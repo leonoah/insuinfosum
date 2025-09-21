@@ -19,7 +19,7 @@ const Hero = () => {
         {/* Content */}
         <div className="relative z-10">
           {/* Logo */}
-          <div className="mb-64">
+          <div className="mb-8">
             <img 
               src={logo} 
               alt="InMinds" 
