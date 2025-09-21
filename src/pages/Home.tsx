@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   CheckCircle 
 } from "lucide-react";
+import consultationImage from "@/assets/consultation-image.jpg";
+import featuresBackground from "@/assets/features-background.jpg";
 
 const Home = () => {
   const steps = [
@@ -96,8 +98,13 @@ const Home = () => {
       </section>
 
       {/* Features */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/20">
-        <div className="max-w-6xl mx-auto">
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-muted/20 overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
+          style={{ backgroundImage: `url(${featuresBackground})` }}
+        />
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               למה InMinds?
@@ -129,73 +136,83 @@ const Home = () => {
 
       {/* Benefits */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="glass border-glass-border rounded-2xl overflow-hidden">
-            <CardContent className="p-12">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                  התוצאות מדברות בעד עצמן
-                </h2>
-                <p className="text-xl text-muted-foreground">
-                  סוכנים שמשתמשים ב-InMinds חוסכים זמן ומשפרים שירות
-                </p>
-              </div>
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Image */}
+            <div className="order-2 lg:order-1">
+              <img 
+                src={consultationImage}
+                alt="יעוץ ביטוח מקצועי"
+                className="rounded-2xl shadow-2xl w-full h-auto"
+              />
+            </div>
+            
+            {/* Content */}
+            <div className="order-1 lg:order-2">
+              <Card className="glass border-glass-border rounded-2xl overflow-hidden">
+                <CardContent className="p-8">
+                  <div className="mb-8">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                      התוצאות מדברות בעד עצמן
+                    </h2>
+                    <p className="text-xl text-muted-foreground">
+                      סוכנים שמשתמשים ב-InMinds חוסכים זמן ומשפרים שירות
+                    </p>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">חיסכון של 80% בזמן</h4>
-                      <p className="text-sm text-muted-foreground">במקום 10 דקות לכתיבת סיכום - רק 2 דקות</p>
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">חיסכון של 80% בזמן</h4>
+                        <p className="text-sm text-muted-foreground">במקום 10 דקות לכתיבת סיכום - רק 2 דקות</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">שירות מקצועי יותר</h4>
+                        <p className="text-sm text-muted-foreground">לקוחות מקבלים סיכום מובנה ונגיש</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">אין טעויות</h4>
+                        <p className="text-sm text-muted-foreground">תבנית אחידה מבטיחה אי-שכחת פרטים</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">שליחה מיידית</h4>
+                        <p className="text-sm text-muted-foreground">מייל או וואטסאפ ללקוח בסיום הפגישה</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">זכירות טובה יותר</h4>
+                        <p className="text-sm text-muted-foreground">לקוחות זוכרים ומבצעים יותר המלצות</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">פרטיות מלאה</h4>
+                        <p className="text-sm text-muted-foreground">נתונים נשמרים רק במכשיר שלכם</p>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">שירות מקצועי יותר</h4>
-                      <p className="text-sm text-muted-foreground">לקוחות מקבלים סיכום מובנה ונגיש</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">אין טעויות</h4>
-                      <p className="text-sm text-muted-foreground">תבנית אחידה מבטיחה אי-שכחת פרטים</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">שליחה מיידית</h4>
-                      <p className="text-sm text-muted-foreground">מייל או וואטסאפ ללקוח בסיום הפגישה</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">זכירות טובה יותר</h4>
-                      <p className="text-sm text-muted-foreground">לקוחות זוכרים ומבצעים יותר המלצות</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <CheckCircle className="h-6 w-6 text-primary mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">פרטיות מלאה</h4>
-                      <p className="text-sm text-muted-foreground">נתונים נשמרים רק במכשיר שלכם</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </section>
 
