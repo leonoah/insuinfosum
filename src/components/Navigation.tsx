@@ -27,8 +27,8 @@ const AppNavigation = () => {
             to="/" 
             className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors"
           >
-            <img src={logo} alt="InsuNote" className="h-6 w-6" />
-            <span>InsuNote</span>
+            <img src={logo} alt="InMinds" className="h-6 w-6" />
+            <span>InMinds</span>
           </Link>
 
           {/* Desktop Navigation */}

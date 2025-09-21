@@ -66,7 +66,7 @@ const HowItWorks = () => {
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
-              איך InsuNote עובד?
+              איך InMinds עובד?
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               תהליך פשוט ומהיר ליצירת סיכומי פגישות מקצועיים. 

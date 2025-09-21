@@ -38,7 +38,7 @@ const Privacy = () => {
               פרטיות ואבטחת מידע
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              ב-InsuNote אנחנו מבינים כמה חשוב לשמור על פרטיות המידע של הלקוחות שלכם. 
+              ב-InMinds אנחנו מבינים כמה חשוב לשמור על פרטיות המידע של הלקוחות שלכם. 
               הנה איך אנחנו מבטיחים אבטחה מקסימלית.
             </p>
           </div>
@@ -51,7 +51,7 @@ const Privacy = () => {
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">חשוב לדעת</h3>
                   <p className="text-muted-foreground">
-                    <strong>InsuNote פועל במלואו במכשיר שלכם.</strong> אין לנו שרתים, אין לנו מסד נתונים, 
+                    <strong>InMinds פועל במלואו במכשיר שלכם.</strong> אין לנו שרתים, אין לנו מסד נתונים, 
                     ואין לנו גישה למידע שלכם. הכל נשמר אצלכם ונשאר אצלכם.
                   </p>
                 </div>
@@ -148,7 +148,7 @@ const Privacy = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground leading-relaxed">
-                  InsuNote תואם לחוקי הפרטיות המחמירים ביותר:
+                  InMinds תואם לחוקי הפרטיות המחמירים ביותר:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mr-4">
                   <li><strong>GDPR (תקנת הפרטיות האירופית):</strong> מלא תאימות מכיוון שאין עיבוד נתונים</li>
@@ -170,7 +170,7 @@ const Privacy = () => {
                   <li>היכנסו להגדרות הדפדפן שלכם</li>
                   <li>חפשו "מחק נתוני גלישה" או "Clear browsing data"</li>
                   <li>ודאו שמסומן "Local Storage" או "Site data"</li>
-                  <li>בחרו את האתר של InsuNote או מחקו הכל</li>
+                  <li>בחרו את האתר של InMinds או מחקו הכל</li>
                 </ol>
                 <p className="text-muted-foreground leading-relaxed">
                   לחלופין, פשוט אל תשמרו טיוטות וכל המידע יימחק אוטומטית כשתסגרו את הדף.

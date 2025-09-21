@@ -100,7 +100,7 @@ const Home = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              למה InsuNote?
+              למה InMinds?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               הכלי המושלם לסוכני ביטוח מקצועיים
@@ -137,7 +137,7 @@ const Home = () => {
                   התוצאות מדברות בעד עצמן
                 </h2>
                 <p className="text-xl text-muted-foreground">
-                  סוכנים שמשתמשים ב-InsuNote חוסכים זמן ומשפרים שירות
+                  סוכנים שמשתמשים ב-InMinds חוסכים זמן ומשפרים שירות
                 </p>
               </div>
 
@@ -239,13 +239,13 @@ const Home = () => {
             <div className="md:col-span-2">
               <Link to="/" className="flex items-center gap-2 text-xl font-bold text-foreground mb-4">
                 <FileText className="h-6 w-6" />
-                <span>InsuNote</span>
+                <span>InMinds</span>
               </Link>
               <p className="text-muted-foreground mb-4 max-w-md">
                 הכלי המוביל לסוכני ביטוח ליצירת סיכומי פגישות מקצועיים במהירות ובקלות.
               </p>
               <p className="text-sm text-muted-foreground">
-                © 2024 InsuNote — כל הזכויות שמורות
+                © 2024 InMinds — כל הזכויות שמורות
               </p>
             </div>
             

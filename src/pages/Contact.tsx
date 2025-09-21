@@ -21,14 +21,14 @@ const Contact = () => {
     e.preventDefault();
     
     // Create mailto link
-    const subject = encodeURIComponent(formData.subject || "פנייה מ-InsuNote");
+    const subject = encodeURIComponent(formData.subject || "פנייה מ-InMinds");
     const body = encodeURIComponent(
       `שם: ${formData.name}\n` +
       `אימייל: ${formData.email}\n\n` +
       `הודעה:\n${formData.message}`
     );
     
-    window.open(`mailto:support@insunote.com?subject=${subject}&body=${body}`);
+    window.open(`mailto:support@inminds.com?subject=${subject}&body=${body}`);
     
     toast({
       title: "תודה על הפנייה",
@@ -43,9 +43,9 @@ const Contact = () => {
     {
       icon: Mail,
       title: "אימייל",
-      description: "support@insunote.com",
+      description: "support@inminds.com",
       action: "שלח מייל",
-      link: "mailto:support@insunote.com"
+      link: "mailto:support@inminds.com"
     },
     {
       icon: MessageCircle,
@@ -58,8 +58,8 @@ const Contact = () => {
 
   const faqs = [
     {
-      question: "האם InsuNote חינמי?",
-      answer: "כן! InsuNote הוא כלי חינמי לחלוטין לסוכני ביטוח. אין עלויות נסתרות או מנויים."
+      question: "האם InMinds חינמי?",
+      answer: "כן! InMinds הוא כלי חינמי לחלוטין לסוכני ביטוח. אין עלויות נסתרות או מנויים."
     },
     {
       question: "האם הנתונים שלי בטוחים?",
