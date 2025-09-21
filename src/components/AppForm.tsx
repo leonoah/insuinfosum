@@ -434,32 +434,6 @@ const AppForm = () => {
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap gap-4 justify-center mb-8">
-          <Button 
-            variant="outline" 
-            onClick={saveDraft}
-            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
-          >
-            <Save className="h-4 w-4 ml-2" />
-            שמור טיוטה
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={loadDraft}
-            className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
-          >
-            טען טיוטה
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowRecordingModal(true)}
-            className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
-          >
-            <Phone className="h-4 w-4 ml-2" />
-            הקלט שיחה עם לקוח
-          </Button>
-        </div>
 
         {/* Form - RTL Layout */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
@@ -496,22 +470,23 @@ const AppForm = () => {
                   פרטי הלקוח
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="clientName">שם הלקוח *</Label>
-                    <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={clientSearchOpen}
-                          className="w-full justify-between mt-2 bg-input border-border rounded-xl h-10"
-                        >
-                          {clientSearchValue || formData.clientName || "בחרו לקוח קיים או הקלידו שם חדש"}
-                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
+              <CardContent className="space-y-8">
+                {/* Client Search Section */}
+                <div className="bg-muted/30 rounded-xl p-6 border border-muted">
+                  <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
+                  <p className="text-sm text-muted-foreground mb-4">חפש לקוח קיים או הוסף לקוח חדש</p>
+                  <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={clientSearchOpen}
+                        className="w-full justify-between bg-background border-border rounded-xl h-12 text-lg"
+                      >
+                        {clientSearchValue || formData.clientName || "בחרו לקוח קיים או הקלידו שם חדש"}
+                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
                       <PopoverContent className="w-full p-0">
                         <Command>
                           <CommandInput 
@@ -555,10 +530,12 @@ const AppForm = () => {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                  </div>
-                  
+                </div>
+
+                {/* Client Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="clientId">תעודת זהות / ח.פ</Label>
+                    <Label htmlFor="clientId" className="text-base font-medium">תעודת זהות / ח.פ</Label>
                     <Input
                       id="clientId"
                       value={formData.clientId}
@@ -569,7 +546,7 @@ const AppForm = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="clientPhone">טלפון *</Label>
+                    <Label htmlFor="clientPhone" className="text-base font-medium">טלפון *</Label>
                     <Input
                       id="clientPhone"
                       type="tel"
@@ -581,7 +558,7 @@ const AppForm = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="clientEmail">אימייל *</Label>
+                    <Label htmlFor="clientEmail" className="text-base font-medium">אימייל</Label>
                     <Input
                       id="clientEmail"
                       type="email"
@@ -593,7 +570,7 @@ const AppForm = () => {
                   </div>
                   
                   <div className="md:col-span-2">
-                    <Label htmlFor="meetingDate">תאריך הפגישה</Label>
+                    <Label htmlFor="meetingDate" className="text-base font-medium">תאריך הפגישה</Label>
                     <Input
                       id="meetingDate"
                       type="date"
@@ -604,7 +581,7 @@ const AppForm = () => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <Label htmlFor="meetingLocation">מיקום / אופי הפגישה</Label>
+                    <Label htmlFor="meetingLocation" className="text-base font-medium">מיקום / אופי הפגישה</Label>
                     <Input
                       id="meetingLocation"
                       value={formData.meetingLocation}
@@ -615,25 +592,6 @@ const AppForm = () => {
                   </div>
                 </div>
 
-                <div>
-                  <Label>נושאים / מוצרים שנדונו</Label>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {insuranceTopics.map((topic) => (
-                      <Badge
-                        key={topic}
-                        variant={formData.topics.includes(topic) ? "default" : "outline"}
-                        className={`cursor-pointer rounded-full px-4 py-2 transition-all ${
-                          formData.topics.includes(topic) 
-                            ? "bg-primary text-primary-foreground" 
-                            : "border-glass-border bg-glass hover:bg-glass text-foreground"
-                        }`}
-                        onClick={() => handleTopicToggle(topic)}
-                      >
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -647,7 +605,34 @@ const AppForm = () => {
                   ניהול מוצרים פיננסיים
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={saveDraft}
+                    className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
+                  >
+                    <Save className="h-4 w-4 ml-2" />
+                    שמור טיוטה
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={loadDraft}
+                    className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-xl"
+                  >
+                    טען טיוטה
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowRecordingModal(true)}
+                    className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl"
+                  >
+                    <Phone className="h-4 w-4 ml-2" />
+                    הקלט שיחה עם לקוח
+                  </Button>
+                </div>
+                
                 <ProductManager
                   currentProducts={formData.products.filter(p => p.type === 'current')}
                   recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
