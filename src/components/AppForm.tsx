@@ -436,33 +436,35 @@ const AppForm = () => {
 
 
         {/* Form - RTL Layout */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-3 glass mb-6 sm:mb-8 p-1 rounded-2xl">
-            <TabsTrigger 
-              value="client" 
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3"
-            >
-              <User className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-              <span className="hidden sm:inline">פרטי לקוח</span>
-              <span className="sm:hidden">לקוח</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="products"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3"
-            >
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-              <span className="hidden sm:inline">מוצרים</span>
-              <span className="sm:hidden">מוצרים</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="decisions"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3"
-            >
-              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-              <span className="hidden sm:inline">החלטות</span>
-              <span className="sm:hidden">החלטות</span>
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full relative z-10" dir="rtl">
+          <div className="sticky top-16 sm:top-20 z-20 bg-background/95 backdrop-blur-sm pb-4 mb-4">
+            <TabsList className="grid w-full grid-cols-3 glass mb-0 p-1 rounded-2xl mx-auto max-w-md sm:max-w-full">
+              <TabsTrigger 
+                value="client" 
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-1 sm:px-4 py-3 sm:py-3 min-h-[48px]"
+              >
+                <User className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                <span className="hidden xs:inline sm:inline">פרטי לקוח</span>
+                <span className="xs:hidden sm:hidden">לקוח</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="products"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-1 sm:px-4 py-3 sm:py-3 min-h-[48px]"
+              >
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                <span className="hidden xs:inline sm:inline">מוצרים</span>
+                <span className="xs:hidden sm:hidden">מוצרים</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="decisions"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm px-1 sm:px-4 py-3 sm:py-3 min-h-[48px]"
+              >
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                <span className="hidden xs:inline sm:inline">החלטות</span>
+                <span className="xs:hidden sm:hidden">החלטות</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Client Details */}
           <TabsContent value="client">
@@ -600,16 +602,15 @@ const AppForm = () => {
           </TabsContent>
 
           {/* Products */}
-          <TabsContent value="products">
+          <TabsContent value="products" className="mt-0 pt-2">
             <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <BarChart3 className="h-5 w-5" />
-                  ניהול מוצרים פיננסיים
+                  מוצרים פיננסיים
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                
+              <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 pt-0">
                 <ProductManager
                   currentProducts={formData.products.filter(p => p.type === 'current')}
                   recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
