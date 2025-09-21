@@ -23,7 +23,7 @@ const Hero = () => {
             <img 
               src={logo} 
               alt="InMinds" 
-              className="h-48 w-48 mx-auto mb-6 drop-shadow-glow"
+              className="h-72 w-72 mx-auto mb-6 drop-shadow-glow"
             />
           </div>
 
