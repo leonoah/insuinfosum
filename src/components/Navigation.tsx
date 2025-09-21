@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/inminds-logo-enhanced.png";
+import logo from "@/assets/inminds-logo-transparent.png";
 
 const AppNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
