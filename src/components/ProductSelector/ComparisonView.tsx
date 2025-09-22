@@ -55,19 +55,18 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
           <h2 className="text-2xl font-bold">השוואת תיקים</h2>
         </div>
         
-        <div className="flex items-center gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="glass p-3 rounded-lg">
-            <div className="text-muted-foreground">סה"כ קיים</div>
-            <div className="font-bold">₪{totalCurrentAmount.toLocaleString()}</div>
+            <div className="text-muted-foreground text-center">סה"כ קיים</div>
+            <div className="font-bold text-center">₪{totalCurrentAmount.toLocaleString()}</div>
           </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
           <div className="glass p-3 rounded-lg">
-            <div className="text-muted-foreground">סה"כ מוצע</div>
-            <div className="font-bold">₪{totalRecommendedAmount.toLocaleString()}</div>
+            <div className="text-muted-foreground text-center">סה"כ מוצע</div>
+            <div className="font-bold text-center">₪{totalRecommendedAmount.toLocaleString()}</div>
           </div>
           <div className={`glass p-3 rounded-lg ${amountDifference >= 0 ? 'border-green-500/50' : 'border-red-500/50'}`}>
-            <div className="text-muted-foreground">הפרש</div>
-            <div className={`font-bold ${amountDifference >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <div className="text-muted-foreground text-center">הפרש</div>
+            <div className={`font-bold text-center ${amountDifference >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {amountDifference >= 0 ? '+' : ''}₪{amountDifference.toLocaleString()}
             </div>
           </div>
@@ -186,29 +185,29 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs md:text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-right p-2">קטגוריה</th>
-                  <th className="text-right p-2">מצב קיים</th>
-                  <th className="text-right p-2">המלצה</th>
-                  <th className="text-right p-2">שינוי</th>
+                  <th className="text-right p-1 md:p-2">קטגוריה</th>
+                  <th className="text-right p-1 md:p-2">מצב קיים</th>
+                  <th className="text-right p-1 md:p-2">המלצה</th>
+                  <th className="text-right p-1 md:p-2">שינוי</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-border/50">
-                  <td className="p-2 font-medium">סה"כ צבירה</td>
-                  <td className="p-2">₪{totalCurrentAmount.toLocaleString()}</td>
-                  <td className="p-2">₪{totalRecommendedAmount.toLocaleString()}</td>
-                  <td className={`p-2 font-medium ${amountDifference >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <td className="p-1 md:p-2 font-medium">סה"כ צבירה</td>
+                  <td className="p-1 md:p-2">₪{totalCurrentAmount.toLocaleString()}</td>
+                  <td className="p-1 md:p-2">₪{totalRecommendedAmount.toLocaleString()}</td>
+                  <td className={`p-1 md:p-2 font-medium ${amountDifference >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                     {amountDifference >= 0 ? '+' : ''}₪{amountDifference.toLocaleString()}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="p-2 font-medium">מספר מוצרים</td>
-                  <td className="p-2">{currentProducts.length}</td>
-                  <td className="p-2">{recommendedProducts.length}</td>
-                  <td className={`p-2 font-medium ${recommendedProducts.length >= currentProducts.length ? 'text-green-500' : 'text-red-500'}`}>
+                  <td className="p-1 md:p-2 font-medium">מספר מוצרים</td>
+                  <td className="p-1 md:p-2">{currentProducts.length}</td>
+                  <td className="p-1 md:p-2">{recommendedProducts.length}</td>
+                  <td className={`p-1 md:p-2 font-medium ${recommendedProducts.length >= currentProducts.length ? 'text-green-500' : 'text-red-500'}`}>
                     {recommendedProducts.length >= currentProducts.length ? '+' : ''}{recommendedProducts.length - currentProducts.length}
                   </td>
                 </tr>
