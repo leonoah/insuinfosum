@@ -226,6 +226,22 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     });
   };
 
+  // Normalize AI HTML output (removes markdown fences and unsafe tags)
+  const normalizeAIHtml = (raw: string) => {
+    if (!raw) return '';
+    let s = raw.trim();
+    // Remove triple backticks (```html ... ```)
+    s = s.replace(/^```\s*html\s*/i, '').replace(/```\s*$/i, '').trim();
+    // Basic sanitization: drop script/style tags
+    s = s.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '')
+         .replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
+    // Ensure RTL wrapper for consistent layout
+    if (!/dir=\"rtl\"/.test(s)) {
+      s = `<div dir="rtl">${s}</div>`;
+    }
+    return s;
+  };
+
   const productStats = useMemo(() => {
     const currentProducts = (formData.products || []).filter(p => p.type === 'current');
     const recommendedProducts = (formData.products || []).filter(p => p.type === 'recommended');
@@ -748,8 +764,15 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
             {formData.decisions && (
               <div>
                 <h4 className="font-semibold text-foreground mb-2">החלטות שהתקבלו:</h4>
-                <div className="bg-primary/10 p-4 rounded-xl text-sm">
-                  {formData.decisions}
+                <div className="bg-primary/10 p-4 rounded-xl text-sm overflow-x-auto">
+                  {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
+                    <div
+                      className="ai-content"
+                      dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
+                    />
+                  ) : (
+                    <div className="whitespace-pre-wrap">{formData.decisions}</div>
+                  )}
                 </div>
               </div>
             )}
