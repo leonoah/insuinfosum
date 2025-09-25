@@ -471,51 +471,15 @@ const AppForm = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-8">
-                {/* Client Search Section */}
-                <div className="bg-muted/30 rounded-xl p-6 border border-muted">
-                  <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
-                  <p className="text-sm text-muted-foreground mb-4">חפש לקוח קיים או הוסף לקוח חדש</p>
-                  <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={clientSearchOpen}
-                        className="w-full justify-between bg-background border-border rounded-xl h-12 text-lg"
-                      >
-                        {clientSearchValue || formData.clientName || "בחרו לקוח קיים או הקלידו שם חדש"}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput 
-                            placeholder="חפשו לקוח או הקלידו שם חדש..."
-                            value={clientSearchValue}
-                            onValueChange={(value) => {
-                              setClientSearchValue(value);
-                              setFormData(prev => ({ ...prev, clientName: value }));
-                            }}
-                          />
-                          <CommandEmpty />
-                          <CommandGroup>
-                            {clients
-                              .filter(client => 
-                                client.client_name.toLowerCase().includes(clientSearchValue.toLowerCase())
-                              )
-                              .map((client) => (
-                                <CommandItem
-                                  key={client.id}
-                                  value={client.client_name}
-                                  onSelect={() => selectClient(client)}
-                                >
-                                  <span className="font-medium">{client.client_name}</span>
-                                </CommandItem>
-                              ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                <div>
+                  <Label htmlFor="clientName" className="text-base font-medium">שם הלקוח *</Label>
+                  <Input
+                    id="clientName"
+                    value={formData.clientName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl"
+                    placeholder="שם הלקוח"
+                  />
                 </div>
 
                 {/* Client Details Grid */}
