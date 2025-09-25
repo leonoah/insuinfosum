@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Edit, Copy, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Edit, Copy, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -16,6 +16,7 @@ interface ProductListProps {
   type: 'current' | 'recommended';
   selectedProducts: string[];
   onProductSelect: (productId: string, selected: boolean) => void;
+  onAddProduct: () => void; // חדש
 }
 
 const ProductItem: React.FC<{
@@ -91,17 +92,19 @@ const ProductItem: React.FC<{
             </div>
           </div>
           <div className="flex gap-1">
+            {/* החץ שמאלה - בצד שמאל של כפתורי הפעולה */}
             {type === 'current' && onCopyToRecommended && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onCopyToRecommended(product)}
-                className="h-8 w-8 p-0 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
+                className="h-8 w-8 p-0 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 order-last"
                 title="העתק למצב מוצע"
               >
-                <ArrowRight className="h-3 w-3" />
+                <ArrowLeft className="h-3 w-3" />
               </Button>
             )}
+            {/* שאר כפתורי הפעולה */}
             <Button
               variant="ghost"
               size="sm"
@@ -142,12 +145,22 @@ const ProductList: React.FC<ProductListProps> = ({
   title,
   type,
   selectedProducts,
-  onProductSelect
+  onProductSelect,
+  onAddProduct // חדש
 }) => {
   const filteredProducts = products.filter(p => p.type === type);
 
   return (
-    <Card className="glass h-full">
+    <Card className="glass h-full relative">
+      {/* כפתור + בפינה העליונה */}
+      <Button
+        onClick={onAddProduct}
+        className="absolute top-4 left-4 z-10 rounded-full border-2 border-primary bg-background text-primary hover:bg-primary hover:text-primary-foreground w-10 h-10 flex items-center justify-center shadow-lg"
+        title={`הוסף ${type === 'current' ? 'מצב קיים' : 'מצב מוצע'}`}
+        aria-label={`הוסף ${type === 'current' ? 'מצב קיים' : 'מצב מוצע'}`}
+      >
+        <span className="text-2xl font-bold">+</span>
+      </Button>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-lg">{title}</span>
@@ -158,9 +171,10 @@ const ProductList: React.FC<ProductListProps> = ({
       </CardHeader>
       <CardContent className="space-y-3">
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground flex flex-col items-center justify-center">
             <div className="text-4xl mb-2">📋</div>
             <div>אין מוצרים במצב זה</div>
+            {/* כפתור + במרכז הוסר */}
           </div>
         ) : (
           filteredProducts.map((product) => (

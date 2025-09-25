@@ -544,6 +544,16 @@ const AppForm = () => {
 
               </CardContent>
             </Card>
+            {/* Next Step Button */}
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={() => setActiveTab("products")}
+                disabled={!(formData.clientName.trim() && formData.clientPhone.trim())}
+                className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
+              >
+                שלב הבא: מוצרים
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Products */}
@@ -565,6 +575,23 @@ const AppForm = () => {
                 />
               </CardContent>
             </Card>
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setActiveTab("client")}
+                className="rounded-xl"
+              >
+                חזור לפרטי לקוח
+              </Button>
+              <Button
+                onClick={() => setActiveTab("decisions")}
+                disabled={formData.products.filter(p => p.type === 'current' || p.type === 'recommended').length === 0}
+                className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
+              >
+                שלב הבא: החלטות
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Decisions */}
@@ -737,6 +764,16 @@ const AppForm = () => {
                 </div>
               </CardContent>
             </Card>
+            {/* Back Button */}
+            <div className="flex justify-start mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setActiveTab("products")}
+                className="rounded-xl"
+              >
+                חזור למוצרים
+              </Button>
+            </div>
           </TabsContent>
 
         </Tabs>
