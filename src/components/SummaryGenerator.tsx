@@ -923,14 +923,38 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
               </DialogDescription>
             </DialogHeader>
             <FinalReportContent />
-            <DialogFooter>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
               <Button variant="outline" onClick={() => setShowFinalReport(false)}>
                 סגור
               </Button>
-              <Button onClick={generateFinalReport}>
-                <Download className="w-4 h-4 ml-2" />
-                הורד PDF
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const reportText = `דוח סיכום פגישת ביטוח\n\nלקוח: ${formData.clientName}\nתאריך: ${formatDate(formData.meetingDate)}\n\nתקציר מנהלים:\n${productStats.highlightBullets.join('\n')}\n\nהחלטות שהתקבלו:\n${formData.decisions}\n\nמשימות להמשך:\n${nextStepsText}`;
+                    const mailtoUrl = `mailto:${formData.clientEmail}?subject=דוח סיכום פגישת ביטוח - ${formData.clientName}&body=${encodeURIComponent(reportText)}`;
+                    window.open(mailtoUrl, '_blank');
+                  }}
+                >
+                  <Mail className="w-4 h-4 ml-2" />
+                  שלח במייל
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const reportText = `דוח סיכום פגישת ביטוח\n\nלקוח: ${formData.clientName}\nתאריך: ${formatDate(formData.meetingDate)}\n\nתקציר מנהלים:\n${productStats.highlightBullets.join('\n')}\n\nהחלטות שהתקבלו:\n${formData.decisions}\n\nמשימות להמשך:\n${nextStepsText}`;
+                    const whatsappUrl = `https://wa.me/${formData.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(reportText)}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 ml-2" />
+                  שלח בוואטסאפ
+                </Button>
+                <Button onClick={generateFinalReport}>
+                  <Download className="w-4 h-4 ml-2" />
+                  הורד PDF
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
