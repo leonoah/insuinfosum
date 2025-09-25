@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import RecordingModal from "./CallRecording/RecordingModal";
-import VoiceTextInput from "./VoiceTextInput";
 import { SelectedProduct } from "@/types/insurance";
 // Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
@@ -656,16 +655,7 @@ const AppForm = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
-                    <VoiceTextInput
-                      onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
-                      }}
-                      textType="currentSituation"
-                      buttonText="הקלטה קולית"
-                    />
-                  </div>
+                  <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
                   <Textarea
                     id="currentSituation"
                     value={formData.currentSituation}
@@ -676,16 +666,7 @@ const AppForm = () => {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="risks">פערים / סיכונים שהודגשו</Label>
-                    <VoiceTextInput
-                      onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, risks: enhancedText }));
-                      }}
-                      textType="risks"
-                      buttonText="הקלטה קולית"
-                    />
-                  </div>
+                  <Label htmlFor="risks">פערים / סיכונים שהודגשו</Label>
                   <Textarea
                     id="risks"
                     value={formData.risks}
@@ -698,24 +679,16 @@ const AppForm = () => {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
-                    <div className="flex gap-2">
-                      <VoiceTextInput
-                        onTextProcessed={(enhancedText, transcribedText) => {
-                          setFormData(prev => ({ ...prev, decisions: enhancedText }));
-                        }}
-                        textType="decisions"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateDecisions}
-                        disabled={isGeneratingDecisions || (!formData.products?.length)}
-                        className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
-                      >
-                        {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateDecisions}
+                      disabled={isGeneratingDecisions || (!formData.products?.length)}
+                      className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
+                    >
+                      {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
+                    </Button>
                   </div>
                   
                   {formData.decisions && formData.decisions.includes('<div') ? (
