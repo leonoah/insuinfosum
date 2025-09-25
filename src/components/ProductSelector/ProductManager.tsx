@@ -213,14 +213,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         >
           <Phone className="h-4 w-4" />
         </Button>
-        <Button onClick={() => openModal('current')} className="glass-hover w-full sm:w-auto max-w-full whitespace-nowrap">
-          <Plus className="h-4 w-4 mr-2" />
-          הוסף מוצר קיים
-        </Button>
-        <Button onClick={() => openModal('recommended')} variant="secondary" className="glass-hover w-full sm:w-auto max-w-full whitespace-nowrap">
-          <Plus className="h-4 w-4 mr-2" />
-          הוסף מוצר מוצע
-        </Button>
+        {/* כפתורי הוספת מוצר קיים/מוצע הוסרו */}
       </div>
 
       {/* Comparison Section - Always Visible */}
@@ -256,6 +249,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
             type="recommended"
             selectedProducts={selectedProducts}
             onProductSelect={handleProductSelect}
+            onAddProduct={() => openModal('recommended')}
           />
         </div>
         {/* Current on the right */}
@@ -270,6 +264,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
             type="current"
             selectedProducts={selectedProducts}
             onProductSelect={handleProductSelect}
+            onAddProduct={() => openModal('current')}
           />
         </div>
       </div>
