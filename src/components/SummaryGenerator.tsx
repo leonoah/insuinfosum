@@ -196,8 +196,9 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       const { data, error } = await supabase
         .from('agent_info')
         .select('*')
+        .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading agent info:', error);
