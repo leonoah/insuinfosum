@@ -579,9 +579,9 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       <div className="text-center mb-8 border-b border-glass-border pb-6">
         <div className="flex items-center justify-center gap-4 mb-4">
           {agentData.logo_url ? (
-            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-16 h-16 object-contain" />
+            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
           ) : (
-            <img src={agentLogo} alt="לוגו הסוכן" className="w-16 h-16 object-contain" />
+            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
           )}
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
