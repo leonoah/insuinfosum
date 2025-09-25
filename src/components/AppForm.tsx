@@ -497,16 +497,7 @@ const AppForm = () => {
                               setFormData(prev => ({ ...prev, clientName: value }));
                             }}
                           />
-                          <CommandEmpty>
-                            <div className="p-4 text-center">
-                              <p className="text-sm text-muted-foreground mb-2">
-                                לא נמצא לקוח עם השם "{clientSearchValue}"
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                המשיכו למלא את הפרטים ליצירת לקוח חדש
-                              </p>
-                            </div>
-                          </CommandEmpty>
+                          <CommandEmpty />
                           <CommandGroup>
                             {clients
                               .filter(client => 
@@ -518,12 +509,7 @@ const AppForm = () => {
                                   value={client.client_name}
                                   onSelect={() => selectClient(client)}
                                 >
-                                  <div className="flex flex-col items-start">
-                                    <span className="font-medium">{client.client_name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      ת.ز: {client.client_id} | טל: {client.client_phone}
-                                    </span>
-                                  </div>
+                                  <span className="font-medium">{client.client_name}</span>
                                 </CommandItem>
                               ))}
                           </CommandGroup>
