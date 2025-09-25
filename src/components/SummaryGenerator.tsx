@@ -434,104 +434,106 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     currentProducts: SelectedProduct[];
     recommendedProducts: SelectedProduct[];
   }) => (
-    <div className="glass p-6 rounded-2xl border border-glass-border">
-      <h4 className="text-lg font-semibold text-primary mb-4 flex items-center gap-3">
-        <BarChart3 className="w-5 h-5" />
+    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+        <BarChart3 className="w-5 h-5 text-blue-600" />
         השוואת תיקים - מצב קיים מול מוצע
       </h4>
       
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
-        <div className="glass p-4 rounded-xl border border-green-500/30">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-200 dark:border-green-700">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-green-500/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-green-100 dark:bg-green-800 flex items-center justify-center">
               <span className="text-2xl">💰</span>
             </div>
-            <div className="text-sm text-muted-foreground">הפרש</div>
-            <div className="text-xl font-bold text-green-400">
-              ₪{Math.abs(productStats.amountDifference).toLocaleString()}+
+            <div className="text-sm text-gray-600 dark:text-gray-400">הפרש הצבירה</div>
+            <div className="text-xl font-bold text-green-600 dark:text-green-400">
+              ₪{Math.abs(productStats.amountDifference).toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">מוצרים</div>
+            <div className="text-xs text-gray-500">
+              {productStats.amountDifference >= 0 ? 'עלייה' : 'ירידה'}
+            </div>
           </div>
         </div>
 
-        <div className="glass p-4 rounded-xl border border-blue-500/30">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-700">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-blue-500/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
               <span className="text-2xl">📊</span>
             </div>
-            <div className="text-sm text-muted-foreground">מצב מוצע</div>
-            <div className="text-xl font-bold text-blue-400">
+            <div className="text-sm text-gray-600 dark:text-gray-400">מצב מוצע</div>
+            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
               ₪{productStats.totalRecommendedAmount.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">{recommendedProducts.length} מוצרים</div>
+            <div className="text-xs text-gray-500">{recommendedProducts.length} מוצרים</div>
           </div>
         </div>
 
-        <div className="glass p-4 rounded-xl border border-gray-500/30">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-gray-500/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
               <span className="text-2xl">📈</span>
             </div>
-            <div className="text-sm text-muted-foreground">מצב קיים</div>
-            <div className="text-xl font-bold text-gray-400">
+            <div className="text-sm text-gray-600 dark:text-gray-400">מצב קיים</div>
+            <div className="text-xl font-bold text-gray-700 dark:text-gray-300">
               ₪{productStats.totalCurrentAmount.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">{currentProducts.length} מוצרים</div>
+            <div className="text-xs text-gray-500">{currentProducts.length} מוצרים</div>
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-glass-border">
-              <th className="text-right py-3 px-4 font-medium text-muted-foreground">קטגוריה</th>
-              <th className="text-center py-3 px-4 font-medium text-muted-foreground">מצב קיים</th>
-              <th className="text-center py-3 px-4 font-medium text-muted-foreground">מצב מוצע</th>
-              <th className="text-center py-3 px-4 font-medium text-muted-foreground">שינוי</th>
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="w-full min-w-[600px]">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th className="text-right py-4 px-6 font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-600">קטגוריה</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-600">מצב קיים</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-600">מצב מוצע</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-600">שינוי</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
-            <tr className="border-b border-glass-border/50">
-              <td className="py-3 px-4 font-medium">סה"כ צבירה</td>
-              <td className="text-center py-3 px-4 text-gray-400">
+          <tbody>
+            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td className="py-4 px-6 font-medium text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700">סה"כ צבירה</td>
+              <td className="text-center py-4 px-4 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700">
                 ₪{productStats.totalCurrentAmount.toLocaleString()}
               </td>
-              <td className="text-center py-3 px-4 text-blue-400">
+              <td className="text-center py-4 px-4 text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-700">
                 ₪{productStats.totalRecommendedAmount.toLocaleString()}
               </td>
-              <td className="text-center py-3 px-4">
-                <span className={productStats.amountDifference >= 0 ? 'text-green-400' : 'text-red-400'}>
+              <td className="text-center py-4 px-4 border-b border-gray-100 dark:border-gray-700">
+                <span className={`font-semibold ${productStats.amountDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {productStats.amountDifference >= 0 ? '+' : ''}₪{productStats.amountDifference.toLocaleString()}
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-glass-border/50">
-              <td className="py-3 px-4 font-medium">מספר מוצרים</td>
-              <td className="text-center py-3 px-4 text-gray-400">{currentProducts.length}</td>
-              <td className="text-center py-3 px-4 text-blue-400">{recommendedProducts.length}</td>
-              <td className="text-center py-3 px-4">
-                <span className={productStats.productCountDifference >= 0 ? 'text-green-400' : 'text-red-400'}>
+            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td className="py-4 px-6 font-medium text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700">מספר מוצרים</td>
+              <td className="text-center py-4 px-4 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700">{currentProducts.length}</td>
+              <td className="text-center py-4 px-4 text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-700">{recommendedProducts.length}</td>
+              <td className="text-center py-4 px-4 border-b border-gray-100 dark:border-gray-700">
+                <span className={`font-semibold ${productStats.productCountDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {productStats.productCountDifference >= 0 ? '+' : ''}{productStats.productCountDifference}
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-glass-border/50">
-              <td className="py-3 px-4 font-medium">ממוצע דמי ניהול (הפקדה)</td>
-              <td className="text-center py-3 px-4 text-gray-400">{productStats.avgCurrentDeposit.toFixed(2)}%</td>
-              <td className="text-center py-3 px-4 text-blue-400">{productStats.avgRecommendedDeposit.toFixed(2)}%</td>
-              <td className="text-center py-3 px-4">
-                <span className={(productStats.avgRecommendedDeposit - productStats.avgCurrentDeposit) <= 0 ? 'text-green-400' : 'text-red-400'}>
+            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td className="py-4 px-6 font-medium text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700">ממוצע דמי ניהול (הפקדה)</td>
+              <td className="text-center py-4 px-4 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700">{productStats.avgCurrentDeposit.toFixed(2)}%</td>
+              <td className="text-center py-4 px-4 text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-700">{productStats.avgRecommendedDeposit.toFixed(2)}%</td>
+              <td className="text-center py-4 px-4 border-b border-gray-100 dark:border-gray-700">
+                <span className={`font-semibold ${(productStats.avgRecommendedDeposit - productStats.avgCurrentDeposit) <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {(productStats.avgRecommendedDeposit - productStats.avgCurrentDeposit) >= 0 ? '+' : ''}{(productStats.avgRecommendedDeposit - productStats.avgCurrentDeposit).toFixed(2)}%
                 </span>
               </td>
             </tr>
-            <tr>
-              <td className="py-3 px-4 font-medium">ממוצע דמי ניהול (צבירה)</td>
-              <td className="text-center py-3 px-4 text-gray-400">{productStats.avgCurrentAccumulation.toFixed(2)}%</td>
-              <td className="text-center py-3 px-4 text-blue-400">{productStats.avgRecommendedAccumulation.toFixed(2)}%</td>
-              <td className="text-center py-3 px-4">
-                <span className={(productStats.avgRecommendedAccumulation - productStats.avgCurrentAccumulation) <= 0 ? 'text-green-400' : 'text-red-400'}>
+            <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td className="py-4 px-6 font-medium text-gray-900 dark:text-white">ממוצע דמי ניהול (צבירה)</td>
+              <td className="text-center py-4 px-4 text-gray-600 dark:text-gray-300">{productStats.avgCurrentAccumulation.toFixed(2)}%</td>
+              <td className="text-center py-4 px-4 text-blue-600 dark:text-blue-400">{productStats.avgRecommendedAccumulation.toFixed(2)}%</td>
+              <td className="text-center py-4 px-4">
+                <span className={`font-semibold ${(productStats.avgRecommendedAccumulation - productStats.avgCurrentAccumulation) <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {(productStats.avgRecommendedAccumulation - productStats.avgCurrentAccumulation) >= 0 ? '+' : ''}{(productStats.avgRecommendedAccumulation - productStats.avgCurrentAccumulation).toFixed(2)}%
                 </span>
               </td>
@@ -576,22 +578,26 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const FinalReportContent = () => (
     <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-background text-foreground">
       {/* Header */}
-      <div className="text-center mb-8 border-b border-glass-border pb-6">
-        <div className="flex items-center justify-center gap-4 mb-4">
+      <div className="text-center mb-8 border-b border-gray-200 dark:border-gray-700 pb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
           {agentData.logo_url ? (
-            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
+            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-20 h-20 object-contain rounded-lg" />
           ) : (
-            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
+            <img src={agentLogo} alt="לוגו הסוכן" className="w-20 h-20 object-contain rounded-lg" />
           )}
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <div className="text-center sm:text-right">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               דוח סיכום ביטוח
             </h1>
-            <p className="text-lg text-muted-foreground">{agentData.name}</p>
+            <div className="bg-blue-100 dark:bg-blue-900/30 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-700">
+              <p className="text-lg font-semibold text-blue-800 dark:text-blue-200">{agentData.name}</p>
+            </div>
           </div>
         </div>
-        <div className="text-lg text-primary font-medium">
-          {formData.clientName} • {formatDate(formData.meetingDate)}
+        <div className="bg-gray-50 dark:bg-gray-800 px-6 py-3 rounded-lg">
+          <div className="text-lg text-gray-900 dark:text-white font-medium">
+            {formData.clientName} • {formatDate(formData.meetingDate)}
+          </div>
         </div>
       </div>
 
