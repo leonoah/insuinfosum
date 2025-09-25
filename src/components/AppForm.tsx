@@ -677,56 +677,6 @@ const AppForm = () => {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <Label>המלצות מוצרים / שינויים</Label>
-                    <Button
-                      type="button" 
-                      variant="outline"
-                      size="sm"
-                      onClick={addRecommendation}
-                      className="border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
-                    >
-                      <Plus className="h-4 w-4 ml-1" />
-                      הוסף
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {formData.recommendations.map((rec, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={rec}
-                          onChange={(e) => updateRecommendation(index, e.target.value)}
-                          className="bg-input rounded-xl"
-                          placeholder={`המלצה ${index + 1}`}
-                        />
-                        {formData.recommendations.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => removeRecommendation(index)}
-                            className="border-glass-border bg-glass hover:bg-destructive rounded-xl shrink-0"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="estimatedCost">הערכת עלות חודשית משוערת</Label>
-                  <Input
-                    id="estimatedCost"
-                    value={formData.estimatedCost}
-                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                    className="mt-2 bg-input rounded-xl"
-                    placeholder="₪ 500-800 לחודש"
-                  />
-                </div>
-
-                <div>
                   <div className="flex justify-between items-center mb-2">
                     <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
                     <Button
