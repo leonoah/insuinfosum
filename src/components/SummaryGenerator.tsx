@@ -908,6 +908,66 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
                   currentProducts={productStats.currentProducts}
                   recommendedProducts={productStats.recommendedProducts}
                 />
+                {/* החלטות, לוחות זמנים, מסמכים, אישורים */}
+                <div className="mt-8 space-y-4">
+                  {formData.currentSituation && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">מצב קיים בקצרה:</h4>
+                      <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                        {formData.currentSituation}
+                      </div>
+                    </div>
+                  )}
+                  {formData.risks && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">פערים / סיכונים שהודגשו:</h4>
+                      <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
+                        {formData.risks}
+                      </div>
+                    </div>
+                  )}
+                  {formData.decisions && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">החלטות שהתקבלו:</h4>
+                      <div className="bg-primary/10 p-4 rounded-xl text-sm overflow-x-auto">
+                        {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
+                          <div
+                            className="ai-content"
+                            dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
+                          />
+                        ) : (
+                          <div className="whitespace-pre-wrap">{formData.decisions}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {formData.timeframes && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">לוחות זמנים:</h4>
+                      <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                        {formData.timeframes}
+                      </div>
+                    </div>
+                  )}
+                  {formData.documents && formData.documents.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">מסמכים/פעולות להשלמה:</h4>
+                      <ul className="list-disc pr-6 text-sm">
+                        {formData.documents.map((doc, idx) => (
+                          <li key={idx}>{doc}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {formData.approvals && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">אישורים/חתימות נדרשות:</h4>
+                      <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                        {formData.approvals}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
