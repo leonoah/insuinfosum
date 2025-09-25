@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import RecordingModal from "./CallRecording/RecordingModal";
+import VoiceTextInput from "./VoiceTextInput";
 import { SelectedProduct } from "@/types/insurance";
 // Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
@@ -655,7 +656,16 @@ const AppForm = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
+                    <VoiceTextInput
+                      onTextProcessed={(enhancedText, transcribedText) => {
+                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
+                      }}
+                      textType="currentSituation"
+                      buttonText="הקלטה קולית"
+                    />
+                  </div>
                   <Textarea
                     id="currentSituation"
                     value={formData.currentSituation}
@@ -666,7 +676,16 @@ const AppForm = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="risks">פערים / סיכונים שהודגשו</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="risks">פערים / סיכונים שהודגשו</Label>
+                    <VoiceTextInput
+                      onTextProcessed={(enhancedText, transcribedText) => {
+                        setFormData(prev => ({ ...prev, risks: enhancedText }));
+                      }}
+                      textType="risks"
+                      buttonText="הקלטה קולית"
+                    />
+                  </div>
                   <Textarea
                     id="risks"
                     value={formData.risks}
