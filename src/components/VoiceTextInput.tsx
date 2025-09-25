@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceTextInputProps {
   onTextProcessed: (enhancedText: string, transcribedText: string) => void;
-  textType: 'currentSituation' | 'risks';
+  textType: 'currentSituation' | 'risks' | 'decisions';
   buttonText?: string;
   description?: string;
 }
@@ -146,7 +146,7 @@ const VoiceTextInput: React.FC<VoiceTextInputProps> = ({
       disabled={isProcessing}
       variant="outline"
       size="sm"
-      className={`gap-2 transition-all duration-300 ${
+      className={`transition-all duration-300 ${
         isRecording ? 'animate-pulse border-destructive text-destructive' : 'border-primary/50 hover:border-primary'
       }`}
     >
@@ -157,13 +157,6 @@ const VoiceTextInput: React.FC<VoiceTextInputProps> = ({
       ) : (
         <Mic className="h-4 w-4" />
       )}
-      
-      {isProcessing 
-        ? 'מעבד...'
-        : isRecording 
-          ? 'עצור הקלטה'
-          : buttonText
-      }
     </Button>
   );
 };
