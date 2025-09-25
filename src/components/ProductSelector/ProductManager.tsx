@@ -216,26 +216,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         {/* כפתורי הוספת מוצר קיים/מוצע הוסרו */}
       </div>
 
-      {/* Comparison Section - Always Visible */}
-      <ComparisonSection 
-        currentProducts={currentProducts}
-        recommendedProducts={recommendedProducts}
-      />
-
-      {/* Comparison Button */}
-      {canShowComparison() && (
-        <div className="flex justify-center">
-          <Button 
-            onClick={() => setShowComparison(true)}
-            className="glass-hover flex items-center gap-2"
-            variant="default"
-          >
-            <GitCompare className="h-4 w-4" />
-            השוואה בין מוצרים נבחרים
-          </Button>
-        </div>
-      )}
-
       {/* Products Lists - RTL Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recommended on the left */}
@@ -268,6 +248,26 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           />
         </div>
       </div>
+
+      {/* Comparison Section - Always Visible */}
+      <ComparisonSection 
+        currentProducts={currentProducts}
+        recommendedProducts={recommendedProducts}
+      />
+
+      {/* Comparison Button */}
+      {canShowComparison() && (
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => setShowComparison(true)}
+            className="glass-hover flex items-center gap-2"
+            variant="default"
+          >
+            <GitCompare className="h-4 w-4" />
+            השוואה בין מוצרים נבחרים
+          </Button>
+        </div>
+      )}
 
       {/* Selection Modal */}
       <ProductSelectionModal
