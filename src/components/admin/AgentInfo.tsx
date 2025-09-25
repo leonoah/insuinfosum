@@ -37,9 +37,11 @@ export const AgentInfo = () => {
       const { data, error } = await supabase
         .from('agent_info')
         .select('*')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
@@ -129,14 +131,40 @@ export const AgentInfo = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      // First, check if record exists
+      const { data: existingData } = await supabase
         .from('agent_info')
-        .upsert({
-          name: agentData.name,
-          phone: agentData.phone,
-          email: agentData.email,
-          logo_url: agentData.logo_url
-        });
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let error;
+      if (existingData) {
+        // Update existing record
+        const updateResult = await supabase
+          .from('agent_info')
+          .update({
+            name: agentData.name,
+            phone: agentData.phone,
+            email: agentData.email,
+            logo_url: agentData.logo_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData.id);
+        error = updateResult.error;
+      } else {
+        // Insert new record
+        const insertResult = await supabase
+          .from('agent_info')
+          .insert({
+            name: agentData.name,
+            phone: agentData.phone,
+            email: agentData.email,
+            logo_url: agentData.logo_url
+          });
+        error = insertResult.error;
+      }
 
       if (error) throw error;
 
