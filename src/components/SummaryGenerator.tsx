@@ -126,6 +126,7 @@ interface FormData {
   meetingDate: string;
   meetingLocation?: string;
   topics: string[];
+  isAnonymous: boolean;
   currentSituation: string;
   risks: string;
   recommendations: string[];
@@ -147,7 +148,14 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [showSectionsDialog, setShowSectionsDialog] = useState(false);
-  const [selectedSections, setSelectedSections] = useState<Record<ReportSectionKey, boolean>>({ ...REPORT_SECTIONS_DEFAULT });
+  const [selectedSections, setSelectedSections] = useState<Record<ReportSectionKey, boolean>>(() => {
+    // Disable personalInfo if anonymous
+    const defaultSections = { ...REPORT_SECTIONS_DEFAULT };
+    if (formData.isAnonymous) {
+      defaultSections.personalInfo = false;
+    }
+    return defaultSections;
+  });
   const [isExpandedMode, setIsExpandedMode] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [aiRiskNotes, setAiRiskNotes] = useState<string>("");
@@ -1032,18 +1040,21 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
             <div className="space-y-4">
               {REPORT_SECTION_KEYS.map((sectionKey) => {
                 const section = REPORT_SECTION_LABELS[sectionKey];
+                const isPersonalInfoDisabled = sectionKey === 'personalInfo' && formData.isAnonymous;
                 return (
                   <div key={sectionKey} className="flex items-start space-x-3 space-x-reverse">
                     <Checkbox
                       id={sectionKey}
                       checked={selectedSections[sectionKey]}
+                      disabled={isPersonalInfoDisabled}
                       onCheckedChange={(checked) => 
                         handleSectionToggle(sectionKey, checked as boolean)
                       }
                     />
                     <div className="flex-1">
-                      <Label htmlFor={sectionKey} className="font-medium">
+                      <Label htmlFor={sectionKey} className={`font-medium ${isPersonalInfoDisabled ? 'text-muted-foreground' : ''}`}>
                         {section.title}
+                        {isPersonalInfoDisabled && <span className="text-xs text-muted-foreground mr-2">(מבוטל - דוח אנונימי)</span>}
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
                         {section.description}

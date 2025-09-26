@@ -47,6 +47,7 @@ interface FormData {
   meetingDate: string;
   meetingLocation: string;
   topics: string[];
+  isAnonymous: boolean;
   
   // Agent recommendations
   currentSituation: string;
@@ -86,6 +87,7 @@ const AppForm = () => {
     meetingDate: new Date().toISOString().split('T')[0],
     meetingLocation: "",
     topics: [],
+    isAnonymous: false,
     currentSituation: "",
     risks: "",
     recommendations: [""],
@@ -97,11 +99,10 @@ const AppForm = () => {
     approvals: ""
   });
 
-  // Required fields: name, phone, current situation
+  // Required fields: current situation, and client details only if not anonymous
   const isSummaryEligible = Boolean(
-    formData.clientName.trim() &&
-    formData.clientPhone.trim() &&
-    formData.currentSituation.trim()
+    formData.currentSituation.trim() &&
+    (formData.isAnonymous || (formData.clientName.trim() && formData.clientPhone.trim()))
   );
 
   // Load clients on component mount
@@ -237,17 +238,28 @@ const AppForm = () => {
   };
 
   const generateSummary = async () => {
-    if (!formData.clientName || !formData.clientPhone || !formData.currentSituation) {
+    if (!formData.currentSituation) {
       toast({
         title: "חסרים פרטים",
-        description: "יש למלא לפחות שם לקוח, טלפון ומצב קיים",
+        description: "יש למלא לפחות מצב קיים",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.isAnonymous && (!formData.clientName || !formData.clientPhone)) {
+      toast({
+        title: "חסרים פרטים",
+        description: "יש למלא שם לקוח וטלפון או לבחור דוח אנונימי",
         variant: "destructive"
       });
       return;
     }
     
-    // Save client before generating summary
-    await saveClient();
+    // Save client before generating summary (only if not anonymous)
+    if (!formData.isAnonymous) {
+      await saveClient();
+    }
     
     // Log the report generation
     await logReport();
@@ -472,11 +484,48 @@ const AppForm = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-8">
-                {/* Client Search Section */}
-                <div className="bg-muted/30 rounded-xl p-6 border border-muted">
-                  <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
-                  <p className="text-sm text-muted-foreground mb-4">חפש לקוח קיים או הוסף לקוח חדש</p>
-                  <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                {/* Anonymous Report Option */}
+                <div className="bg-muted/20 rounded-xl p-4 border border-muted">
+                  <div className="flex items-center space-x-3 space-x-reverse">
+                    <Checkbox
+                      id="isAnonymous"
+                      checked={formData.isAnonymous}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          isAnonymous: checked as boolean,
+                          // Clear client data when switching to anonymous
+                          ...(checked && {
+                            clientName: "",
+                            clientId: "",
+                            clientPhone: "",
+                            clientEmail: ""
+                          })
+                        }))
+                      }
+                      className="rounded-md"
+                    />
+                    <Label 
+                      htmlFor="isAnonymous" 
+                      className="text-base font-medium cursor-pointer"
+                    >
+                      ללא פרטי לקוח (דוח אנונימי)
+                    </Label>
+                  </div>
+                  {formData.isAnonymous && (
+                    <p className="text-sm text-muted-foreground mt-2 mr-6">
+                      הדוח ייווצר ללא פרטי הלקוח ויהיה אנונימי לחלוטין
+                    </p>
+                  )}
+                </div>
+
+                {!formData.isAnonymous && (
+                  <>
+                     {/* Client Search Section */}
+                     <div className="bg-muted/30 rounded-xl p-6 border border-muted">
+                       <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
+                       <p className="text-sm text-muted-foreground mb-4">חפש לקוח קיים או הוסף לקוח חדש</p>
+                       <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -530,11 +579,11 @@ const AppForm = () => {
                           </CommandGroup>
                         </Command>
                       </PopoverContent>
-                    </Popover>
-                </div>
+                       </Popover>
+                     </div>
 
-                {/* Client Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {/* Client Details Grid */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="clientId" className="text-base font-medium">תעודת זהות / ח.פ</Label>
                     <Input
@@ -591,7 +640,9 @@ const AppForm = () => {
                       placeholder="למשל: פגישה במשרד, זום, טלפונית"
                     />
                   </div>
-                </div>
+                     </div>
+                   </>
+                 )}
 
               </CardContent>
             </Card>
