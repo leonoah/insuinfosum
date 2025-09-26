@@ -8,14 +8,27 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Phone, Mic } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import RecordingModal from "./CallRecording/RecordingModal";
 import VoiceTextInput from "./VoiceTextInput";
 import { SelectedProduct } from "@/types/insurance";
+// Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Client {
   id: string;
@@ -34,7 +47,6 @@ interface FormData {
   meetingDate: string;
   meetingLocation: string;
   topics: string[];
-  isAnonymous: boolean;
   
   // Agent recommendations
   currentSituation: string;
@@ -63,6 +75,8 @@ const AppForm = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [clientSearchValue, setClientSearchValue] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
@@ -72,7 +86,6 @@ const AppForm = () => {
     meetingDate: new Date().toISOString().split('T')[0],
     meetingLocation: "",
     topics: [],
-    isAnonymous: false,
     currentSituation: "",
     risks: "",
     recommendations: [""],
@@ -84,10 +97,11 @@ const AppForm = () => {
     approvals: ""
   });
 
-  // Required fields: current situation and either client details or anonymous mode
+  // Required fields: name, phone, current situation
   const isSummaryEligible = Boolean(
-    formData.currentSituation.trim() &&
-    (formData.isAnonymous || (formData.clientName.trim() && formData.clientPhone.trim()))
+    formData.clientName.trim() &&
+    formData.clientPhone.trim() &&
+    formData.currentSituation.trim()
   );
 
   // Load clients on component mount
@@ -110,7 +124,7 @@ const AppForm = () => {
   };
 
   const saveClient = async () => {
-    if (!formData.clientName || !formData.clientId || formData.isAnonymous) return;
+    if (!formData.clientName || !formData.clientId) return;
     
     try {
       const { data, error } = await supabase
@@ -131,24 +145,35 @@ const AppForm = () => {
     }
   };
 
+  const selectClient = (client: Client) => {
+    setFormData(prev => ({
+      ...prev,
+      clientName: client.client_name,
+      clientId: client.client_id,
+      clientPhone: client.client_phone || "",
+      clientEmail: client.client_email || ""
+    }));
+    setClientSearchValue(client.client_name);
+    setClientSearchOpen(false);
+    
+    toast({
+      title: "לקוח נטען",
+      description: `פרטי ${client.client_name} נטענו בהצלחה`,
+    });
+  };
+
   const documentOptions = [
     "העתק תעודת זהות", "אישור הכנסה", "בדיקות רפואיות", 
     "פוליסות קיימות", "מסמכי בנק", "אישור רופא"
   ];
 
   const calculateProgress = () => {
-    if (formData.isAnonymous) {
-      const fields = [formData.currentSituation, formData.decisions];
-      const filledFields = fields.filter(field => field.trim()).length;
-      return (filledFields / fields.length) * 100;
-    } else {
-      const fields = [
-        formData.clientName, formData.clientPhone, formData.clientEmail,
-        formData.currentSituation, formData.decisions
-      ];
-      const filledFields = fields.filter(field => field.trim()).length;
-      return (filledFields / fields.length) * 100;
-    }
+    const fields = [
+      formData.clientName, formData.clientPhone, formData.clientEmail,
+      formData.currentSituation, formData.decisions
+    ];
+    const filledFields = fields.filter(field => field.trim()).length;
+    return (filledFields / fields.length) * 100;
   };
 
   const handleTopicToggle = (topic: string) => {
@@ -212,27 +237,17 @@ const AppForm = () => {
   };
 
   const generateSummary = async () => {
-    if (formData.isAnonymous) {
-      if (!formData.currentSituation) {
-        toast({
-          title: "חסר מידע",
-          description: "יש למלא את המצב הקיים לפחות כדי ליצור דוח",
-          variant: "destructive"
-        });
-        return;
-      }
-    } else {
-      if (!formData.clientName || !formData.clientPhone || !formData.currentSituation) {
-        toast({
-          title: "חסרים פרטים",
-          description: "יש למלא לפחות שם לקוח, טלפון ומצב קיים",
-          variant: "destructive"
-        });
-        return;
-      }
-      // Save client before generating summary
-      await saveClient();
+    if (!formData.clientName || !formData.clientPhone || !formData.currentSituation) {
+      toast({
+        title: "חסרים פרטים",
+        description: "יש למלא לפחות שם לקוח, טלפון ומצב קיים",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    // Save client before generating summary
+    await saveClient();
     
     // Log the report generation
     await logReport();
@@ -242,8 +257,7 @@ const AppForm = () => {
 
   const logReport = async () => {
     try {
-      const clientName = formData.isAnonymous ? "דוח אנונימי" : formData.clientName;
-      const reportContent = `דוח ייעוץ פיננסי עבור ${clientName}
+      const reportContent = `דוח ייעוץ פיננסי עבור ${formData.clientName}
 תאריך: ${formData.meetingDate || new Date().toLocaleDateString('he-IL')}
 נושאים: ${formData.topics}
 מצב קיים: ${formData.currentSituation}
@@ -255,8 +269,8 @@ const AppForm = () => {
       const { error } = await supabase
         .from('reports_log')
         .insert({
-          client_id: formData.isAnonymous ? "anonymous" : (formData.clientPhone || "unknown"), 
-          client_name: clientName,
+          client_id: formData.clientPhone, // Using phone as ID for now
+          client_name: formData.clientName,
           report_content: reportContent,
           status: 'generated'
         });
@@ -281,9 +295,9 @@ const AppForm = () => {
           },
           currentDecisions: formData.decisions,
           clientInfo: {
-            clientName: formData.isAnonymous ? "דוח אנונימי" : formData.clientName,
-            clientPhone: formData.isAnonymous ? "" : formData.clientPhone,
-            clientEmail: formData.isAnonymous ? "" : formData.clientEmail,
+            clientName: formData.clientName,
+            clientPhone: formData.clientPhone,
+            clientEmail: formData.clientEmail,
             meetingDate: formData.meetingDate,
             topics: formData.topics,
             currentSituation: formData.currentSituation,
@@ -421,32 +435,6 @@ const AppForm = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 justify-center mb-8">
-          <Button onClick={saveDraft} variant="outline" className="glass border-glass-border">
-            <Save className="h-4 w-4 ml-2" />
-            שמירת טיוטה
-          </Button>
-          <Button onClick={loadDraft} variant="outline" className="glass border-glass-border">
-            <FileText className="h-4 w-4 ml-2" />
-            טעינת טיוטה
-          </Button>
-          <Button 
-            onClick={() => setShowRecordingModal(true)} 
-            variant="outline" 
-            className="glass border-glass-border"
-          >
-            <Phone className="h-4 w-4 ml-2" />
-            הקלטת שיחה
-          </Button>
-          <Button 
-            onClick={generateSummary} 
-            disabled={!isSummaryEligible}
-            className="bg-primary text-primary-foreground font-medium"
-          >
-            יצירת דוח
-          </Button>
-        </div>
 
         {/* Form - RTL Layout */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
@@ -484,199 +472,134 @@ const AppForm = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-8">
-                {/* Anonymous Report Checkbox */}
-                <div className="flex items-center space-x-2 mb-6">
-                  <Checkbox
-                    id="anonymous"
-                    checked={formData.isAnonymous}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, isAnonymous: checked as boolean }))
-                    }
-                  />
-                  <Label htmlFor="anonymous" className="text-lg font-medium">ללא פרטי לקוח (דוח אנונימי)</Label>
-                </div>
-
-                {/* Client Details Section */}
-                {!formData.isAnonymous && (
-                  <div className="space-y-6">
-                    <div className="bg-muted/30 rounded-xl p-6 border border-muted">
-                      <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
-                      <Input
-                        id="clientName"
-                        value={formData.clientName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                        placeholder="הזן שם הלקוח"
-                        className="mt-2 bg-background border-border rounded-xl h-12 text-lg"
-                      />
-                    </div>
-
-                    {/* Client Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="clientId" className="text-base font-medium">תעודת זהות / ח.פ</Label>
-                        <Input
-                          id="clientId"
-                          value={formData.clientId}
-                          onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
-                          className="mt-2 bg-input rounded-xl"
-                          placeholder="123456789"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="clientPhone" className="text-base font-medium">טלפון *</Label>
-                        <Input
-                          id="clientPhone"
-                          type="tel"
-                          value={formData.clientPhone}
-                          onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
-                          className="mt-2 bg-input rounded-xl"
-                          placeholder="050-1234567"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="clientEmail" className="text-base font-medium">אימייל</Label>
-                        <Input
-                          id="clientEmail"
-                          type="email"
-                          value={formData.clientEmail}
-                          onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
-                          className="mt-2 bg-input rounded-xl"
-                          placeholder="client@email.com"
-                        />
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <Label htmlFor="meetingDate" className="text-base font-medium">תאריך הפגישה</Label>
-                        <Input
-                          id="meetingDate"
-                          type="date"
-                          value={formData.meetingDate}
-                          onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
-                          className="mt-2 bg-input rounded-xl"
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <Label htmlFor="meetingLocation" className="text-base font-medium">מיקום / אופי הפגישה</Label>
-                        <Input
-                          id="meetingLocation"
-                          value={formData.meetingLocation}
-                          onChange={(e) => setFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
-                          className="mt-2 bg-input rounded-xl"
-                          placeholder="למשל: פגישה במשרד, זום, טלפונית"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Topics */}
-                <div>
-                  <Label className="text-base font-medium mb-4 block">נושאי הפגישה</Label>
-                  <div className="flex flex-wrap gap-3">
-                    {insuranceTopics.map((topic) => (
-                      <Badge
-                        key={topic}
-                        variant={formData.topics.includes(topic) ? "default" : "outline"}
-                        className="cursor-pointer hover:bg-primary/80 transition-colors px-4 py-2"
-                        onClick={() => handleTopicToggle(topic)}
+                {/* Client Search Section */}
+                <div className="bg-muted/30 rounded-xl p-6 border border-muted">
+                  <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
+                  <p className="text-sm text-muted-foreground mb-4">חפש לקוח קיים או הוסף לקוח חדש</p>
+                  <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={clientSearchOpen}
+                        className="w-full justify-between bg-background border-border rounded-xl h-12 text-lg"
                       >
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
+                        {clientSearchValue || formData.clientName || "בחרו לקוח קיים או הקלידו שם חדש"}
+                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput 
+                            placeholder="חפשו לקוח או הקלידו שם חדש..."
+                            value={clientSearchValue}
+                            onValueChange={(value) => {
+                              setClientSearchValue(value);
+                              setFormData(prev => ({ ...prev, clientName: value }));
+                            }}
+                          />
+                          <CommandEmpty>
+                            <div className="p-4 text-center">
+                              <p className="text-sm text-muted-foreground mb-2">
+                                לא נמצא לקוח עם השם "{clientSearchValue}"
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                המשיכו למלא את הפרטים ליצירת לקוח חדש
+                              </p>
+                            </div>
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {clients
+                              .filter(client => 
+                                client.client_name.toLowerCase().includes(clientSearchValue.toLowerCase())
+                              )
+                              .map((client) => (
+                                <CommandItem
+                                  key={client.id}
+                                  value={client.client_name}
+                                  onSelect={() => selectClient(client)}
+                                >
+                                  <div className="flex flex-col items-start">
+                                    <span className="font-medium">{client.client_name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ת.ز: {client.client_id} | טל: {client.client_phone}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                 </div>
 
-                {/* Current Situation */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Label htmlFor="currentSituation" className="text-base font-medium">מצב קיים *</Label>
-                    <VoiceTextInput 
-                      onTextProcessed={(enhancedText, transcribedText) => 
-                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }))
-                      }
-                      textType="currentSituation"
+                {/* Client Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="clientId" className="text-base font-medium">תעודת זהות / ח.פ</Label>
+                    <Input
+                      id="clientId"
+                      value={formData.clientId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl"
+                      placeholder="123456789"
                     />
                   </div>
-                  <Textarea
-                    id="currentSituation"
-                    value={formData.currentSituation}
-                    onChange={(e) => setFormData(prev => ({ ...prev, currentSituation: e.target.value }))}
-                    className="min-h-[120px] bg-input rounded-xl resize-none"
-                    placeholder="תאר את המצב הפיננסי הנוכחי של הלקוח..."
-                  />
-                </div>
-
-                {/* Risks */}
-                <div>
-                  <Label htmlFor="risks" className="text-base font-medium mb-4 block">סיכונים וחששות</Label>
-                  <Textarea
-                    id="risks"
-                    value={formData.risks}
-                    onChange={(e) => setFormData(prev => ({ ...prev, risks: e.target.value }))}
-                    className="min-h-[100px] bg-input rounded-xl resize-none"
-                    placeholder="תאר סיכונים, חששות או נקודות חשובות שעלו..."
-                  />
-                </div>
-
-                {/* Recommendations */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <Label className="text-base font-medium">המלצות</Label>
-                    <Button
-                      type="button"
-                      onClick={addRecommendation}
-                      size="sm"
-                      variant="outline"
-                      className="glass border-glass-border"
-                    >
-                      <Plus className="h-4 w-4 ml-1" />
-                      הוסף המלצה
-                    </Button>
+                  
+                  <div>
+                    <Label htmlFor="clientPhone" className="text-base font-medium">טלפון *</Label>
+                    <Input
+                      id="clientPhone"
+                      type="tel"
+                      value={formData.clientPhone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl"
+                      placeholder="050-1234567"
+                    />
                   </div>
-                  {formData.recommendations.map((rec, index) => (
-                    <div key={index} className="flex gap-2 mb-3">
-                      <Textarea
-                        value={rec}
-                        onChange={(e) => updateRecommendation(index, e.target.value)}
-                        className="flex-1 min-h-[80px] bg-input rounded-xl resize-none"
-                        placeholder={`המלצה ${index + 1}...`}
-                      />
-                      {formData.recommendations.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => removeRecommendation(index)}
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                  
+                  <div>
+                    <Label htmlFor="clientEmail" className="text-base font-medium">אימייל</Label>
+                    <Input
+                      id="clientEmail"
+                      type="email"
+                      value={formData.clientEmail}
+                      onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl"
+                      placeholder="client@email.com"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <Label htmlFor="meetingDate" className="text-base font-medium">תאריך הפגישה</Label>
+                    <Input
+                      id="meetingDate"
+                      type="date"
+                      value={formData.meetingDate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label htmlFor="meetingLocation" className="text-base font-medium">מיקום / אופי הפגישה</Label>
+                    <Input
+                      id="meetingLocation"
+                      value={formData.meetingLocation}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl"
+                      placeholder="למשל: פגישה במשרד, זום, טלפונית"
+                    />
+                  </div>
                 </div>
 
-                {/* Estimated Cost */}
-                <div>
-                  <Label htmlFor="estimatedCost" className="text-base font-medium">עלות משוערת</Label>
-                  <Input
-                    id="estimatedCost"
-                    value={formData.estimatedCost}
-                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                    className="mt-2 bg-input rounded-xl"
-                    placeholder="למשל: ₪500-800 לחודש"
-                  />
-                </div>
               </CardContent>
             </Card>
             {/* Next Step Button */}
             <div className="flex justify-end mt-6">
               <Button
                 onClick={() => setActiveTab("products")}
-                disabled={!isSummaryEligible}
+                disabled={!(formData.clientName.trim() && formData.clientPhone.trim())}
                 className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
               >
                 שלב הבא: מוצרים
@@ -690,27 +613,31 @@ const AppForm = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  מוצרים פיננסיים
+                  ניהול מוצרים פיננסיים
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                
                 <ProductManager
                   currentProducts={formData.products.filter(p => p.type === 'current')}
                   recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
                   onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
+                  onShowRecording={() => setShowRecordingModal(true)}
                 />
               </CardContent>
             </Card>
+            {/* Navigation Buttons */}
             <div className="flex justify-between mt-6">
               <Button
-                onClick={() => setActiveTab("client")}
                 variant="outline"
-                className="px-8 py-3 rounded-xl"
+                onClick={() => setActiveTab("client")}
+                className="rounded-xl"
               >
-                חזרה: פרטי לקוח
+                חזור לפרטי לקוח
               </Button>
               <Button
                 onClick={() => setActiveTab("decisions")}
+                disabled={formData.products.filter(p => p.type === 'current' || p.type === 'recommended').length === 0}
                 className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
               >
                 שלב הבא: החלטות
@@ -724,52 +651,114 @@ const AppForm = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
-                  החלטות וצעדים הבאים
+                  סיכום החלטות שהתקבלו
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-8">
-                {/* Decisions */}
+              <CardContent className="space-y-6">
                 <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Label htmlFor="decisions" className="text-base font-medium">מה הוחלט לבצע</Label>
-                    <VoiceTextInput 
-                      onTextProcessed={(enhancedText, transcribedText) => 
-                        setFormData(prev => ({ ...prev, decisions: enhancedText }))
-                      }
-                      textType="decisions"
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
+                    <VoiceTextInput
+                      onTextProcessed={(enhancedText, transcribedText) => {
+                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
+                      }}
+                      textType="currentSituation"
+                      buttonText="הקלטה קולית"
                     />
-                    <Button
-                      onClick={handleGenerateDecisions}
-                      disabled={isGeneratingDecisions}
-                      variant="outline"
-                      size="sm"
-                      className="glass border-glass-border text-xs"
-                    >
-                      {isGeneratingDecisions ? "מייצר..." : "יצירה אוטומטית"}
-                    </Button>
                   </div>
                   <Textarea
-                    id="decisions"
-                    value={formData.decisions}
-                    onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
-                    className="min-h-[120px] bg-input rounded-xl resize-none"
-                    placeholder="תאר את ההחלטות שהתקבלו והצעדים הבאים..."
+                    id="currentSituation"
+                    value={formData.currentSituation}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currentSituation: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl min-h-[100px]"
+                    placeholder="תארו את המצב הביטוחי הנוכחי של הלקוח..."
                   />
                 </div>
 
-                {/* Required Documents */}
                 <div>
-                  <Label className="text-base font-medium mb-4 block">מסמכים נדרשים</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="risks">פערים / סיכונים שהודגשו</Label>
+                    <VoiceTextInput
+                      onTextProcessed={(enhancedText, transcribedText) => {
+                        setFormData(prev => ({ ...prev, risks: enhancedText }));
+                      }}
+                      textType="risks"
+                      buttonText="הקלטה קולית"
+                    />
+                  </div>
+                  <Textarea
+                    id="risks"
+                    value={formData.risks}
+                    onChange={(e) => setFormData(prev => ({ ...prev, risks: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl min-h-[100px]"
+                    placeholder="רשמו פערים וסיכונים שזוהו..."
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
+                    <div className="flex gap-2">
+                      <VoiceTextInput
+                        onTextProcessed={(enhancedText, transcribedText) => {
+                          setFormData(prev => ({ ...prev, decisions: enhancedText }));
+                        }}
+                        textType="decisions"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateDecisions}
+                        disabled={isGeneratingDecisions || (!formData.products?.length)}
+                        className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
+                      >
+                        {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {formData.decisions && formData.decisions.includes('<div') ? (
+                    <div className="space-y-2">
+                      <div className="p-4 bg-background/50 rounded-xl border min-h-[100px]">
+                        <div 
+                          className="ai-content"
+                          dangerouslySetInnerHTML={{ __html: formData.decisions }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, decisions: '' }))}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        עריכה ידנית
+                      </Button>
+                    </div>
+                  ) : (
+                    <Textarea
+                      id="decisions"
+                      value={formData.decisions}
+                      onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
+                      className="mt-2 bg-input rounded-xl min-h-[100px]"
+                      placeholder="פרטו את ההחלטות שהתקבלו בפגישה..."
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <Label>מסמכים / פעולות להשלמה</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                     {documentOptions.map((doc) => (
-                      <div key={doc} className="flex items-center space-x-2">
+                      <div key={doc} className="flex items-center space-x-2 space-x-reverse">
                         <Checkbox
                           id={doc}
                           checked={formData.documents.includes(doc)}
                           onCheckedChange={() => handleDocumentToggle(doc)}
                         />
-                        <Label
-                          htmlFor={doc}
+                        <Label 
+                          htmlFor={doc} 
                           className="text-sm font-normal cursor-pointer"
                         >
                           {doc}
@@ -779,58 +768,73 @@ const AppForm = () => {
                   </div>
                 </div>
 
-                {/* Timeframes */}
                 <div>
-                  <Label htmlFor="timeframes" className="text-base font-medium">לוחות זמנים ומועדים</Label>
-                  <Textarea
+                  <Label htmlFor="timeframes">טווחי זמנים</Label>
+                  <Input
                     id="timeframes"
                     value={formData.timeframes}
                     onChange={(e) => setFormData(prev => ({ ...prev, timeframes: e.target.value }))}
-                    className="mt-2 min-h-[80px] bg-input rounded-xl resize-none"
-                    placeholder="מועדי הגשת מסמכים, מועדי תשלום, פגישות המשך..."
+                    className="mt-2 bg-input rounded-xl"
+                    placeholder="תוך שבועיים, חודש..."
                   />
                 </div>
 
-                {/* Approvals */}
                 <div>
-                  <Label htmlFor="approvals" className="text-base font-medium">אישורים ובדיקות</Label>
-                  <Textarea
+                  <Label htmlFor="approvals">אישורים / חתימות נדרשות</Label>
+                  <Input
                     id="approvals"
                     value={formData.approvals}
                     onChange={(e) => setFormData(prev => ({ ...prev, approvals: e.target.value }))}
-                    className="mt-2 min-h-[80px] bg-input rounded-xl resize-none"
-                    placeholder="אישורים רפואיים, בדיקות נדרשות, אישורי הכנסה..."
+                    className="mt-2 bg-input rounded-xl"
+                    placeholder="חתימת בן/בת זוג, אישור רופא..."
                   />
                 </div>
               </CardContent>
             </Card>
-            <div className="flex justify-between mt-6">
+            {/* Back Button */}
+            <div className="flex justify-start mt-6">
               <Button
-                onClick={() => setActiveTab("products")}
                 variant="outline"
-                className="px-8 py-3 rounded-xl"
+                onClick={() => setActiveTab("products")}
+                className="rounded-xl"
               >
-                חזרה: מוצרים
-              </Button>
-              <Button
-                onClick={generateSummary}
-                disabled={!isSummaryEligible}
-                className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
-              >
-                יצירת דוח מלא
+                חזור למוצרים
               </Button>
             </div>
           </TabsContent>
+
         </Tabs>
+
+        {/* Generate Button */}
+        <div className="mt-8 text-center">
+          <Button 
+            onClick={generateSummary}
+            size="lg"
+            disabled={!isSummaryEligible}
+            className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow text-lg min-w-[200px] glass-hover"
+          >
+            <FileText className="h-5 w-5 ml-2" />
+            ייצר סיכום
+          </Button>
+          {!isSummaryEligible && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              נדרש למלא: שם לקוח, טלפון ומצב קיים לפני יצירת הסיכום
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Recording Modal */}
-      {showRecordingModal && (
-        <RecordingModal 
-          isOpen={showRecordingModal}
-          onClose={() => setShowRecordingModal(false)}
-          onApprove={handleRecordingApproval}
-        />
+      <RecordingModal
+        isOpen={showRecordingModal}
+        onClose={() => setShowRecordingModal(false)}
+        onApprove={handleRecordingApproval}
+        initialClientId={formData.clientId}
+        initialClientName={formData.clientName}
+      />
+
+      {showSummary && (
+        <SummaryGenerator formData={formData} onBack={() => setShowSummary(false)} />
       )}
     </div>
   );
