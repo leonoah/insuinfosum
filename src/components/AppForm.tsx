@@ -650,7 +650,7 @@ const AppForm = () => {
             <div className="flex justify-end mt-6">
               <Button
                 onClick={() => setActiveTab("products")}
-                disabled={!(formData.clientName.trim() && formData.clientPhone.trim())}
+                disabled={!(formData.isAnonymous || (formData.clientName.trim() && formData.clientPhone.trim()))}
                 className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
               >
                 שלב הבא: מוצרים
