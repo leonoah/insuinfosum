@@ -427,64 +427,67 @@ const AppForm = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pt-16 sm:pt-20 pb-8 px-3 sm:px-4 md:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+        {/* Header - Mobile Optimized */}
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4 px-2">
             יצירת סיכום פגישה + מוצרים פיננסיים
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg px-2">
             מלאו את הפרטים להכנת סיכום מקצועי
           </p>
           
-          {/* Progress */}
-          <div className="mt-6 glass p-4 rounded-2xl">
+          {/* Progress - Mobile Optimized */}
+          <div className="mt-4 sm:mt-6 glass p-3 sm:p-4 rounded-2xl mx-2 sm:mx-0">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">התקדmות</span>
-              <span className="text-sm font-medium">{Math.round(calculateProgress())}%</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">התקדמות</span>
+              <span className="text-xs sm:text-sm font-medium">{Math.round(calculateProgress())}%</span>
             </div>
             <Progress value={calculateProgress()} className="h-2" />
           </div>
         </div>
 
 
-        {/* Form - RTL Layout */}
+        {/* Form - RTL Layout with Mobile Optimization */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-3 glass mb-8 p-1 rounded-2xl">
+          <TabsList className="grid w-full grid-cols-3 glass mb-6 sm:mb-8 p-1 rounded-2xl mx-2 sm:mx-0">
             <TabsTrigger 
               value="client" 
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-h-[44px] text-sm sm:text-base flex-col sm:flex-row gap-1 sm:gap-2"
             >
-              <User className="h-4 w-4 ml-2" />
-              פרטי לקוח
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">פרטי לקוח</span>
+              <span className="sm:hidden text-xs">לקוח</span>
             </TabsTrigger>
             <TabsTrigger 
               value="products"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-h-[44px] text-sm sm:text-base flex-col sm:flex-row gap-1 sm:gap-2"
             >
-              <BarChart3 className="h-4 w-4 ml-2" />
-              מוצרים
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">מוצרים</span>
+              <span className="sm:hidden text-xs">מוצרים</span>
             </TabsTrigger>
             <TabsTrigger 
               value="decisions"
-              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-h-[44px] text-sm sm:text-base flex-col sm:flex-row gap-1 sm:gap-2"
             >
-              <CheckCircle className="h-4 w-4 ml-2" />
-              החלטות
+              <CheckCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">החלטות</span>
+              <span className="sm:hidden text-xs">החלטות</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Client Details */}
           <TabsContent value="client">
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="glass border-glass-border rounded-2xl mx-2 sm:mx-0">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <User className="h-5 w-5" />
                   פרטי הלקוח
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-8">
+              <CardContent className="space-y-6 sm:space-y-8 px-4 sm:px-6">
                 {/* Anonymous Report Option */}
                 <div className="bg-muted/20 rounded-xl p-4 border border-muted">
                   <div className="flex items-center space-x-3 space-x-reverse">
@@ -661,14 +664,14 @@ const AppForm = () => {
 
           {/* Products */}
           <TabsContent value="products">
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="glass border-glass-border rounded-2xl mx-2 sm:mx-0">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <BarChart3 className="h-5 w-5" />
                   ניהול מוצרים פיננסיים
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 px-4 sm:px-6">
                 {hasSkippedProducts && formData.products.length === 0 && (
                   <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
                     <div className="flex items-center gap-2 text-orange-700">
@@ -735,14 +738,14 @@ const AppForm = () => {
 
           {/* Decisions */}
           <TabsContent value="decisions">
-            <Card className="glass border-glass-border rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="glass border-glass-border rounded-2xl mx-2 sm:mx-0">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <CheckCircle className="h-5 w-5" />
                   סיכום החלטות שהתקבלו
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 px-4 sm:px-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>

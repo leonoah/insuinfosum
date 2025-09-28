@@ -198,20 +198,29 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   return (
     <div className="space-y-6">
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
-        <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover shrink-0" title="יבוא מצב קיים מאקסל" aria-label="יבוא מצב קיים מאקסל">
+      {/* Action Buttons - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-2 w-full">
+        <Button 
+          onClick={() => setShowExcelImport(true)} 
+          variant="default" 
+          size="sm" 
+          className="glass-hover min-h-[44px] flex items-center justify-center gap-2" 
+          title="יבוא מצב קיים מאקסל" 
+          aria-label="יבוא מצב קיים מאקסל"
+        >
           <Upload className="h-4 w-4" />
+          <span className="sm:hidden">יבוא מאקסל</span>
         </Button>
         <Button 
           variant="outline" 
           size="sm"
           onClick={onShowRecording}
-          className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl shrink-0"
+          className="border-glass-border bg-red-50 hover:bg-red-100 text-red-700 border-red-200 rounded-xl min-h-[44px] flex items-center justify-center gap-2"
           title="הקלט שיחה עם לקוח"
           aria-label="הקלט שיחה עם לקוח"
         >
           <Phone className="h-4 w-4" />
+          <span className="sm:hidden">הקלטת שיחה</span>
         </Button>
         {/* כפתורי הוספת מוצר קיים/מוצע הוסרו */}
       </div>
