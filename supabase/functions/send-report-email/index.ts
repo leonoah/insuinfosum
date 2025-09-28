@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     const fileName = `סיכום-ביטוח-${clientName}-${new Date(meetingDate).toLocaleDateString('he-IL')}.pdf`;
     
     const emailPayload = {
-      from: `${agentData.name} <onboarding@resend.dev>`,
+      from: `${agentData.name} <info@inminds.co.il>`,
       to: [to],
       subject: subject,
       html: `
