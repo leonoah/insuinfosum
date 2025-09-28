@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart, Loader2, FileText, Edit3, Settings, Expand } from "lucide-react";
+import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart, Loader2, FileText, Edit3, Settings, Expand, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -492,7 +492,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
   };
 
-  const quickSendReport = async (method: 'email' | 'whatsapp' | 'download') => {
+  const quickSendReport = async (method: 'email' | 'whatsapp' | 'download' | 'share') => {
     if (isQuickSending) return;
     
     setIsQuickSending(true);
@@ -508,6 +508,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         await sendReportByWhatsApp();
       } else if (method === 'download') {
         await downloadReport();
+      } else if (method === 'share') {
+        await shareReport();
       }
     } catch (error) {
       console.error('Quick send error:', error);
@@ -599,6 +601,43 @@ ${agentData.name}`;
       toast({
         title: "שגיאה ביצירת הקישור",
         description: "אנא נסה שנית",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const shareReport = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `דוח סיכום ביטוח - ${formData.clientName}`,
+          text: `דוח סיכום פגישת ביטוח עם ${formData.clientName} מתאריך ${formatDate(formData.meetingDate)}`,
+          url: window.location.href,
+        });
+        
+        toast({
+          title: "שותף בהצלחה",
+          description: "הדוח שותף בהצלחה",
+        });
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        await navigator.clipboard.writeText(
+          `דוח סיכום פגישת ביטוח - ${formData.clientName}\n` +
+          `תאריך הפגישה: ${formatDate(formData.meetingDate)}\n` +
+          `נוצר על ידי: ${agentData.name}\n\n` +
+          `לצפייה בדוח: ${window.location.href}`
+        );
+        
+        toast({
+          title: "הועתק ללוח",
+          description: "פרטי הדוח הועתקו ללוח",
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing report:', error);
+      toast({
+        title: "שגיאה בשיתוף",
+        description: "לא ניתן לשתף את הדוח",
         variant: "destructive",
       });
     }
@@ -1228,6 +1267,15 @@ ${agentData.name}`;
                 variant="outline" 
                 size="sm"
                 disabled={isQuickSending}
+                onClick={() => quickSendReport('share')}
+              >
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Share className="w-4 h-4 ml-2" />}
+                שתף
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={isQuickSending}
                 onClick={() => quickSendReport('download')}
               >
                 {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Download className="w-4 h-4 ml-2" />}
@@ -1424,6 +1472,13 @@ ${agentData.name}`;
                 >
                   <MessageCircle className="w-4 h-4 ml-2" />
                   שלח בוואטסאפ
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={shareReport}
+                >
+                  <Share className="w-4 h-4 ml-2" />
+                  שתף
                 </Button>
                 <Button onClick={generateFinalReport}>
                   <Download className="w-4 h-4 ml-2" />
