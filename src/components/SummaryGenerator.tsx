@@ -169,6 +169,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     email: null,
     logo_url: null
   });
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
 
   useEffect(() => {
     loadAgentInfo();
@@ -421,13 +423,17 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     return pdf.output('datauristring').split(',')[1]; // Get base64 part
   };
 
-  const sendReportByEmail = async () => {
-    if (!formData.clientEmail) {
-      toast({
-        title: "שגיאה",
-        description: "כתובת מייל לא נמצאה",
-        variant: "destructive",
-      });
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
+  const sendReportByEmail = async (emailAddress?: string) => {
+    const targetEmail = emailAddress || formData.clientEmail;
+    
+    if (!targetEmail || !validateEmail(targetEmail)) {
+      setEmailInput(formData.clientEmail || "");
+      setShowEmailDialog(true);
       return;
     }
 
@@ -441,7 +447,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       
       const response = await supabase.functions.invoke('send-report-email', {
         body: {
-          to: formData.clientEmail,
+          to: targetEmail,
           subject: `דוח סיכום פגישת ביטוח - ${formData.clientName}`,
           clientName: formData.clientName,
           meetingDate: formData.meetingDate,
@@ -456,7 +462,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
       toast({
         title: "האימייל נשלח בהצלחה",
-        description: "הדוח נשלח למייל הלקוח עם קובץ PDF מצורף",
+        description: `הדוח נשלח למייל ${targetEmail} עם קובץ PDF מצורף`,
       });
     } catch (error) {
       console.error('Error sending email:', error);
@@ -1155,7 +1161,7 @@ ${agentData.name}`;
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  onClick={sendReportByEmail}
+                  onClick={() => sendReportByEmail()}
                 >
                   <Mail className="w-4 h-4 ml-2" />
                   שלח במייל
@@ -1244,6 +1250,51 @@ ${agentData.name}`;
               </Button>
               <Button onClick={() => setShowSectionsDialog(false)}>
                 שמור הגדרות
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Email Input Dialog */}
+        <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>הכנס כתובת מייל</DialogTitle>
+              <DialogDescription>
+                אנא הכנס כתובת מייל תקינה לשליחת הדוח
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <Label htmlFor="email-input">כתובת מייל:</Label>
+              <Input
+                id="email-input"
+                type="email"
+                placeholder="example@gmail.com"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                className="text-left"
+                dir="ltr"
+              />
+              {emailInput && !validateEmail(emailInput) && (
+                <p className="text-sm text-red-500">כתובת המייל אינה תקינה</p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
+                ביטול
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (validateEmail(emailInput)) {
+                    setShowEmailDialog(false);
+                    sendReportByEmail(emailInput.trim());
+                  }
+                }}
+                disabled={!emailInput || !validateEmail(emailInput)}
+              >
+                שלח דוח
               </Button>
             </DialogFooter>
           </DialogContent>
