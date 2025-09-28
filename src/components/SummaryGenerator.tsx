@@ -384,6 +384,163 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     });
   };
 
+  const generatePDFBase64 = async (): Promise<string> => {
+    const reportElement = document.getElementById('final-report-content');
+    if (!reportElement) {
+      throw new Error('Report element not found');
+    }
+
+    const canvas = await html2canvas(reportElement, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+    });
+    
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    const imgWidth = 210;
+    const pageHeight = 295;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    return pdf.output('datauristring').split(',')[1]; // Get base64 part
+  };
+
+  const sendReportByEmail = async () => {
+    if (!formData.clientEmail) {
+      toast({
+        title: "שגיאה",
+        description: "כתובת מייל לא נמצאה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setShowFinalReport(true);
+      
+      // Wait a moment for the dialog to render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const pdfBase64 = await generatePDFBase64();
+      
+      const response = await supabase.functions.invoke('send-report-email', {
+        body: {
+          to: formData.clientEmail,
+          subject: `דוח סיכום פגישת ביטוח - ${formData.clientName}`,
+          clientName: formData.clientName,
+          meetingDate: formData.meetingDate,
+          pdfBase64: pdfBase64,
+          agentData: agentData,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast({
+        title: "האימייל נשלח בהצלחה",
+        description: "הדוח נשלח למייל הלקוח עם קובץ PDF מצורף",
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "שגיאה בשליחת המייל",
+        description: "אנא נסה שנית",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sendReportByWhatsApp = async () => {
+    if (!formData.clientPhone) {
+      toast({
+        title: "שגיאה",
+        description: "מספר טלפון לא נמצא",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setShowFinalReport(true);
+      
+      // Wait a moment for the dialog to render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const pdfBase64 = await generatePDFBase64();
+      
+      // Convert base64 to blob for upload
+      const pdfBlob = new Blob([
+        new Uint8Array(
+          atob(pdfBase64)
+            .split('')
+            .map(char => char.charCodeAt(0))
+        )
+      ], { type: 'application/pdf' });
+
+      // Upload PDF to storage
+      const fileName = `reports/סיכום-ביטוח-${formData.clientName}-${Date.now()}.pdf`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('site-backups')
+        .upload(fileName, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('site-backups')
+        .getPublicUrl(fileName);
+
+      const reportText = `דוח סיכום פגישת ביטוח
+
+לקוח: ${formData.clientName}
+תאריך: ${formatDate(formData.meetingDate)}
+
+📄 הדוח המלא זמין להורדה בקישור:
+${urlData.publicUrl}
+
+${agentData.name}`;
+
+      const whatsappUrl = `https://wa.me/${formData.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(reportText)}`;
+      window.open(whatsappUrl, '_blank');
+
+      toast({
+        title: "הקישור נוצר בהצלחה",
+        description: "וואטסאפ נפתח עם הקישור לדוח",
+      });
+    } catch (error) {
+      console.error('Error sending WhatsApp:', error);
+      toast({
+        title: "שגיאה ביצירת הקישור",
+        description: "אנא נסה שנית",
+        variant: "destructive",
+      });
+    }
+  };
+
   const generateFinalReport = async () => {
     setShowFinalReport(true);
     const config = isExpandedMode ? selectedSections : REPORT_SECTIONS_DEFAULT;
@@ -998,22 +1155,14 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    const reportText = `דוח סיכום פגישת ביטוח\n\nלקוח: ${formData.clientName}\nתאריך: ${formatDate(formData.meetingDate)}\n\nתקציר מנהלים:\n${productStats.highlightBullets.join('\n')}\n\nהחלטות שהתקבלו:\n${formData.decisions}\n\nמשימות להמשך:\n${nextStepsText}`;
-                    const mailtoUrl = `mailto:${formData.clientEmail}?subject=דוח סיכום פגישת ביטוח - ${formData.clientName}&body=${encodeURIComponent(reportText)}`;
-                    window.open(mailtoUrl, '_blank');
-                  }}
+                  onClick={sendReportByEmail}
                 >
                   <Mail className="w-4 h-4 ml-2" />
                   שלח במייל
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    const reportText = `דוח סיכום פגישת ביטוח\n\nלקוח: ${formData.clientName}\nתאריך: ${formatDate(formData.meetingDate)}\n\nתקציר מנהלים:\n${productStats.highlightBullets.join('\n')}\n\nהחלטות שהתקבלו:\n${formData.decisions}\n\nמשימות להמשך:\n${nextStepsText}`;
-                    const whatsappUrl = `https://wa.me/${formData.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(reportText)}`;
-                    window.open(whatsappUrl, '_blank');
-                  }}
+                  onClick={sendReportByWhatsApp}
                 >
                   <MessageCircle className="w-4 h-4 ml-2" />
                   שלח בוואטסאפ

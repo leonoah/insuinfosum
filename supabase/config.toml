@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.voice-to-enhanced-text]
 verify_jwt = false
+
+[functions.send-report-email]
+verify_jwt = false
