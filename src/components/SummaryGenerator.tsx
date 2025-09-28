@@ -182,6 +182,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [tempRisks, setTempRisks] = useState("");
   const [tempDecisions, setTempDecisions] = useState("");
   const [isQuickSending, setIsQuickSending] = useState(false);
+  const [showFinalReportDialog, setShowFinalReportDialog] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
 
   useEffect(() => {
     loadAgentInfo();
@@ -774,6 +776,119 @@ ${agentData.name}`;
     }
   };
 
+  const handleAutoFill = async () => {
+    // Get current and recommended products from formData.products
+    const allProducts = formData.products || [];
+    const currentProducts = allProducts.filter(p => p.type === 'current');
+    const recommendedProducts = allProducts.filter(p => p.type === 'recommended');
+    
+    if (currentProducts.length === 0 && recommendedProducts.length === 0) {
+      toast({
+        title: "חסרים נתונים",
+        description: "נא לבחור מוצרים קיימים ומוצעים לפני המילוי האוטומטי",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAutoFilling(true);
+    
+    try {
+      const response = await supabase.functions.invoke('generate-decisions', {
+        body: {
+          products: {
+            current: currentProducts,
+            recommended: recommendedProducts
+          },
+          currentDecisions: {
+            currentSituation: formData.currentSituation || '',
+            risks: formData.risks || '',
+            decisions: formData.decisions || ''
+          },
+          clientInfo: {
+            name: formData.clientName,
+            email: formData.clientEmail,
+            phone: formData.clientPhone,
+            location: formData.meetingLocation || ''
+          }
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data && response.data.success) {
+        const generatedContent = response.data.decisions;
+        
+        // Parse the generated content and extract the three sections
+        const sections = parseGeneratedDecisions(generatedContent);
+        
+        // Update formData directly since it's mutable
+        formData.currentSituation = sections.currentSituation;
+        formData.risks = sections.risks;
+        formData.decisions = sections.decisions;
+
+        // Force re-render by updating a state variable
+        setIsAutoFilling(false);
+        setIsAutoFilling(true);
+        setTimeout(() => setIsAutoFilling(false), 100);
+
+        toast({
+          title: "מילוי אוטומטי הושלם",
+          description: "הסיכונים וההחלטות מולאו בהצלחה על ידי AI",
+        });
+      } else {
+        throw new Error('תגובה לא תקינה מהשרת');
+      }
+    } catch (error) {
+      console.error('Error in auto-fill:', error);
+      toast({
+        title: "שגיאה במילוי אוטומטי",
+        description: "לא ניתן היה למלא את השדות אוטומטית. נסה שנית.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
+  const parseGeneratedDecisions = (content: string) => {
+    // Default values
+    let currentSituation = '';
+    let risks = '';
+    let decisions = '';
+
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(content);
+      if (parsed.currentSituation) currentSituation = parsed.currentSituation;
+      if (parsed.risks) risks = parsed.risks;
+      if (parsed.decisions) decisions = parsed.decisions;
+    } catch {
+      // If not JSON, try to parse as HTML/text with sections
+      const sections = content.split(/\n\s*\n/);
+      
+      sections.forEach(section => {
+        const lowerSection = section.toLowerCase();
+        if (lowerSection.includes('מצב קיים') || lowerSection.includes('מצב נוכחי')) {
+          currentSituation = section.replace(/.*?(מצב קיים|מצב נוכחי)[^:]*:?\s*/i, '').trim();
+        } else if (lowerSection.includes('סיכונים') || lowerSection.includes('פערים')) {
+          risks = section.replace(/.*?(סיכונים|פערים)[^:]*:?\s*/i, '').trim();
+        } else if (lowerSection.includes('החלטות') || lowerSection.includes('הוחלט')) {
+          decisions = section.replace(/.*?(החלטות|הוחלט)[^:]*:?\s*/i, '').trim();
+        }
+      });
+
+      // If still empty, use the whole content as decisions (most important)
+      if (!currentSituation && !risks && !decisions) {
+        decisions = content;
+      }
+    }
+
+    return { currentSituation, risks, decisions };
+  };
+
   const ComparisonSection = ({ currentProducts, recommendedProducts }: {
     currentProducts: SelectedProduct[];
     recommendedProducts: SelectedProduct[];
@@ -1301,6 +1416,22 @@ ${agentData.name}`;
                 />
                 {/* החלטות, לוחות זמנים, מסמכים, אישורים */}
                 <div className="mt-8 space-y-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">סיכום והחלטות</h3>
+                    <Button
+                      onClick={handleAutoFill}
+                      disabled={isAutoFilling}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      {isAutoFilling ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      {isAutoFilling ? 'ממלא...' : 'מילוי אוטומטי'}
+                    </Button>
+                  </div>
                   {formData.currentSituation && (
                     <div>
                       <div className="flex items-center justify-between mb-2">
