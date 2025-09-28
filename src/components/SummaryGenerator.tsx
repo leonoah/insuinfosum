@@ -1250,36 +1250,40 @@ ${agentData.name}`;
                 size="sm"
                 disabled={isQuickSending}
                 onClick={() => quickSendReport('email')}
+                title="שלח במייל"
               >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Mail className="w-4 h-4 ml-2" />}
-                שלח במייל
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Mail className="w-4 h-4 sm:ml-2" />}
+                <span className="hidden sm:inline">שלח במייל</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 disabled={isQuickSending}
                 onClick={() => quickSendReport('whatsapp')}
+                title="שלח בוואטסאפ"
               >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <MessageCircle className="w-4 h-4 ml-2" />}
-                שלח בוואטסאפ
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <MessageCircle className="w-4 h-4 sm:ml-2" />}
+                <span className="hidden sm:inline">שלח בוואטסאפ</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 disabled={isQuickSending}
                 onClick={() => quickSendReport('share')}
+                title="שתף"
               >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Share className="w-4 h-4 ml-2" />}
-                שתף
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Share className="w-4 h-4 sm:ml-2" />}
+                <span className="hidden sm:inline">שתף</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 disabled={isQuickSending}
                 onClick={() => quickSendReport('download')}
+                title="הורד PDF"
               >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Download className="w-4 h-4 ml-2" />}
-                הורד PDF
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Download className="w-4 h-4 sm:ml-2" />}
+                <span className="hidden sm:inline">הורד PDF</span>
               </Button>
             </div>
           </div>
@@ -1462,27 +1466,30 @@ ${agentData.name}`;
                 <Button 
                   variant="outline" 
                   onClick={() => sendReportByEmail()}
+                  title="שלח במייל"
                 >
-                  <Mail className="w-4 h-4 ml-2" />
-                  שלח במייל
+                  <Mail className="w-4 h-4 sm:ml-2" />
+                  <span className="hidden sm:inline">שלח במייל</span>
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => sendReportByWhatsApp()}
+                  title="שלח בוואטסאפ"
                 >
-                  <MessageCircle className="w-4 h-4 ml-2" />
-                  שלח בוואטסאפ
+                  <MessageCircle className="w-4 h-4 sm:ml-2" />
+                  <span className="hidden sm:inline">שלח בוואטסאפ</span>
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={shareReport}
+                  title="שתף"
                 >
-                  <Share className="w-4 h-4 ml-2" />
-                  שתף
+                  <Share className="w-4 h-4 sm:ml-2" />
+                  <span className="hidden sm:inline">שתף</span>
                 </Button>
-                <Button onClick={generateFinalReport}>
-                  <Download className="w-4 h-4 ml-2" />
-                  הורד PDF
+                <Button onClick={generateFinalReport} title="הורד PDF">
+                  <Download className="w-4 h-4 sm:ml-2" />
+                  <span className="hidden sm:inline">הורד PDF</span>
                 </Button>
               </div>
             </DialogFooter>
