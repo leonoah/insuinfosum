@@ -173,6 +173,15 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [emailInput, setEmailInput] = useState("");
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
+  
+  // Edit mode states for AI-processed texts
+  const [editingCurrentSituation, setEditingCurrentSituation] = useState(false);
+  const [editingRisks, setEditingRisks] = useState(false);
+  const [editingDecisions, setEditingDecisions] = useState(false);
+  const [tempCurrentSituation, setTempCurrentSituation] = useState("");
+  const [tempRisks, setTempRisks] = useState("");
+  const [tempDecisions, setTempDecisions] = useState("");
+  const [isQuickSending, setIsQuickSending] = useState(false);
 
   useEffect(() => {
     loadAgentInfo();
@@ -483,6 +492,31 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
   };
 
+  const quickSendReport = async (method: 'email' | 'whatsapp' | 'download') => {
+    if (isQuickSending) return;
+    
+    setIsQuickSending(true);
+    setShowFinalReport(true);
+    
+    try {
+      // Wait for dialog to render
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (method === 'email') {
+        await sendReportByEmail();
+      } else if (method === 'whatsapp') {
+        await sendReportByWhatsApp();
+      } else if (method === 'download') {
+        await downloadReport();
+      }
+    } catch (error) {
+      console.error('Quick send error:', error);
+    } finally {
+      setIsQuickSending(false);
+      setShowFinalReport(false);
+    }
+  };
+
   const sendReportByWhatsApp = async (phoneNumber?: string) => {
     const targetPhone = phoneNumber || formData.clientPhone;
     
@@ -621,6 +655,83 @@ ${agentData.name}`;
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const downloadReport = async () => {
+    try {
+      const pdfBase64 = await generatePDFBase64();
+      
+      // Convert base64 to blob and download
+      const byteCharacters = atob(pdfBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `דוח_סיכום_${formData.clientName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "הדוח הורד בהצלחה",
+        description: "הקובץ נשמר במחשב שלך",
+      });
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast({
+        title: "שגיאה בהורדת הדוח",
+        description: "אנא נסה שנית",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startEditingField = (field: 'currentSituation' | 'risks' | 'decisions') => {
+    if (field === 'currentSituation') {
+      setTempCurrentSituation(formData.currentSituation || '');
+      setEditingCurrentSituation(true);
+    } else if (field === 'risks') {
+      setTempRisks(formData.risks || '');
+      setEditingRisks(true);
+    } else if (field === 'decisions') {
+      setTempDecisions(formData.decisions || '');
+      setEditingDecisions(true);
+    }
+  };
+
+  const saveEditedField = (field: 'currentSituation' | 'risks' | 'decisions') => {
+    if (field === 'currentSituation') {
+      formData.currentSituation = tempCurrentSituation;
+      setEditingCurrentSituation(false);
+    } else if (field === 'risks') {
+      formData.risks = tempRisks;
+      setEditingRisks(false);
+    } else if (field === 'decisions') {
+      formData.decisions = tempDecisions;
+      setEditingDecisions(false);
+    }
+    
+    toast({
+      title: "השינוי נשמר",
+      description: "הטקסט עודכן בהצלחה",
+    });
+  };
+
+  const cancelEditingField = (field: 'currentSituation' | 'risks' | 'decisions') => {
+    if (field === 'currentSituation') {
+      setEditingCurrentSituation(false);
+    } else if (field === 'risks') {
+      setEditingRisks(false);
+    } else if (field === 'decisions') {
+      setEditingDecisions(false);
     }
   };
 
@@ -1090,6 +1201,40 @@ ${agentData.name}`;
               </Button>
             </div>
           </div>
+          
+          {/* Quick Actions */}
+          <div className="mt-4 pt-4 border-t border-glass-border">
+            <div className="text-sm text-muted-foreground mb-3">פעולות מהירות:</div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={isQuickSending}
+                onClick={() => quickSendReport('email')}
+              >
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Mail className="w-4 h-4 ml-2" />}
+                שלח במייל
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={isQuickSending}
+                onClick={() => quickSendReport('whatsapp')}
+              >
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <MessageCircle className="w-4 h-4 ml-2" />}
+                שלח בוואטסאפ
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={isQuickSending}
+                onClick={() => quickSendReport('download')}
+              >
+                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Download className="w-4 h-4 ml-2" />}
+                הורד PDF
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Preview */}
@@ -1106,33 +1251,117 @@ ${agentData.name}`;
                 <div className="mt-8 space-y-4">
                   {formData.currentSituation && (
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2">מצב קיים בקצרה:</h4>
-                      <div className="bg-muted/30 p-4 rounded-xl text-sm">
-                        {formData.currentSituation}
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-foreground">מצב קיים בקצרה:</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditingField('currentSituation')}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
                       </div>
+                      {editingCurrentSituation ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={tempCurrentSituation}
+                            onChange={(e) => setTempCurrentSituation(e.target.value)}
+                            className="min-h-[100px]"
+                            placeholder="ערוך את המצב הקיים..."
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveEditedField('currentSituation')}>
+                              שמור
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('currentSituation')}>
+                              ביטול
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                          {formData.currentSituation}
+                        </div>
+                      )}
                     </div>
                   )}
                   {formData.risks && (
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2">פערים / סיכונים שהודגשו:</h4>
-                      <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
-                        {formData.risks}
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-foreground">פערים / סיכונים שהודגשו:</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditingField('risks')}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
                       </div>
+                      {editingRisks ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={tempRisks}
+                            onChange={(e) => setTempRisks(e.target.value)}
+                            className="min-h-[100px]"
+                            placeholder="ערוך את הסיכונים והפערים..."
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveEditedField('risks')}>
+                              שמור
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('risks')}>
+                              ביטול
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
+                          {formData.risks}
+                        </div>
+                      )}
                     </div>
                   )}
                   {formData.decisions && (
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2">החלטות שהתקבלו:</h4>
-                      <div className="bg-primary/10 p-4 rounded-xl text-sm overflow-x-auto">
-                        {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
-                          <div
-                            className="ai-content"
-                            dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
-                          />
-                        ) : (
-                          <div className="whitespace-pre-wrap">{formData.decisions}</div>
-                        )}
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-foreground">החלטות שהתקבלו:</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditingField('decisions')}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
                       </div>
+                      {editingDecisions ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={tempDecisions}
+                            onChange={(e) => setTempDecisions(e.target.value)}
+                            className="min-h-[100px]"
+                            placeholder="ערוך את ההחלטות שהתקבלו..."
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveEditedField('decisions')}>
+                              שמור
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('decisions')}>
+                              ביטול
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-primary/10 p-4 rounded-xl text-sm overflow-x-auto">
+                          {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
+                            <div
+                              className="ai-content"
+                              dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
+                            />
+                          ) : (
+                            <div className="whitespace-pre-wrap">{formData.decisions}</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   {formData.timeframes && (
