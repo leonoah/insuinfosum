@@ -512,7 +512,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       const fileName = `reports/סיכום-ביטוח-${formData.clientName}-${Date.now()}.pdf`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('site-backups')
+        .from('whatsapp-reports')
         .upload(fileName, pdfBlob, {
           contentType: 'application/pdf',
           upsert: false
@@ -524,7 +524,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('site-backups')
+        .from('whatsapp-reports')
         .getPublicUrl(fileName);
 
       const reportText = `דוח סיכום פגישת ביטוח
