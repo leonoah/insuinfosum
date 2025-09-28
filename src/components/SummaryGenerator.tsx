@@ -1432,10 +1432,12 @@ ${agentData.name}`;
                       {isAutoFilling ? 'ממלא...' : 'מילוי אוטומטי'}
                     </Button>
                   </div>
-                  {formData.currentSituation && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-foreground">מצב קיים בקצרה:</h4>
+                  
+                  {/* מצב קיים בקצרה */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-foreground">מצב קיים בקצרה:</h4>
+                      {formData.currentSituation && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1443,35 +1445,37 @@ ${agentData.name}`;
                         >
                           <Edit3 className="w-4 h-4" />
                         </Button>
-                      </div>
-                      {editingCurrentSituation ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={tempCurrentSituation}
-                            onChange={(e) => setTempCurrentSituation(e.target.value)}
-                            className="min-h-[100px]"
-                            placeholder="ערוך את המצב הקיים..."
-                          />
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveEditedField('currentSituation')}>
-                              שמור
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('currentSituation')}>
-                              ביטול
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-muted/30 p-4 rounded-xl text-sm">
-                          {formData.currentSituation}
-                        </div>
                       )}
                     </div>
-                  )}
-                  {formData.risks && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-foreground">פערים / סיכונים שהודגשו:</h4>
+                    {editingCurrentSituation ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={tempCurrentSituation}
+                          onChange={(e) => setTempCurrentSituation(e.target.value)}
+                          className="min-h-[100px]"
+                          placeholder="ערוך את המצב הקיים..."
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => saveEditedField('currentSituation')}>
+                            שמור
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => cancelEditingField('currentSituation')}>
+                            ביטול
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                        {formData.currentSituation || "לחץ על 'מילוי אוטומטי' למילוי השדה"}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* סיכונים */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-foreground">פערים / סיכונים שהודגשו:</h4>
+                      {formData.risks && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1479,32 +1483,81 @@ ${agentData.name}`;
                         >
                           <Edit3 className="w-4 h-4" />
                         </Button>
-                      </div>
-                      {editingRisks ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={tempRisks}
-                            onChange={(e) => setTempRisks(e.target.value)}
-                            className="min-h-[100px]"
-                            placeholder="ערוך את הסיכונים והפערים..."
-                          />
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveEditedField('risks')}>
-                              שמור
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('risks')}>
-                              ביטול
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
-                          {formData.risks}
-                        </div>
                       )}
                     </div>
-                  )}
-                  {formData.decisions && (
+                    {editingRisks ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={tempRisks}
+                          onChange={(e) => setTempRisks(e.target.value)}
+                          className="min-h-[100px]"
+                          placeholder="ערוך את הסיכונים והפערים..."
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => saveEditedField('risks')}>
+                            שמור
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => cancelEditingField('risks')}>
+                            ביטול
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
+                        {formData.risks || "לחץ על 'מילוי אוטומטי' למילוי השדה"}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* החלטות */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-foreground">החלטות שהתקבלו:</h4>
+                      {formData.decisions && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditingField('decisions')}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {editingDecisions ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={tempDecisions}
+                          onChange={(e) => setTempDecisions(e.target.value)}
+                          className="min-h-[100px]"
+                          placeholder="ערוך את ההחלטות שהתקבלו..."
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => saveEditedField('decisions')}>
+                            שמור
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => cancelEditingField('decisions')}>
+                            ביטול
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-primary/10 p-4 rounded-xl text-sm overflow-x-auto">
+                        {formData.decisions ? (
+                          (formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
+                            <div
+                              className="ai-content"
+                              dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
+                            />
+                          ) : (
+                            <div className="whitespace-pre-wrap">{formData.decisions}</div>
+                          )
+                        ) : (
+                          "לחץ על 'מילוי אוטומטי' למילוי השדה"
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {formData.timeframes && (
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold text-foreground">החלטות שהתקבלו:</h4>
