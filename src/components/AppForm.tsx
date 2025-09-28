@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
@@ -74,7 +74,7 @@ const AppForm = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("client");
   const [showSummary, setShowSummary] = useState(false);
-  const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState("");
@@ -296,8 +296,8 @@ const AppForm = () => {
     }
   };
 
-  const handleGenerateDecisions = async () => {
-    setIsGeneratingDecisions(true);
+  const handleAutoFill = async () => {
+    setIsAutoFilling(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-decisions', {
@@ -306,44 +306,47 @@ const AppForm = () => {
             current: formData.products.filter(p => p.type === 'current'),
             recommended: formData.products.filter(p => p.type === 'recommended')
           },
-          currentDecisions: formData.decisions,
+          currentDecisions: {
+            currentSituation: formData.currentSituation,
+            risks: formData.risks,
+            decisions: formData.decisions
+          },
           clientInfo: {
             clientName: formData.clientName,
             clientPhone: formData.clientPhone,
             clientEmail: formData.clientEmail,
             meetingDate: formData.meetingDate,
-            topics: formData.topics,
-            currentSituation: formData.currentSituation,
-            risks: formData.risks,
-            recommendations: formData.recommendations,
-            estimatedCost: formData.estimatedCost
-          }
+            topics: formData.topics
+          },
+          autoFillMode: true
         }
       });
 
       if (error) {
-        console.error('Error generating decisions:', error);
+        console.error('Error auto-filling:', error);
         toast({
           title: "שגיאה",
-          description: "שגיאה ביצירת ההחלטות. אנא נסה שוב.",
+          description: "שגיאה במילוי האוטומטי. אנא נסה שוב.",
           variant: "destructive"
         });
         return;
       }
 
-      if (data?.decisions) {
+      if (data?.currentSituation || data?.risks || data?.decisions) {
         setFormData(prev => ({
           ...prev,
-          decisions: data.decisions
+          currentSituation: data.currentSituation || prev.currentSituation,
+          risks: data.risks || prev.risks,
+          decisions: data.decisions || prev.decisions
         }));
         toast({
           title: "הצלחה!",
-          description: "החלטות סונכרנו בהצלחה! ניתן לערוך את הטקסט לפי הצורך.",
+          description: "השדות מולאו אוטומטית! ניתן לערוך את הטקסט לפי הצורך.",
         });
       } else {
         toast({
           title: "שגיאה",
-          description: "לא הצלחנו לייצר החלטות. אנא נסה שוב.",
+          description: "לא הצלחנו לבצע מילוי אוטומטי. אנא נסה שוב.",
           variant: "destructive"
         });
       }
@@ -351,11 +354,11 @@ const AppForm = () => {
       console.error('Error:', error);
       toast({
         title: "שגיאה",
-        description: "שגיאה ביצירת ההחלטות. אנא נסה שוב.",
+        description: "שגיאה במילוי האוטומטי. אנא נסה שוב.",
         variant: "destructive"
       });
     } finally {
-      setIsGeneratingDecisions(false);
+      setIsAutoFilling(false);
     }
   };
 
@@ -696,6 +699,30 @@ const AppForm = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Auto Fill Button */}
+                <div className="mb-6">
+                  <Button
+                    type="button"
+                    onClick={handleAutoFill}
+                    disabled={isAutoFilling || (!formData.products?.length && !hasSkippedProducts)}
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl py-3 font-medium"
+                  >
+                    {isAutoFilling ? (
+                      <>
+                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                        מבצע מילוי אוטומטי...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 ml-2" />
+                        מילוי אוטומטי
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                    ימלא אוטומטי את 3 השדות על בסיס המוצרים שנבחרו
+                  </p>
+                </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
@@ -737,55 +764,23 @@ const AppForm = () => {
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
-                    <div className="flex gap-2">
-                      <VoiceTextInput
-                        onTextProcessed={(enhancedText, transcribedText) => {
-                          setFormData(prev => ({ ...prev, decisions: enhancedText }));
-                        }}
-                        textType="decisions"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateDecisions}
-                        disabled={isGeneratingDecisions || (!formData.products?.length && !hasSkippedProducts)}
-                        className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
-                      >
-                        {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {formData.decisions && formData.decisions.includes('<div') ? (
-                    <div className="space-y-2">
-                      <div className="p-4 bg-background/50 rounded-xl border min-h-[100px]">
-                        <div 
-                          className="ai-content"
-                          dangerouslySetInnerHTML={{ __html: formData.decisions }}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFormData(prev => ({ ...prev, decisions: '' }))}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        עריכה ידנית
-                      </Button>
-                    </div>
-                  ) : (
-                    <Textarea
-                      id="decisions"
-                      value={formData.decisions}
-                      onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl min-h-[100px]"
-                      placeholder="פרטו את ההחלטות שהתקבלו בפגישה..."
+                    <VoiceTextInput
+                      onTextProcessed={(enhancedText, transcribedText) => {
+                        setFormData(prev => ({ ...prev, decisions: enhancedText }));
+                      }}
+                      textType="decisions"
+                      buttonText="הקלטה קולית"
                     />
-                  )}
+                  </div>
+                  <Textarea
+                    id="decisions"
+                    value={formData.decisions}
+                    onChange={(e) => setFormData(prev => ({ ...prev, decisions: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl min-h-[100px]"
+                    placeholder="פרטו את ההחלטות שהתקבלו בפגישה..."
+                  />
                 </div>
 
                 <div>

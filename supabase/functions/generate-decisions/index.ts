@@ -17,15 +17,42 @@ serve(async (req) => {
   }
 
   try {
-    const { products, currentDecisions, clientInfo } = await req.json();
+    const { products, currentDecisions, clientInfo, autoFillMode } = await req.json();
     
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not found');
     }
 
-    // Prepare the prompt for ChatGPT
-    const prompt = `אתה יועץ ביטוח מקצועי. על בסיס המידע הבא, עדכן ושפר את החלטות הלקוח:
+    let prompt: string;
+    
+    if (autoFillMode) {
+      // Auto-fill mode: generate plain text for the 3 specific fields
+      prompt = `אתה יועץ ביטוח מקצועי. על בסיס המידע הבא, מלא את 3 השדות הבאים:
+
+פרטי לקוח: ${JSON.stringify(clientInfo, null, 2)}
+
+מוצרים נוכחיים: ${JSON.stringify(products.current, null, 2)}
+
+מוצרים מומלצים: ${JSON.stringify(products.recommended, null, 2)}
+
+החלטות קיימות: ${JSON.stringify(currentDecisions, null, 2)}
+
+אנא מלא את השדות הבאים בטקסט פשוט (לא HTML):
+
+1. מצב קיים בקצרה: (2-3 משפטים המתארים את המצב הביטוחי הנוכחי)
+2. סיכונים: (רשימת הסיכונים והפערים שזוהו)  
+3. מה הוחלט לבצע: (החלטות ופעולות שהתקבלו בפגישה)
+
+חזור עם JSON בפורמט הבא:
+{
+  "currentSituation": "טקסט המצב הקיים",
+  "risks": "טקסט הסיכונים", 
+  "decisions": "טקסט ההחלטות"
+}`;
+    } else {
+      // Legacy mode: generate HTML for report
+      prompt = `אתה יועץ ביטוח מקצועי. על בסיס המידע הבא, עדכן ושפר את החלטות הלקוח:
 
 פרטי לקוח: ${JSON.stringify(clientInfo, null, 2)}
 
@@ -70,6 +97,7 @@ serve(async (req) => {
 </div>
 
 התשובה צריכה להיות HTML תקין בעברית ומפורטת.`;
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -82,7 +110,9 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'אתה יועץ ביטוח מקצועי המסייע בכתיבת החלטות לקוחות בפורמט HTML מובנה וקריא. חזור תמיד עם HTML תקין ומסודר.'
+            content: autoFillMode 
+              ? 'אתה יועץ ביטוח מקצועי המסייע במילוי שדות טקסט על בסיס ניתוח מוצרים. חזור תמיד עם JSON תקין כפי שנדרש.'
+              : 'אתה יועץ ביטוח מקצועי המסייע בכתיבת החלטות לקוחות בפורמט HTML מובנה וקריא. חזור תמיד עם HTML תקין ומסודר.'
           },
           {
             role: 'user',
@@ -101,16 +131,41 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const generatedDecisions = data.choices[0].message.content;
+    const generatedContent = data.choices[0].message.content;
 
-    console.log('Generated decisions successfully');
+    console.log('Generated content successfully');
 
-    return new Response(JSON.stringify({ 
-      decisions: generatedDecisions,
-      success: true 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    if (autoFillMode) {
+      // Parse JSON response for auto-fill mode
+      try {
+        const parsedContent = JSON.parse(generatedContent);
+        return new Response(JSON.stringify({ 
+          currentSituation: parsedContent.currentSituation,
+          risks: parsedContent.risks,
+          decisions: parsedContent.decisions,
+          success: true 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (parseError) {
+        console.error('Error parsing JSON response:', parseError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to parse AI response',
+          success: false 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      // Legacy mode: return HTML decisions
+      return new Response(JSON.stringify({ 
+        decisions: generatedContent,
+        success: true 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
   } catch (error) {
     console.error('Error in generate-decisions function:', error);
