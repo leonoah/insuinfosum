@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, BarChart3, Upload, GitCompare, Phone } from 'lucide-react';
+import { Plus, BarChart3, Upload, GitCompare, Phone, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonSection from './ComparisonSection';
 import ExcelImportDialog from './ExcelImportDialog';
+import PensionFileImport from './PensionFileImport';
 import CurrentStateView from './CurrentStateView';
 import EditableStateView from './EditableStateView';
 import ProductComparisonModal from './ProductComparisonModal';
@@ -29,6 +31,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
   const [currentView, setCurrentView] = useState<'products' | 'current-state' | 'editable-state'>('products');
   const [excelData, setExcelData] = useState<any>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [showPensionImport, setShowPensionImport] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
 
@@ -162,6 +165,16 @@ const ProductManager: React.FC<ProductManagerProps> = ({
     onUpdateProducts([...allProducts, product]);
   };
 
+  const handlePensionImport = (importedProducts: SelectedProduct[]) => {
+    const newProducts = importedProducts.map(product => ({
+      ...product,
+      id: `pension-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+    
+    onUpdateProducts([...allProducts, ...newProducts]);
+    setShowPensionImport(false);
+  };
+
 
 
   if (currentView === 'current-state' && excelData) {
@@ -202,6 +215,9 @@ const ProductManager: React.FC<ProductManagerProps> = ({
       <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
         <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover shrink-0" title="יבוא מצב קיים מאקסל" aria-label="יבוא מצב קיים מאקסל">
           <Upload className="h-4 w-4" />
+        </Button>
+        <Button onClick={() => setShowPensionImport(true)} variant="outline" size="sm" className="glass-hover shrink-0" title="יבוא ממסלקה פנסיונית" aria-label="יבוא ממסלקה פנסיונית">
+          <FileUp className="h-4 w-4" />
         </Button>
         <Button 
           variant="outline" 
@@ -291,6 +307,16 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           setShowExcelImport(false);
         }}
       />
+
+      {/* Pension File Import Dialog */}
+      <Dialog open={showPensionImport} onOpenChange={setShowPensionImport}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <PensionFileImport
+            onProductsSelected={handlePensionImport}
+            onClose={() => setShowPensionImport(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Product Comparison Modal */}
       <ProductComparisonModal
