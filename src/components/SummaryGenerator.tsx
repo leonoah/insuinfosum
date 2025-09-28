@@ -537,8 +537,24 @@ ${urlData.publicUrl}
 
 ${agentData.name}`;
 
-      const whatsappUrl = `https://wa.me/${targetPhone.replace(/\D/g, '')}?text=${encodeURIComponent(reportText)}`;
-      window.open(whatsappUrl, '_blank');
+      // Normalize phone to international format for WhatsApp (E.164 for IL)
+      const normalizedDigits = (() => {
+        let d = targetPhone.replace(/\D/g, '');
+        if (d.startsWith('972')) return d;
+        if (d.startsWith('0')) return '972' + d.slice(1);
+        return d;
+      })();
+
+      const whatsappUrl = `https://wa.me/${normalizedDigits}?text=${encodeURIComponent(reportText)}`;
+
+      // Pre-open to avoid popup blockers, then navigate once ready
+      const waWindow = window.open('', '_blank');
+      if (waWindow) {
+        waWindow.location.href = whatsappUrl;
+      } else {
+        // Fallback: open in the same tab if popup was blocked
+        window.location.href = whatsappUrl;
+      }
 
       toast({
         title: "הקישור נוצר בהצלחה",
