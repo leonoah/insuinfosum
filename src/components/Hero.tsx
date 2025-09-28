@@ -18,12 +18,12 @@ const Hero = () => {
       <div className="max-w-6xl mx-auto text-center relative z-10">
         {/* Content */}
         <div>
-          {/* Logo */}
-          <div className="mb-8">
+          {/* Logo - Mobile Optimized */}
+          <div className="mb-6 sm:mb-8">
             <img 
               src={logo} 
               alt="InMinds" 
-              className="h-72 w-72 mx-auto mb-6 drop-shadow-glow"
+              className="h-32 w-32 sm:h-48 sm:w-48 md:h-64 md:w-64 lg:h-72 lg:w-72 mx-auto mb-4 sm:mb-6 drop-shadow-glow"
             />
           </div>
 
@@ -33,8 +33,8 @@ const Hero = () => {
             חדש! סיכום אוטומטי חכם
           </div>
 
-          {/* Main heading - Optimized for LCP */}
-          <h1 className="text-4xl sm:text-6xl font-bold text-foreground mb-6 leading-tight lg:text-6xl" style={{ contain: 'layout paint' }}>
+          {/* Main heading - Mobile Optimized */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6 leading-tight" style={{ contain: 'layout paint' }}>
             סיכום שיחה חכם
             <br />
             <span className="bg-gradient-to-l from-primary to-primary-hover bg-clip-text text-transparent" style={{ willChange: 'auto' }}>
@@ -42,23 +42,23 @@ const Hero = () => {
             </span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-xl sm:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+          {/* Subtitle - Mobile Optimized */}
+          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
             ממלאים 3 שדות, מקבלים מסמך מסודר ללקוח — מיידית.
             <br />
-            <span className="text-lg">חסכו זמן יקר ותנו שירות מקצועי יותר</span>
+            <span className="text-sm sm:text-base md:text-lg">חסכו זמן יקר ותנו שירות מקצועי יותר</span>
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Button asChild size="lg" className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow text-lg h-auto min-w-[200px] glass-hover">
-              <Link to="/app" className="flex items-center gap-2">
+          {/* CTA Buttons - Mobile Optimized */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 px-4">
+            <Button asChild size="lg" className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-glow text-base sm:text-lg h-auto w-full sm:w-auto min-w-[200px] glass-hover">
+              <Link to="/app" className="flex items-center justify-center gap-2">
                 התחל עכשיו
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
 
-            <Button variant="outline" size="lg" className="border-glass-border bg-glass hover:bg-glass text-foreground font-medium px-8 py-4 rounded-2xl text-lg h-auto min-w-[200px] glass-hover">
+            <Button variant="outline" size="lg" className="border-glass-border bg-glass hover:bg-glass text-foreground font-medium px-6 sm:px-8 py-3 sm:py-4 rounded-2xl text-base sm:text-lg h-auto w-full sm:w-auto min-w-[200px] glass-hover">
               <Play className="h-5 w-5 ml-2" />
               צפה בדוגמה
             </Button>
