@@ -522,65 +522,18 @@ const AppForm = () => {
 
                 {!formData.isAnonymous && (
                   <>
-                     {/* Client Search Section */}
+                     {/* Client Name Section */}
                      <div className="bg-muted/30 rounded-xl p-6 border border-muted">
                        <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
-                       <p className="text-sm text-muted-foreground mb-4">חפש לקוח קיים או הוסף לקוח חדש</p>
-                       <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={clientSearchOpen}
-                        className="w-full justify-between bg-background border-border rounded-xl h-12 text-lg"
-                      >
-                        {clientSearchValue || formData.clientName || "בחרו לקוח קיים או הקלידו שם חדש"}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput 
-                            placeholder="חפשו לקוח או הקלידו שם חדש..."
-                            value={clientSearchValue}
-                            onValueChange={(value) => {
-                              setClientSearchValue(value);
-                              setFormData(prev => ({ ...prev, clientName: value }));
-                            }}
-                          />
-                          <CommandEmpty>
-                            <div className="p-4 text-center">
-                              <p className="text-sm text-muted-foreground mb-2">
-                                לא נמצא לקוח עם השם "{clientSearchValue}"
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                המשיכו למלא את הפרטים ליצירת לקוח חדש
-                              </p>
-                            </div>
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {clients
-                              .filter(client => 
-                                client.client_name.toLowerCase().includes(clientSearchValue.toLowerCase())
-                              )
-                              .map((client) => (
-                                <CommandItem
-                                  key={client.id}
-                                  value={client.client_name}
-                                  onSelect={() => selectClient(client)}
-                                >
-                                  <div className="flex flex-col items-start">
-                                    <span className="font-medium">{client.client_name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      ת.ز: {client.client_id} | טל: {client.client_phone}
-                                    </span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                       </Popover>
+                       <p className="text-sm text-muted-foreground mb-4">הכנס את שם הלקוח</p>
+                       <Input
+                         id="clientName"
+                         type="text"
+                         value={formData.clientName}
+                         onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+                         placeholder="שם הלקוח"
+                         className="bg-background border-border rounded-xl h-12 text-lg"
+                       />
                      </div>
 
                      {/* Client Details Grid */}
