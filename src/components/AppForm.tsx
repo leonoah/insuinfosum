@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Loader2, Sparkles } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
@@ -75,7 +75,6 @@ const AppForm = () => {
   const [activeTab, setActiveTab] = useState("client");
   const [showSummary, setShowSummary] = useState(false);
   const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
-  const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState("");
@@ -358,104 +357,6 @@ const AppForm = () => {
     } finally {
       setIsGeneratingDecisions(false);
     }
-  };
-
-  // New: Auto-fill all three sections using AI
-  const handleAutoFill = async () => {
-    const allProducts = formData.products || [];
-    const currentProducts = allProducts.filter(p => p.type === 'current');
-    const recommendedProducts = allProducts.filter(p => p.type === 'recommended');
-
-    if (currentProducts.length === 0 && recommendedProducts.length === 0 && !hasSkippedProducts) {
-      toast({
-        title: "חסרים נתונים",
-        description: "נא לבחור מוצרים קיימים ומוצעים לפני המילוי האוטומטי",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsAutoFilling(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-decisions', {
-        body: {
-          products: {
-            current: currentProducts,
-            recommended: recommendedProducts,
-          },
-          currentDecisions: {
-            currentSituation: formData.currentSituation || '',
-            risks: formData.risks || '',
-            decisions: formData.decisions || '',
-          },
-          clientInfo: {
-            clientName: formData.clientName,
-            clientPhone: formData.clientPhone,
-            clientEmail: formData.clientEmail,
-            meetingDate: formData.meetingDate,
-            topics: formData.topics,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.decisions) {
-        const sections = parseGeneratedDecisions(data.decisions);
-        setFormData(prev => ({
-          ...prev,
-          currentSituation: sections.currentSituation || prev.currentSituation,
-          risks: sections.risks || prev.risks,
-          decisions: sections.decisions || data.decisions,
-        }));
-        toast({
-          title: "מילוי אוטומטי הושלם",
-          description: "מצב קיים, סיכונים והחלטות מולאו בהצלחה",
-        });
-      } else {
-        throw new Error('תגובה לא תקינה מהשרת');
-      }
-    } catch (err) {
-      console.error('Error in auto-fill:', err);
-      toast({
-        title: "שגיאה במילוי אוטומטי",
-        description: "לא ניתן היה למלא את השדות אוטומטית. נסה שנית.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAutoFilling(false);
-    }
-  };
-
-  const parseGeneratedDecisions = (content: string) => {
-    let currentSituation = '';
-    let risks = '';
-    let decisions = '';
-
-    try {
-      const parsed = JSON.parse(content);
-      if (parsed.currentSituation) currentSituation = parsed.currentSituation;
-      if (parsed.risks) risks = parsed.risks;
-      if (parsed.decisions) decisions = parsed.decisions;
-    } catch {
-      const sections = content.split(/\n\s*\n/);
-      sections.forEach(section => {
-        const lower = section.toLowerCase();
-        if (lower.includes('מצב קיים') || lower.includes('מצב נוכחי')) {
-          currentSituation = section.replace(/.*?(מצב קיים|מצב נוכחי)[^:]*:?\s*/i, '').trim();
-        } else if (lower.includes('סיכונים') || lower.includes('פערים')) {
-          risks = section.replace(/.*?(סיכונים|פערים)[^:]*:?\s*/i, '').trim();
-        } else if (lower.includes('החלטות') || lower.includes('הוחלט')) {
-          decisions = section.replace(/.*?(החלטות|הוחלט)[^:]*:?\s*/i, '').trim();
-        }
-      });
-      if (!currentSituation && !risks && !decisions) {
-        decisions = content;
-      }
-    }
-
-    return { currentSituation, risks, decisions };
   };
 
   // Handle call recording approval
@@ -789,27 +690,10 @@ const AppForm = () => {
           <TabsContent value="decisions">
             <Card className="glass border-glass-border rounded-2xl">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    סיכום החלטות שהתקבלו
-                  </CardTitle>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAutoFill}
-                    disabled={isAutoFilling || (formData.products.filter(p => p.type === 'current' || p.type === 'recommended').length === 0 && !hasSkippedProducts)}
-                    className="rounded-lg flex items-center gap-2"
-                  >
-                    {isAutoFilling ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
-                    )}
-                    <span className="hidden sm:inline">מילוי אוטומטי</span>
-                  </Button>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  סיכום החלטות שהתקבלו
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
@@ -862,6 +746,16 @@ const AppForm = () => {
                         }}
                         textType="decisions"
                       />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateDecisions}
+                        disabled={isGeneratingDecisions || (!formData.products?.length && !hasSkippedProducts)}
+                        className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
+                      >
+                        {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
+                      </Button>
                     </div>
                   </div>
                   
