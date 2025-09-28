@@ -171,6 +171,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   });
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailInput, setEmailInput] = useState("");
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
 
   useEffect(() => {
     loadAgentInfo();
@@ -428,6 +430,13 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     return emailRegex.test(email.trim());
   };
 
+  const validatePhone = (phone: string): boolean => {
+    // Israeli phone number validation - supports formats like 050-1234567, 0501234567, +972501234567
+    const phoneRegex = /^(\+972|0)?[5-9]\d{8}$/;
+    const cleanPhone = phone.replace(/[-\s]/g, '');
+    return phoneRegex.test(cleanPhone);
+  };
+
   const sendReportByEmail = async (emailAddress?: string) => {
     const targetEmail = emailAddress || formData.clientEmail;
     
@@ -474,13 +483,11 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
   };
 
-  const sendReportByWhatsApp = async () => {
-    if (!formData.clientPhone) {
-      toast({
-        title: "שגיאה",
-        description: "מספר טלפון לא נמצא",
-        variant: "destructive",
-      });
+  const sendReportByWhatsApp = async (phoneNumber?: string) => {
+    const targetPhone = phoneNumber || formData.clientPhone;
+    
+    if (!targetPhone || !validatePhone(targetPhone)) {
+      setShowPhoneDialog(true);
       return;
     }
 
@@ -505,7 +512,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       const fileName = `reports/סיכום-ביטוח-${formData.clientName}-${Date.now()}.pdf`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('site-backups')
+        .from('whatsapp-reports')
         .upload(fileName, pdfBlob, {
           contentType: 'application/pdf',
           upsert: false
@@ -517,7 +524,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('site-backups')
+        .from('whatsapp-reports')
         .getPublicUrl(fileName);
 
       const reportText = `דוח סיכום פגישת ביטוח
@@ -530,8 +537,24 @@ ${urlData.publicUrl}
 
 ${agentData.name}`;
 
-      const whatsappUrl = `https://wa.me/${formData.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(reportText)}`;
-      window.open(whatsappUrl, '_blank');
+      // Normalize phone to international format for WhatsApp (E.164 for IL)
+      const normalizedDigits = (() => {
+        let d = targetPhone.replace(/\D/g, '');
+        if (d.startsWith('972')) return d;
+        if (d.startsWith('0')) return '972' + d.slice(1);
+        return d;
+      })();
+
+      const whatsappUrl = `https://wa.me/${normalizedDigits}?text=${encodeURIComponent(reportText)}`;
+
+      // Pre-open to avoid popup blockers, then navigate once ready
+      const waWindow = window.open('', '_blank');
+      if (waWindow) {
+        waWindow.location.href = whatsappUrl;
+      } else {
+        // Fallback: open in the same tab if popup was blocked
+        window.location.href = whatsappUrl;
+      }
 
       toast({
         title: "הקישור נוצר בהצלחה",
@@ -1168,7 +1191,7 @@ ${agentData.name}`;
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={sendReportByWhatsApp}
+                  onClick={() => sendReportByWhatsApp()}
                 >
                   <MessageCircle className="w-4 h-4 ml-2" />
                   שלח בוואטסאפ
@@ -1293,6 +1316,51 @@ ${agentData.name}`;
                   }
                 }}
                 disabled={!emailInput || !validateEmail(emailInput)}
+              >
+                שלח דוח
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Phone Input Dialog */}
+        <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>הכנס מספר טלפון</DialogTitle>
+              <DialogDescription>
+                אנא הכנס מספר טלפון תקין לשליחת הדוח בוואטסאפ
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <Label htmlFor="phone-input">מספר טלפון:</Label>
+              <Input
+                id="phone-input"
+                type="tel"
+                placeholder="050-1234567"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                className="text-left"
+                dir="ltr"
+              />
+              {phoneInput && !validatePhone(phoneInput) && (
+                <p className="text-sm text-red-500">מספר הטלפון אינו תקין</p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPhoneDialog(false)}>
+                ביטול
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (validatePhone(phoneInput)) {
+                    setShowPhoneDialog(false);
+                    sendReportByWhatsApp(phoneInput.trim());
+                  }
+                }}
+                disabled={!phoneInput || !validatePhone(phoneInput)}
               >
                 שלח דוח
               </Button>
