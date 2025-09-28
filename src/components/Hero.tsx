@@ -1,23 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Play } from "lucide-react";
-import { FallingPattern } from "@/components/ui/falling-pattern";
 import logo from "@/assets/logo-final.png";
 const Hero = () => {
-  return <section className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16">
-      <div className="max-w-6xl mx-auto text-center">
-        {/* Falling Pattern Background */}
-        <FallingPattern 
-          className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_10%,var(--background)_60%)]"
-          color="hsl(var(--primary) / 0.15)"
-          backgroundColor="transparent"
-          duration={200}
-          blurIntensity="0.5em"
-          density={0.8}
-        />
-
+  return <section 
+    className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16 relative"
+    style={{
+      backgroundImage: `url('https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}
+  >
+      {/* Background overlay for 50% opacity */}
+      <div className="absolute inset-0 bg-background/50 z-0"></div>
+      
+      <div className="max-w-6xl mx-auto text-center relative z-10">
         {/* Content */}
-        <div className="relative z-10">
+        <div>
           {/* Logo */}
           <div className="mb-8">
             <img 
