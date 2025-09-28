@@ -79,6 +79,7 @@ const AppForm = () => {
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
+  const [hasSkippedProducts, setHasSkippedProducts] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
     clientId: "",
@@ -668,11 +669,28 @@ const AppForm = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {hasSkippedProducts && formData.products.length === 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 text-orange-700">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="font-medium">דילגת על שלב המוצרים</span>
+                    </div>
+                    <p className="text-sm text-orange-600 mt-1">
+                      אם תרצה להוסיף מוצרים לדוח, תוכל לעשות זאת כאן ולאחר מכן לחזור לשלב ההחלטות
+                    </p>
+                  </div>
+                )}
                 
                 <ProductManager
                   currentProducts={formData.products.filter(p => p.type === 'current')}
                   recommendedProducts={formData.products.filter(p => p.type === 'recommended')}
-                  onUpdateProducts={(products) => setFormData(prev => ({ ...prev, products }))}
+                  onUpdateProducts={(products) => {
+                    setFormData(prev => ({ ...prev, products }));
+                    // Reset skip flag when products are added
+                    if (products.length > 0) {
+                      setHasSkippedProducts(false);
+                    }
+                  }}
                   onShowRecording={() => setShowRecordingModal(true)}
                 />
               </CardContent>
@@ -686,13 +704,32 @@ const AppForm = () => {
               >
                 חזור לפרטי לקוח
               </Button>
-              <Button
-                onClick={() => setActiveTab("decisions")}
-                disabled={formData.products.filter(p => p.type === 'current' || p.type === 'recommended').length === 0}
-                className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
-              >
-                שלב הבא: החלטות
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setHasSkippedProducts(true);
+                    setActiveTab("decisions");
+                    toast({
+                      title: "דילגת על מוצרים",
+                      description: "תוכל להוסיף מוצרים מאוחר יותר בעת הצורך",
+                    });
+                  }}
+                  className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+                >
+                  דלג על מוצרים
+                </Button>
+                <Button
+                  onClick={() => {
+                    setHasSkippedProducts(false);
+                    setActiveTab("decisions");
+                  }}
+                  disabled={formData.products.filter(p => p.type === 'current' || p.type === 'recommended').length === 0 && !hasSkippedProducts}
+                  className="bg-primary text-primary-foreground font-medium px-8 py-3 rounded-xl"
+                >
+                  שלב הבא: החלטות
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
@@ -761,7 +798,7 @@ const AppForm = () => {
                         variant="outline"
                         size="sm"
                         onClick={handleGenerateDecisions}
-                        disabled={isGeneratingDecisions || (!formData.products?.length)}
+                        disabled={isGeneratingDecisions || (!formData.products?.length && !hasSkippedProducts)}
                         className="text-xs border-glass-border bg-glass hover:bg-glass text-foreground rounded-lg"
                       >
                         {isGeneratingDecisions ? 'מייצר החלטות...' : '🤖 סנכרן החלטות עם AI'}
