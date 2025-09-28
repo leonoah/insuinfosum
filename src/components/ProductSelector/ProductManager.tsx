@@ -218,21 +218,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
       {/* Products Lists - RTL Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recommended on the left */}
-        <div className="lg:order-2">
-          <ProductList
-            products={allProducts}
-            onEdit={handleEditProduct}
-            onDelete={handleDeleteProduct}
-            onDuplicate={handleDuplicateProduct}
-            title="מצב מוצע"
-            type="recommended"
-            selectedProducts={selectedProducts}
-            onProductSelect={handleProductSelect}
-            onAddProduct={() => openModal('recommended')}
-          />
-        </div>
-        {/* Current on the right */}
+        {/* Current first on mobile, right on desktop */}
         <div className="lg:order-1">
           <ProductList
             products={allProducts}
@@ -245,6 +231,20 @@ const ProductManager: React.FC<ProductManagerProps> = ({
             selectedProducts={selectedProducts}
             onProductSelect={handleProductSelect}
             onAddProduct={() => openModal('current')}
+          />
+        </div>
+        {/* Recommended second on mobile, left on desktop */}
+        <div className="lg:order-2">
+          <ProductList
+            products={allProducts}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+            onDuplicate={handleDuplicateProduct}
+            title="מצב מוצע"
+            type="recommended"
+            selectedProducts={selectedProducts}
+            onProductSelect={handleProductSelect}
+            onAddProduct={() => openModal('recommended')}
           />
         </div>
       </div>
