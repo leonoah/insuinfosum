@@ -14,8 +14,6 @@ import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, Ma
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-// @ts-ignore - library has no types
-import html2pdf from "html2pdf.js";
 import { supabase } from "@/integrations/supabase/client";
 import agentLogo from "@/assets/agent-logo.png";
 import { SelectedProduct } from "@/types/insurance";
@@ -405,21 +403,35 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       throw new Error('Report element not found');
     }
 
-    const filename = `סיכום-ביטוח-${formData.clientName}-${formatDate(formData.meetingDate)}.pdf`;
+    const canvas = await html2canvas(reportElement, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+    });
+    
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    const imgWidth = 210;
+    const pageHeight = 295;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
 
-    const opt: any = {
-      margin: [10, 10, 10, 10],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['.avoid-break', 'img', 'table', '.glass', '.ai-content .section'] },
-    };
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
 
-    const worker = (html2pdf as any)().set(opt).from(reportElement).toPdf();
-    const pdf = await worker.get('pdf');
-    const dataUriString = pdf.output('datauristring');
-    return dataUriString.split(',')[1];
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    return pdf.output('datauristring').split(',')[1]; // Get base64 part
   };
 
   const validateEmail = (email: string): boolean => {
@@ -643,10 +655,6 @@ ${agentData.name}`;
           scale: 2,
           useCORS: true,
           allowTaint: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowHeight: reportElement.scrollHeight,
-          windowWidth: reportElement.scrollWidth,
         });
         
         // Convert canvas to image for PDF
@@ -887,10 +895,7 @@ ${agentData.name}`;
     const IconComponent = section.icon;
 
     return (
-      <div className="glass p-6 rounded-2xl border border-glass-border mb-6 avoid-break" style={{
-        pageBreakInside: 'avoid',
-        breakInside: 'avoid',
-      }}>
+      <div className="glass p-6 rounded-2xl border border-glass-border mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -913,28 +918,14 @@ ${agentData.name}`;
   };
 
   const FinalReportContent = () => (
-    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-background text-foreground" style={{
-      pageBreakInside: 'avoid',
-    }}>
+    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-background text-foreground">
       {/* Header */}
-      <div className="text-center mb-8 border-b border-glass-border pb-6" style={{
-        pageBreakInside: 'avoid',
-        breakInside: 'avoid',
-      }}>
-        <div className="flex items-center justify-center gap-4 mb-4" style={{
-          pageBreakInside: 'avoid',
-          breakInside: 'avoid',
-        }}>
+      <div className="text-center mb-8 border-b border-glass-border pb-6">
+        <div className="flex items-center justify-center gap-4 mb-4">
           {agentData.logo_url ? (
-            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" style={{
-              pageBreakInside: 'avoid',
-              breakInside: 'avoid',
-            }} />
+            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
           ) : (
-            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" style={{
-              pageBreakInside: 'avoid',
-              breakInside: 'avoid',
-            }} />
+            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
           )}
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -1031,11 +1022,8 @@ ${agentData.name}`;
             <div className="mt-6">
               <h4 className="font-semibold text-foreground mb-4">מוצרים מוצעים לשינוי:</h4>
               <div className="space-y-3">
-                 {productStats.recommendedProducts.map((product, index) => (
-                  <div key={index} className="glass p-4 rounded-xl border border-glass-border" style={{
-                    pageBreakInside: 'avoid',
-                    breakInside: 'avoid',
-                  }}>
+                {productStats.recommendedProducts.map((product, index) => (
+                  <div key={index} className="glass p-4 rounded-xl border border-glass-border">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <div className="font-medium text-primary">
@@ -1156,10 +1144,7 @@ ${agentData.name}`;
       )}
 
       {/* Footer */}
-      <div className="text-center mt-8 pt-6 border-t border-glass-border" style={{
-        pageBreakInside: 'avoid',
-        breakInside: 'avoid',
-      }}>
+      <div className="text-center mt-8 pt-6 border-t border-glass-border">
         <div className="text-sm text-muted-foreground mb-2">
           נוצר על ידי {agentData.name}
         </div>
