@@ -125,7 +125,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
             <div className="border-2 border-dashed border-glass-border rounded-lg p-8 hover:border-primary/50 transition-colors">
               <input
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.xml"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="pension-file-upload"
@@ -145,7 +145,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                     {isLoading ? "מפרש קובץ..." : "העלה קובץ מסלקה פנסיונית"}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    קבצי PDF בלבד
+                    קבצי PDF או XML
                   </div>
                 </div>
               </Label>

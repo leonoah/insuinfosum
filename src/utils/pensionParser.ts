@@ -218,15 +218,45 @@ export class PensionParser {
   }
 
   static async parsePensionFile(file: File): Promise<PensionFileData | null> {
-    // כרגע נחזיר את הנתונים לדוגמה
-    // בעתיד ניתן לשלב עם AI לפיענוח אוטומטי של קבצים
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
-    if (!file.name.toLowerCase().includes('מסלקה') && !file.name.toLowerCase().includes('pension')) {
-      throw new Error('קובץ זה לא נראה כמו מסלקה פנסיונית');
+    // טיפול בקובץ XML
+    if (fileExtension === 'xml') {
+      const { XMLPensionParser } = await import('./xmlPensionParser');
+      const xmlData = await XMLPensionParser.parseXMLFile(file);
+      
+      const totalByType = this.getTotalByType(xmlData.products);
+      
+      return {
+        fileName: file.name,
+        parsedDate: new Date().toLocaleDateString('he-IL'),
+        summary: {
+          clientId: xmlData.clientId,
+          clientName: xmlData.clientName,
+          reportDate: xmlData.reportDate,
+          products: xmlData.products,
+          totalByType: {
+            'קרנות השתלמות': totalByType['קרן השתלמות'] || 0,
+            'קופות גמל': totalByType['קופת גמל'] || 0,
+            'חברות ביטוח': totalByType['חברת ביטוח'] || 0,
+            'קרנות פנסיה חדשות': totalByType['קרן פנסיה חדשה'] || 0
+          }
+        }
+      };
     }
-
-    // החזרת נתונים לדוגמה (בעתיד - פיענוח אמיתי)
-    return this.samplePensionData;
+    
+    // טיפול בקובץ PDF
+    if (fileExtension === 'pdf') {
+      // בעתיד ניתן לשלב עם AI לפיענוח אוטומטי של קבצי PDF
+      if (!file.name.toLowerCase().includes('מסלקה') && !file.name.toLowerCase().includes('pension')) {
+        throw new Error('קובץ זה לא נראה כמו מסלקה פנסיונית');
+      }
+      
+      // החזרת נתונים לדוגמה
+      return this.samplePensionData;
+    }
+    
+    throw new Error('נתמך רק קבצי PDF או XML');
   }
 
   static getProductsByType(products: PensionProduct[], type: string): PensionProduct[] {
