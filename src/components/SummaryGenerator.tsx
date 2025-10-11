@@ -398,42 +398,120 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   };
 
   const generatePDFBase64 = async (): Promise<string> => {
-    const reportElement = document.getElementById('final-report-content');
+    const reportElement = document.getElementById('final-report-content') as HTMLElement | null;
     if (!reportElement) {
       throw new Error('Report element not found');
     }
 
-    const canvas = await html2canvas(reportElement, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-    });
-    
     const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+      orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    const imgData = canvas.toDataURL('image/png');
+    const margin = 10; // mm
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2;
+    const gap = 4; // space between blocks (mm)
 
-    let currentHeight = 0;
+    let cursorY = margin;
 
-    while (currentHeight < imgHeight) {
-      const position = -currentHeight;
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      currentHeight += pageHeight;
+    const blocks = Array.from(reportElement.children) as HTMLElement[];
 
-      if (currentHeight < imgHeight) {
-        pdf.addPage();
+    const renderElementToCanvas = (el: HTMLElement) =>
+      html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight,
+      });
+
+    const addCanvasSliced = async (canvas: HTMLCanvasElement) => {
+      const pxPerMm = canvas.width / contentWidth; // pixels per 1mm at target width
+      const sliceHeightPx = Math.floor(contentHeight * pxPerMm);
+      let yPx = 0;
+
+      while (yPx < canvas.height) {
+        // start each slice on a fresh page to avoid mid-slice offsets
+        if (cursorY !== margin) {
+          pdf.addPage();
+        }
+        cursorY = margin;
+
+        const remainingPx = canvas.height - yPx;
+        const currentSlicePx = Math.min(sliceHeightPx, remainingPx);
+
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = currentSlicePx;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.drawImage(
+          canvas,
+          0,
+          yPx,
+          canvas.width,
+          currentSlicePx,
+          0,
+          0,
+          canvas.width,
+          currentSlicePx
+        );
+
+        const sliceHeightMm = currentSlicePx / pxPerMm;
+        pdf.addImage(
+          sliceCanvas.toDataURL('image/png'),
+          'PNG',
+          margin,
+          cursorY,
+          contentWidth,
+          sliceHeightMm
+        );
+
+        yPx += currentSlicePx;
+
+        if (yPx < canvas.height) {
+          pdf.addPage();
+        }
       }
+
+      // reset for next block
+      cursorY = margin;
+    };
+
+    for (const block of blocks) {
+      const style = window.getComputedStyle(block);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+
+      const canvas = await renderElementToCanvas(block);
+      const targetHeightMm = (canvas.height * contentWidth) / canvas.width;
+
+      if (targetHeightMm > contentHeight) {
+        await addCanvasSliced(canvas);
+        continue;
+      }
+
+      const remainingSpaceMm = pageHeight - margin - cursorY;
+      if (targetHeightMm > remainingSpaceMm) {
+        pdf.addPage();
+        cursorY = margin;
+      }
+
+      pdf.addImage(
+        canvas.toDataURL('image/png'),
+        'PNG',
+        margin,
+        cursorY,
+        contentWidth,
+        targetHeightMm
+      );
+
+      cursorY += targetHeightMm + gap;
     }
 
-    return pdf.output('datauristring').split(',')[1]; // Get base64 part
+    return pdf.output('datauristring').split(',')[1];
   };
 
   const validateEmail = (email: string): boolean => {
@@ -646,56 +724,10 @@ ${agentData.name}`;
   };
 
   const generateFinalReport = async () => {
-    setShowFinalReport(true);
-    const config = isExpandedMode ? selectedSections : REPORT_SECTIONS_DEFAULT;
-    
-    // Generate the report content with improved styling
-    const reportElement = document.getElementById('final-report-content');
-    if (reportElement) {
-      try {
-        const canvas = await html2canvas(reportElement, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-        });
-        
-        // Convert canvas to image for PDF
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4',
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft >= 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
-
-        pdf.save(`סיכום-ביטוח-${formData.clientName}-${formatDate(formData.meetingDate)}.pdf`);
-        
-        toast({
-          title: "הדוח נוצר בהצלחה",
-          description: "קובץ PDF הורד למחשב שלך",
-        });
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        toast({
-          title: "שגיאה ביצירת הדוח",
-          description: "אנא נסה שנית",
-          variant: "destructive",
-        });
-      }
+    try {
+      await downloadReport();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
     }
   };
 
