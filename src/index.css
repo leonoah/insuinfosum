@@ -186,7 +186,8 @@
   #final-report-content table,
   #final-report-content .glass,
   #final-report-content .ai-content .section,
-  #final-report-content .ai-content .risk-item {
+  #final-report-content .ai-content .risk-item,
+  #final-report-content .avoid-break {
     page-break-inside: avoid;
     break-inside: avoid;
   }

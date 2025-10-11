@@ -14,6 +14,8 @@ import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, Ma
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+// @ts-ignore - library has no types
+import html2pdf from "html2pdf.js";
 import { supabase } from "@/integrations/supabase/client";
 import agentLogo from "@/assets/agent-logo.png";
 import { SelectedProduct } from "@/types/insurance";
@@ -403,39 +405,21 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       throw new Error('Report element not found');
     }
 
-    const canvas = await html2canvas(reportElement, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      windowHeight: reportElement.scrollHeight,
-      windowWidth: reportElement.scrollWidth,
-    });
-    
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-    
-    const imgWidth = 210;
-    const pageHeight = 295;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
+    const filename = `סיכום-ביטוח-${formData.clientName}-${formatDate(formData.meetingDate)}.pdf`;
 
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    const opt: any = {
+      margin: [10, 10, 10, 10],
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.avoid-break', 'img', 'table', '.glass', '.ai-content .section'] },
+    };
 
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    return pdf.output('datauristring').split(',')[1]; // Get base64 part
+    const worker = (html2pdf as any)().set(opt).from(reportElement).toPdf();
+    const pdf = await worker.get('pdf');
+    const dataUriString = pdf.output('datauristring');
+    return dataUriString.split(',')[1];
   };
 
   const validateEmail = (email: string): boolean => {
@@ -903,7 +887,7 @@ ${agentData.name}`;
     const IconComponent = section.icon;
 
     return (
-      <div className="glass p-6 rounded-2xl border border-glass-border mb-6" style={{
+      <div className="glass p-6 rounded-2xl border border-glass-border mb-6 avoid-break" style={{
         pageBreakInside: 'avoid',
         breakInside: 'avoid',
       }}>
