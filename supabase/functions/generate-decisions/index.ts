@@ -52,7 +52,9 @@ serve(async (req) => {
 2. סיכונים: (רשימת הסיכונים והפערים שזוהו)  
 3. מה הוחלט לבצע: (החלטות ופעולות שהתקבלו בפגישה)
 
-חזור עם JSON בפורמט הבא:
+חשוב: אל תשתמש בסימני ציטוט (") בתוך הטקסט. השתמש במירכאות בודדות (') במקום.
+
+חזור עם JSON בפורמט הבא (בלבד, ללא טקסט נוסף):
 {
   "currentSituation": "טקסט המצב הקיים",
   "risks": "טקסט הסיכונים", 
@@ -166,7 +168,44 @@ serve(async (req) => {
           console.log('Extracted JSON from markdown code block');
         }
         
-        const parsedContent = JSON.parse(jsonContent);
+        // Try to parse as-is first
+        let parsedContent;
+        try {
+          parsedContent = JSON.parse(jsonContent);
+        } catch (firstError) {
+          console.log('First parse attempt failed, trying to fix common issues');
+          
+          // Try to fix common JSON issues - escape unescaped quotes in values
+          // This regex finds quotes that are inside string values and not properly escaped
+          let fixedContent = jsonContent;
+          
+          // Find all string values and escape quotes within them
+          fixedContent = fixedContent.replace(
+            /"([^"]*?)"/g, 
+            (match, content) => {
+              // Only process if this looks like a value (not a key)
+              // Skip if it's after a colon (likely a key)
+              return `"${content.replace(/"/g, '\\"')}"`;
+            }
+          );
+          
+          // Alternative approach: escape all problematic Hebrew quotes
+          fixedContent = jsonContent.replace(/ש"ח/g, 'ש\\"ח');
+          
+          console.log('Attempting parse with fixed content');
+          try {
+            parsedContent = JSON.parse(fixedContent);
+            console.log('Successfully parsed after fixing common issues');
+          } catch (secondError) {
+            console.error('Both parse attempts failed:', {
+              firstError: firstError.message,
+              secondError: secondError.message,
+              originalContent: jsonContent.substring(0, 500),
+              fixedContent: fixedContent.substring(0, 500)
+            });
+            throw new Error(`Failed to parse JSON: ${secondError.message}`);
+          }
+        }
         
         // Validate required fields
         if (!parsedContent.currentSituation && !parsedContent.risks && !parsedContent.decisions) {
@@ -189,7 +228,7 @@ serve(async (req) => {
           content: generatedContent.substring(0, 500)
         });
         return new Response(JSON.stringify({ 
-          error: 'Failed to parse AI response. Please try again.',
+          error: 'שגיאה בעיבוד התשובה מה-AI. אנא נסה שוב.',
           details: parseError.message,
           success: false 
         }), {
