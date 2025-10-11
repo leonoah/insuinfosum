@@ -180,6 +180,24 @@
     line-height: 1.6;
     margin-bottom: 0.75rem;
   }
+
+  /* PDF Print Styles - Prevent content from breaking across pages */
+  #final-report-content img,
+  #final-report-content table,
+  #final-report-content .glass,
+  #final-report-content .ai-content .section,
+  #final-report-content .ai-content .risk-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  #final-report-content h1,
+  #final-report-content h2,
+  #final-report-content h3,
+  #final-report-content h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
 }
 
 /* Transcript highlighting styles */

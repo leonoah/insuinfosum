@@ -42,9 +42,15 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
   if (currentProducts.length === 0 && recommendedProducts.length === 0) {
     return null;
   }
-  return <div className="space-y-6">
+  return <div className="space-y-6" style={{
+    pageBreakInside: 'avoid',
+    breakInside: 'avoid',
+  }}>
       {/* Summary Header */}
-      <Card className="glass">
+      <Card className="glass" style={{
+        pageBreakInside: 'avoid',
+        breakInside: 'avoid',
+      }}>
         <CardHeader>
           <CardTitle className="text-xl">השוואת תיקים</CardTitle>
         </CardHeader>
@@ -84,13 +90,19 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
       
 
       {/* Summary Table */}
-      <Card className="glass">
+      <Card className="glass" style={{
+        pageBreakInside: 'avoid',
+        breakInside: 'avoid',
+      }}>
         <CardHeader>
           <CardTitle>סיכום השינויים</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs md:text-sm">
+            <table className="w-full text-xs md:text-sm" style={{
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid',
+            }}>
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-right p-1 md:p-2">קטגוריה</th>

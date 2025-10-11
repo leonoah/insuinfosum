@@ -407,6 +407,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       scale: 2,
       useCORS: true,
       allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowHeight: reportElement.scrollHeight,
+      windowWidth: reportElement.scrollWidth,
     });
     
     const pdf = new jsPDF({
@@ -655,6 +659,10 @@ ${agentData.name}`;
           scale: 2,
           useCORS: true,
           allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowHeight: reportElement.scrollHeight,
+          windowWidth: reportElement.scrollWidth,
         });
         
         // Convert canvas to image for PDF
@@ -895,7 +903,10 @@ ${agentData.name}`;
     const IconComponent = section.icon;
 
     return (
-      <div className="glass p-6 rounded-2xl border border-glass-border mb-6">
+      <div className="glass p-6 rounded-2xl border border-glass-border mb-6" style={{
+        pageBreakInside: 'avoid',
+        breakInside: 'avoid',
+      }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -918,14 +929,28 @@ ${agentData.name}`;
   };
 
   const FinalReportContent = () => (
-    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-background text-foreground">
+    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-background text-foreground" style={{
+      pageBreakInside: 'avoid',
+    }}>
       {/* Header */}
-      <div className="text-center mb-8 border-b border-glass-border pb-6">
-        <div className="flex items-center justify-center gap-4 mb-4">
+      <div className="text-center mb-8 border-b border-glass-border pb-6" style={{
+        pageBreakInside: 'avoid',
+        breakInside: 'avoid',
+      }}>
+        <div className="flex items-center justify-center gap-4 mb-4" style={{
+          pageBreakInside: 'avoid',
+          breakInside: 'avoid',
+        }}>
           {agentData.logo_url ? (
-            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
+            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" style={{
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid',
+            }} />
           ) : (
-            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
+            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" style={{
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid',
+            }} />
           )}
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -1022,8 +1047,11 @@ ${agentData.name}`;
             <div className="mt-6">
               <h4 className="font-semibold text-foreground mb-4">מוצרים מוצעים לשינוי:</h4>
               <div className="space-y-3">
-                {productStats.recommendedProducts.map((product, index) => (
-                  <div key={index} className="glass p-4 rounded-xl border border-glass-border">
+                 {productStats.recommendedProducts.map((product, index) => (
+                  <div key={index} className="glass p-4 rounded-xl border border-glass-border" style={{
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                  }}>
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <div className="font-medium text-primary">
@@ -1144,7 +1172,10 @@ ${agentData.name}`;
       )}
 
       {/* Footer */}
-      <div className="text-center mt-8 pt-6 border-t border-glass-border">
+      <div className="text-center mt-8 pt-6 border-t border-glass-border" style={{
+        pageBreakInside: 'avoid',
+        breakInside: 'avoid',
+      }}>
         <div className="text-sm text-muted-foreground mb-2">
           נוצר על ידי {agentData.name}
         </div>
