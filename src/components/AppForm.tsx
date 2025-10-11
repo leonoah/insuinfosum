@@ -326,7 +326,18 @@ const AppForm = () => {
         console.error('Error auto-filling:', error);
         toast({
           title: "שגיאה",
-          description: "שגיאה במילוי האוטומטי. אנא נסה שוב.",
+          description: `שגיאה במילוי האוטומטי: ${error.message || 'אנא נסה שוב'}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if response indicates failure
+      if (data?.success === false) {
+        console.error('Auto-fill failed:', data);
+        toast({
+          title: "שגיאה",
+          description: data.error || "לא הצלחנו לבצע מילוי אוטומטי. אנא נסה שוב.",
           variant: "destructive"
         });
         return;
@@ -344,6 +355,7 @@ const AppForm = () => {
           description: "השדות מולאו אוטומטית! ניתן לערוך את הטקסט לפי הצורך.",
         });
       } else {
+        console.warn('No data returned from auto-fill:', data);
         toast({
           title: "שגיאה",
           description: "לא הצלחנו לבצע מילוי אוטומטי. אנא נסה שוב.",
@@ -351,10 +363,10 @@ const AppForm = () => {
         });
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in handleAutoFill:', error);
       toast({
         title: "שגיאה",
-        description: "שגיאה במילוי האוטומטי. אנא נסה שוב.",
+        description: `שגיאה במילוי האוטומטי: ${error instanceof Error ? error.message : 'אנא נסה שוב'}`,
         variant: "destructive"
       });
     } finally {
