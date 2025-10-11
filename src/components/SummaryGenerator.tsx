@@ -424,7 +424,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       html2canvas(el, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#000000',
         windowWidth: el.scrollWidth,
         windowHeight: el.scrollHeight,
       });
@@ -962,7 +962,7 @@ ${agentData.name}`;
             <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
           )}
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-foreground">
               דוח סיכום ביטוח
             </h1>
             <p className="text-lg text-muted-foreground">{agentData.name}</p>
@@ -1192,6 +1192,12 @@ ${agentData.name}`;
             אימייל: {agentData.email}
           </div>
         )}
+        <div className="mt-4 text-xs text-muted-foreground">
+          דוח זה נוצר בעזרת InMinds
+        </div>
+        <div className="mt-2 text-xs text-muted-foreground leading-relaxed">
+          הצהרת אחריות: המידע בדוח זה הינו בגדר המלצה כללית בלבד ואינו מהווה ייעוץ פיננסי/ביטוחי אישי. קבלת החלטות תיעשה באחריות הלקוח לאחר בחינת צרכיו ומצבו. הסוכן והחברה לא יישאו באחריות לנזקים שייגרמו משימוש במידע זה.
+        </div>
       </div>
     </div>
   );
