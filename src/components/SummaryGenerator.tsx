@@ -410,25 +410,27 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     });
     
     const pdf = new jsPDF({
-      orientation: 'portrait',
+      orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
       unit: 'mm',
       format: 'a4',
     });
-    
-    const imgWidth = 210;
-    const pageHeight = 295;
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
+    const imgData = canvas.toDataURL('image/png');
 
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    let currentHeight = 0;
 
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    while (currentHeight < imgHeight) {
+      const position = -currentHeight;
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      currentHeight += pageHeight;
+
+      if (currentHeight < imgHeight) {
+        pdf.addPage();
+      }
     }
 
     return pdf.output('datauristring').split(',')[1]; // Get base64 part
