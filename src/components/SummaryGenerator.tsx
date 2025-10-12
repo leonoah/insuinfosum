@@ -929,15 +929,15 @@ ${agentData.name}`;
     const IconComponent = section.icon;
 
     return (
-      <div className="glass p-6 rounded-2xl border border-glass-border mb-6">
+      <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-              <IconComponent className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+              <IconComponent className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-foreground">{section.title}</h3>
-              <p className="text-sm text-muted-foreground">{section.description}</p>
+              <h3 className="text-xl font-bold text-white">{section.title}</h3>
+              <p className="text-sm text-gray-300">{section.description}</p>
             </div>
           </div>
           {isEditable && (
@@ -952,9 +952,9 @@ ${agentData.name}`;
   };
 
   const FinalReportContent = () => (
-    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-background text-foreground">
+    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-black text-white">
       {/* Header */}
-      <div className="text-center mb-8 border-b border-glass-border pb-6">
+      <div className="text-center mb-8 border-b border-gray-700 pb-6">
         <div className="flex items-center justify-center gap-4 mb-4">
           {agentData.logo_url ? (
             <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
@@ -962,13 +962,13 @@ ${agentData.name}`;
             <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
           )}
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-bold text-white">
               דוח סיכום ביטוח
             </h1>
-            <p className="text-lg text-muted-foreground">{agentData.name}</p>
+            <p className="text-lg text-gray-300">{agentData.name}</p>
           </div>
         </div>
-        <div className="text-lg text-primary font-medium">
+        <div className="text-lg text-cyan-400 font-medium">
           {formData.clientName} • {formatDate(formData.meetingDate)}
         </div>
       </div>
@@ -979,40 +979,40 @@ ${agentData.name}`;
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <User className="w-4 h-4 text-primary" />
-                <span className="font-medium">שם הלקוח:</span>
-                <span>{formData.clientName}</span>
+                <User className="w-4 h-4 text-cyan-400" />
+                <span className="font-medium text-white">שם הלקוח:</span>
+                <span className="text-gray-300">{formData.clientName}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-primary" />
-                <span className="font-medium">טלפון:</span>
-                <span>{formData.clientPhone}</span>
+                <Phone className="w-4 h-4 text-cyan-400" />
+                <span className="font-medium text-white">טלפון:</span>
+                <span className="text-gray-300">{formData.clientPhone}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-primary" />
-                <span className="font-medium">אימייל:</span>
-                <span>{formData.clientEmail || 'לא צויין'}</span>
+                <Mail className="w-4 h-4 text-cyan-400" />
+                <span className="font-medium text-white">אימייל:</span>
+                <span className="text-gray-300">{formData.clientEmail || 'לא צויין'}</span>
               </div>
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span className="font-medium">תאריך הפגישה:</span>
-                <span>{formatDate(formData.meetingDate)}</span>
+                <Calendar className="w-4 h-4 text-cyan-400" />
+                <span className="font-medium text-white">תאריך הפגישה:</span>
+                <span className="text-gray-300">{formatDate(formData.meetingDate)}</span>
               </div>
               <div className="flex items-center gap-3">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="font-medium">מיקום הפגישה:</span>
-                <span>{formData.meetingLocation || 'לא צויין'}</span>
+                <MapPin className="w-4 h-4 text-cyan-400" />
+                <span className="font-medium text-white">מיקום הפגישה:</span>
+                <span className="text-gray-300">{formData.meetingLocation || 'לא צויין'}</span>
               </div>
               {formData.topics.length > 0 && (
                 <div className="flex items-start gap-3">
-                  <Layers className="w-4 h-4 text-primary mt-1" />
+                  <Layers className="w-4 h-4 text-cyan-400 mt-1" />
                   <div>
-                    <span className="font-medium">נושאים מרכזיים:</span>
+                    <span className="font-medium text-white">נושאים מרכזיים:</span>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {formData.topics.map((topic, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge key={index} variant="secondary" className="text-xs bg-gray-700 text-white">
                           {topic}
                         </Badge>
                       ))}
@@ -1029,13 +1029,13 @@ ${agentData.name}`;
       {selectedSections.executiveSummary && (
         <ReportSection sectionKey="executiveSummary">
           <div className="space-y-4">
-            <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-4 rounded-xl border border-primary/30">
-              <h4 className="font-semibold text-primary mb-3">עיקרי השינויים:</h4>
+            <div className="bg-gradient-to-r from-cyan-500/20 to-cyan-500/10 p-4 rounded-xl border border-cyan-500/30">
+              <h4 className="font-semibold text-cyan-400 mb-3">עיקרי השינויים:</h4>
               <ul className="space-y-2">
                 {productStats.highlightBullets.map((highlight, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    <span className="text-sm">{highlight}</span>
+                    <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
+                    <span className="text-sm text-gray-300">{highlight}</span>
                   </li>
                 ))}
               </ul>
@@ -1054,16 +1054,16 @@ ${agentData.name}`;
           
           {productStats.recommendedProducts.length > 0 && (
             <div className="mt-6">
-              <h4 className="font-semibold text-foreground mb-4">מוצרים מוצעים לשינוי:</h4>
+              <h4 className="font-semibold text-white mb-4">מוצרים מוצעים לשינוי:</h4>
               <div className="space-y-3">
                 {productStats.recommendedProducts.map((product, index) => (
-                  <div key={index} className="glass p-4 rounded-xl border border-glass-border">
+                  <div key={index} className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <div className="font-medium text-primary">
+                        <div className="font-medium text-cyan-400">
                           {product.productName} ({product.company})
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-gray-300">
                           <div>מסלול: {product.subType}</div>
                           <div>סכום צבירה: ₪{product.amount.toLocaleString()}</div>
                           <div>
@@ -1077,7 +1077,7 @@ ${agentData.name}`;
                           )}
                         </div>
                         {product.notes && (
-                          <div className="text-sm bg-muted/30 p-2 rounded">
+                          <div className="text-sm bg-gray-800/50 p-2 rounded text-gray-300">
                             הערות: {product.notes}
                           </div>
                         )}
@@ -1097,8 +1097,8 @@ ${agentData.name}`;
           <div className="space-y-4">
             {formData.currentSituation && (
               <div>
-                <h4 className="font-semibold text-foreground mb-2">המצב הנוכחי:</h4>
-                <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                <h4 className="font-semibold text-white mb-2">המצב הנוכחי:</h4>
+                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
                   {formData.currentSituation}
                 </div>
               </div>
@@ -1106,8 +1106,8 @@ ${agentData.name}`;
             
             {formData.risks && (
               <div>
-                <h4 className="font-semibold text-foreground mb-2">סיכונים וחשיפות:</h4>
-                <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
+                <h4 className="font-semibold text-white mb-2">סיכונים וחשיפות:</h4>
+                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-sm text-gray-300">
                   {formData.risks}
                 </div>
               </div>
@@ -1115,8 +1115,8 @@ ${agentData.name}`;
 
             {additionalNotesText && (
               <div>
-                <h4 className="font-semibold text-foreground mb-2">הערות נוספות:</h4>
-                <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                <h4 className="font-semibold text-white mb-2">הערות נוספות:</h4>
+                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
                   {additionalNotesText}
                 </div>
               </div>
@@ -1128,8 +1128,8 @@ ${agentData.name}`;
       {/* Disclosures Section */}
       {selectedSections.disclosures && (
         <ReportSection sectionKey="disclosures" isEditable>
-          <div className="bg-muted/30 p-4 rounded-xl">
-            <div className="text-sm text-muted-foreground">
+          <div className="bg-gray-800/50 p-4 rounded-xl">
+            <div className="text-sm text-gray-300">
               {disclosureText}
             </div>
           </div>
@@ -1142,8 +1142,8 @@ ${agentData.name}`;
           <div className="space-y-4">
             {formData.decisions && (
               <div>
-                <h4 className="font-semibold text-foreground mb-2">החלטות שהתקבלו:</h4>
-                <div className="bg-primary/10 p-4 rounded-xl text-sm overflow-x-auto">
+                <h4 className="font-semibold text-white mb-2">החלטות שהתקבלו:</h4>
+                <div className="bg-cyan-500/10 p-4 rounded-xl text-sm overflow-x-auto text-gray-300">
                   {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
                     <div
                       className="ai-content"
@@ -1158,8 +1158,8 @@ ${agentData.name}`;
 
             {formData.timeframes && (
               <div>
-                <h4 className="font-semibold text-foreground mb-2">לוחות זמנים:</h4>
-                <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                <h4 className="font-semibold text-white mb-2">לוחות זמנים:</h4>
+                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
                   {formData.timeframes}
                 </div>
               </div>
@@ -1167,8 +1167,8 @@ ${agentData.name}`;
 
             {nextStepsText && (
               <div>
-                <h4 className="font-semibold text-foreground mb-2">משימות להמשך:</h4>
-                <div className="bg-muted/30 p-4 rounded-xl text-sm">
+                <h4 className="font-semibold text-white mb-2">משימות להמשך:</h4>
+                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
                   {nextStepsText}
                 </div>
               </div>
@@ -1178,24 +1178,24 @@ ${agentData.name}`;
       )}
 
       {/* Footer */}
-      <div className="text-center mt-8 pt-6 border-t border-glass-border">
-        <div className="text-sm text-muted-foreground mb-2">
+      <div className="text-center mt-8 pt-6 border-t border-gray-700">
+        <div className="text-sm text-gray-300 mb-2">
           נוצר על ידי {agentData.name}
         </div>
         {agentData.phone && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-gray-300">
             טלפון: {agentData.phone}
           </div>
         )}
         {agentData.email && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-gray-300">
             אימייל: {agentData.email}
           </div>
         )}
-        <div className="mt-4 text-xs text-muted-foreground">
+        <div className="mt-4 text-xs text-gray-400">
           דוח זה נוצר בעזרת InMinds
         </div>
-        <div className="mt-2 text-xs text-muted-foreground leading-relaxed">
+        <div className="mt-2 text-xs text-gray-400 leading-relaxed">
           הצהרת אחריות: המידע בדוח זה הינו בגדר המלצה כללית בלבד ואינו מהווה ייעוץ פיננסי/ביטוחי אישי. קבלת החלטות תיעשה באחריות הלקוח לאחר בחינת צרכיו ומצבו. הסוכן והחברה לא יישאו באחריות לנזקים שייגרמו משימוש במידע זה.
         </div>
       </div>
