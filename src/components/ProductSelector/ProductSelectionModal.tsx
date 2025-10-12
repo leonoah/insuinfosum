@@ -327,12 +327,64 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
           {step.current === 3 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
-                <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, current: 2 })}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+                {!editingProduct && (
+                  <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, current: 2 })}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
                 <h3 className="text-lg font-semibold">
-                  פרטי המוצר: {step.selectedProduct} - {step.selectedCompany}
+                  {editingProduct ? 'עריכת מוצר' : `פרטי המוצר: ${step.selectedProduct} - ${step.selectedCompany}`}
                 </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {editingProduct && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">מוצר</label>
+                      <Select 
+                        value={step.selectedProduct || ''} 
+                        onValueChange={(value) => {
+                          setStep({ ...step, selectedProduct: value, selectedCompany: undefined });
+                          setFormData({ ...formData, productName: value });
+                        }}
+                      >
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר מוצר" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {uniqueProducts.map((product) => (
+                            <SelectItem key={product.שם} value={product.שם}>
+                              {PRODUCT_ICONS[product.שם] || '📄'} {product.שם}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">חברה</label>
+                      <Select 
+                        value={step.selectedCompany || ''} 
+                        onValueChange={(value) => {
+                          setStep({ ...step, selectedCompany: value });
+                          setFormData({ ...formData, company: value });
+                        }}
+                      >
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר חברה" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {availableCompanies.map((company) => (
+                            <SelectItem key={company.שם_חברה} value={company.שם_חברה}>
+                              {company.שם_חברה}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
