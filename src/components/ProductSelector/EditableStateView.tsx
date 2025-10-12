@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, ArrowLeft, Plus, Trash2, Copy } from 'lucide-react';
 import { INVESTMENT_TRACKS } from '@/types/insurance';
+import insurersData from '@/data/insurers_products_il.json';
 
 interface EditableSavingsProduct {
   id: string;
@@ -155,6 +156,9 @@ const EditableStateView: React.FC<EditableStateViewProps> = ({
 
   const kpis = calculateKPIs();
 
+  // Extract unique company names from insurers data
+  const insuranceCompanies = insurersData.map(item => item.שם_חברה);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -266,7 +270,21 @@ const EditableStateView: React.FC<EditableStateViewProps> = ({
                             {product.isModified && <Badge variant="secondary">שונה</Badge>}
                           </div>
                         </TableCell>
-                        <TableCell>{product.manufacturer}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={product.manufacturer}
+                            onValueChange={(value) => updateSavingsProduct(product.id, 'manufacturer', value)}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {insuranceCompanies.map(company => (
+                                <SelectItem key={company} value={company}>{company}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell>
                           <Input
                             value={product.planName}
@@ -369,7 +387,21 @@ const EditableStateView: React.FC<EditableStateViewProps> = ({
                             {product.isModified && <Badge variant="secondary">שונה</Badge>}
                           </div>
                         </TableCell>
-                        <TableCell>{product.manufacturer}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={product.manufacturer}
+                            onValueChange={(value) => updateInsuranceProduct(product.id, 'manufacturer', value)}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {insuranceCompanies.map(company => (
+                                <SelectItem key={company} value={company}>{company}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell>
                           <Input
                             value={product.product}
