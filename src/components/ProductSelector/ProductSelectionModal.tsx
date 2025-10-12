@@ -343,14 +343,18 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">מוצר</label>
                       <Select 
-                        value={step.selectedProduct || ''} 
+                        value={step.selectedProduct || editingProduct.productName} 
                         onValueChange={(value) => {
                           setStep({ ...step, selectedProduct: value, selectedCompany: undefined });
                           setFormData({ ...formData, productName: value });
                         }}
                       >
                         <SelectTrigger className="glass">
-                          <SelectValue placeholder="בחר מוצר" />
+                          <SelectValue>
+                            {step.selectedProduct && (
+                              <span>{PRODUCT_ICONS[step.selectedProduct] || '📄'} {step.selectedProduct}</span>
+                            )}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-background z-50">
                           {uniqueProducts.map((product) => (
@@ -365,14 +369,16 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
                       <Select 
-                        value={step.selectedCompany || ''} 
+                        value={step.selectedCompany || editingProduct.company} 
                         onValueChange={(value) => {
                           setStep({ ...step, selectedCompany: value });
                           setFormData({ ...formData, company: value });
                         }}
                       >
                         <SelectTrigger className="glass">
-                          <SelectValue placeholder="בחר חברה" />
+                          <SelectValue>
+                            {step.selectedCompany}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-background z-50">
                           {availableCompanies.map((company) => (
