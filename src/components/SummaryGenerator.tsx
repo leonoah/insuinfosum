@@ -403,6 +403,12 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       throw new Error('Report element not found');
     }
 
+    // Force a stable width for crisp A4 capture (content width ~190mm ≈ 720px @96dpi)
+    const ORIGINAL_INLINE_WIDTH = reportElement.style.width;
+    const CONTENT_PX_WIDTH = 720;
+    reportElement.style.width = `${CONTENT_PX_WIDTH}px`;
+    reportElement.style.backgroundColor = '#000000';
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -422,7 +428,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
     const renderElementToCanvas = (el: HTMLElement) =>
       html2canvas(el, {
-        scale: 2,
+        scale: 3, // higher quality
         useCORS: true,
         backgroundColor: '#000000',
         windowWidth: el.scrollWidth,
@@ -510,6 +516,9 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
 
       cursorY += targetHeightMm + gap;
     }
+
+    // Reset forced width to original
+    reportElement.style.width = ORIGINAL_INLINE_WIDTH;
 
     return pdf.output('datauristring').split(',')[1];
   };
