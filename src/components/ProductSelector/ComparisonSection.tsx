@@ -5,10 +5,12 @@ import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
 interface ComparisonSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
+  isReport?: boolean;
 }
 const ComparisonSection: React.FC<ComparisonSectionProps> = ({
   currentProducts,
-  recommendedProducts
+  recommendedProducts,
+  isReport = false
 }) => {
   const getRiskIcon = (change?: string) => {
     switch (change) {
@@ -31,7 +33,7 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
       case 'פיזור מחדש':
         return 'text-blue-500';
       default:
-        return 'text-muted-foreground';
+        return isReport ? 'text-gray-300' : 'text-muted-foreground';
     }
   };
   const totalCurrentAmount = currentProducts.reduce((sum, p) => sum + p.amount, 0);
@@ -42,39 +44,45 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
   if (currentProducts.length === 0 && recommendedProducts.length === 0) {
     return null;
   }
+  
+  const cardClass = isReport ? "bg-gray-900/50 border-gray-700" : "glass";
+  const textClass = isReport ? "text-white" : "";
+  const mutedTextClass = isReport ? "text-gray-300" : "text-muted-foreground";
+  const borderClass = isReport ? "border-gray-700" : "border-border";
+  
   return <div className="space-y-6">
       {/* Summary Header */}
-      <Card className="glass">
+      <Card className={cardClass}>
         <CardHeader>
-          <CardTitle className="text-xl">השוואת תיקים</CardTitle>
+          <CardTitle className={`text-xl ${textClass}`}>השוואת תיקים</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="glass p-4 rounded-lg border-2 border-blue-500/30">
-              <div className="text-muted-foreground text-center">מצב קיים</div>
-              <div className="font-bold text-lg md:text-xl text-center">₪{totalCurrentAmount.toLocaleString()}</div>
-              <div className="text-xs text-center text-muted-foreground">{currentProducts.length} מוצרים</div>
+            <div className={`${isReport ? 'bg-gray-800/50' : 'glass'} p-4 rounded-lg border-2 border-blue-500/30`}>
+              <div className={`text-center ${mutedTextClass}`}>מצב קיים</div>
+              <div className={`font-bold text-lg md:text-xl text-center ${textClass}`}>₪{totalCurrentAmount.toLocaleString()}</div>
+              <div className={`text-xs text-center ${mutedTextClass}`}>{currentProducts.length} מוצרים</div>
             </div>
             
-            <div className="glass p-4 rounded-lg border-2 border-green-500/30">
-              <div className="text-muted-foreground text-center">מצב מוצע</div>
-              <div className="font-bold text-lg md:text-xl text-center">₪{totalRecommendedAmount.toLocaleString()}</div>
-              <div className="text-xs text-center text-muted-foreground">{recommendedProducts.length} מוצרים</div>
+            <div className={`${isReport ? 'bg-gray-800/50' : 'glass'} p-4 rounded-lg border-2 border-green-500/30`}>
+              <div className={`text-center ${mutedTextClass}`}>מצב מוצע</div>
+              <div className={`font-bold text-lg md:text-xl text-center ${textClass}`}>₪{totalRecommendedAmount.toLocaleString()}</div>
+              <div className={`text-xs text-center ${mutedTextClass}`}>{recommendedProducts.length} מוצרים</div>
             </div>
             
-            <div className={`glass p-4 rounded-lg border-2 ${amountDifference >= 0 ? 'border-green-500/50' : 'border-red-500/50'}`}>
-              <div className="text-muted-foreground text-center">הפרש</div>
+            <div className={`${isReport ? 'bg-gray-800/50' : 'glass'} p-4 rounded-lg border-2 ${amountDifference >= 0 ? 'border-green-500/50' : 'border-red-500/50'}`}>
+              <div className={`text-center ${mutedTextClass}`}>הפרש</div>
               <div className={`font-bold text-lg md:text-xl text-center ${amountDifference >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {amountDifference >= 0 ? '+' : ''}₪{amountDifference.toLocaleString()}
               </div>
-              <div className="text-xs text-center text-muted-foreground">
+              <div className={`text-xs text-center ${mutedTextClass}`}>
                 {recommendedProducts.length >= currentProducts.length ? '+' : ''}{recommendedProducts.length - currentProducts.length} מוצרים
               </div>
             </div>
             
             {/* Arrow for desktop only */}
-            <div className="hidden md:flex absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <ArrowRight className="h-6 w-6 text-muted-foreground" />
+            <div className={`hidden md:flex absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2`}>
+              <ArrowRight className={`h-6 w-6 ${mutedTextClass}`} />
             </div>
           </div>
         </CardContent>
@@ -84,15 +92,15 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
       
 
       {/* Summary Table */}
-      <Card className="glass">
+      <Card className={cardClass}>
         <CardHeader>
-          <CardTitle>סיכום השינויים</CardTitle>
+          <CardTitle className={textClass}>סיכום השינויים</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs md:text-sm">
+            <table className={`w-full text-xs md:text-sm ${textClass}`}>
               <thead>
-                <tr className="border-b border-border">
+                <tr className={`border-b ${borderClass}`}>
                   <th className="text-right p-1 md:p-2">קטגוריה</th>
                   <th className="text-right p-1 md:p-2">מצב קיים</th>
                   <th className="text-right p-1 md:p-2">המלצה</th>
@@ -100,7 +108,7 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-border/50">
+                <tr className={`border-b ${borderClass}/50`}>
                   <td className="p-1 md:p-2 font-medium">סה"כ צבירה</td>
                   <td className="p-1 md:p-2">₪{totalCurrentAmount.toLocaleString()}</td>
                   <td className="p-1 md:p-2">₪{totalRecommendedAmount.toLocaleString()}</td>
@@ -108,7 +116,7 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
                     {amountDifference >= 0 ? '+' : ''}₪{amountDifference.toLocaleString()}
                   </td>
                 </tr>
-                <tr className="border-b border-border/50">
+                <tr className={`border-b ${borderClass}/50`}>
                   <td className="p-1 md:p-2 font-medium">מספר מוצרים</td>
                   <td className="p-1 md:p-2">{currentProducts.length}</td>
                   <td className="p-1 md:p-2">{recommendedProducts.length}</td>
@@ -116,7 +124,7 @@ const ComparisonSection: React.FC<ComparisonSectionProps> = ({
                     {recommendedProducts.length >= currentProducts.length ? '+' : ''}{recommendedProducts.length - currentProducts.length}
                   </td>
                 </tr>
-                <tr className="border-b border-border/50">
+                <tr className={`border-b ${borderClass}/50`}>
                   <td className="p-1 md:p-2 font-medium">דמי ניהול (הפקדה)</td>
                   <td className="p-1 md:p-2">
                     {currentProducts.length > 0 ? (currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / currentProducts.length).toFixed(2) + '%' : '-'}

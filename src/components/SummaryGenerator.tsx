@@ -812,65 +812,65 @@ ${agentData.name}`;
     currentProducts: SelectedProduct[];
     recommendedProducts: SelectedProduct[];
   }) => (
-    <div className="glass p-6 rounded-2xl border border-glass-border">
-      <h4 className="text-lg font-semibold text-primary mb-4 flex items-center gap-3">
+    <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700">
+      <h4 className="text-lg font-semibold text-cyan-400 mb-4 flex items-center gap-3">
         <BarChart3 className="w-5 h-5" />
         השוואת תיקים - מצב קיים מול מוצע
       </h4>
       
       <div className="grid md:grid-cols-3 gap-6 mb-6">
-        <div className="glass p-4 rounded-xl border border-green-500/30">
+        <div className="bg-gray-800/50 p-4 rounded-xl border border-green-500/30">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-green-500/20 flex items-center justify-center">
               <span className="text-2xl">💰</span>
             </div>
-            <div className="text-sm text-muted-foreground">הפרש</div>
+            <div className="text-sm text-gray-300">הפרש</div>
             <div className="text-xl font-bold text-green-400">
               ₪{Math.abs(productStats.amountDifference).toLocaleString()}+
             </div>
-            <div className="text-xs text-muted-foreground">מוצרים</div>
+            <div className="text-xs text-gray-300">מוצרים</div>
           </div>
         </div>
 
-        <div className="glass p-4 rounded-xl border border-blue-500/30">
+        <div className="bg-gray-800/50 p-4 rounded-xl border border-blue-500/30">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-blue-500/20 flex items-center justify-center">
               <span className="text-2xl">📊</span>
             </div>
-            <div className="text-sm text-muted-foreground">מצב מוצע</div>
+            <div className="text-sm text-gray-300">מצב מוצע</div>
             <div className="text-xl font-bold text-blue-400">
               ₪{productStats.totalRecommendedAmount.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">{recommendedProducts.length} מוצרים</div>
+            <div className="text-xs text-gray-300">{recommendedProducts.length} מוצרים</div>
           </div>
         </div>
 
-        <div className="glass p-4 rounded-xl border border-gray-500/30">
+        <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-500/30">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-gray-500/20 flex items-center justify-center">
               <span className="text-2xl">📈</span>
             </div>
-            <div className="text-sm text-muted-foreground">מצב קיים</div>
+            <div className="text-sm text-gray-300">מצב קיים</div>
             <div className="text-xl font-bold text-gray-400">
               ₪{productStats.totalCurrentAmount.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">{currentProducts.length} מוצרים</div>
+            <div className="text-xs text-gray-300">{currentProducts.length} מוצרים</div>
           </div>
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full text-white">
           <thead>
-            <tr className="border-b border-glass-border">
-              <th className="text-right py-3 px-4 font-medium text-muted-foreground">קטגוריה</th>
-              <th className="text-center py-3 px-4 font-medium text-muted-foreground">מצב קיים</th>
-              <th className="text-center py-3 px-4 font-medium text-muted-foreground">מצב מוצע</th>
-              <th className="text-center py-3 px-4 font-medium text-muted-foreground">שינוי</th>
+            <tr className="border-b border-gray-700">
+              <th className="text-right py-3 px-4 font-medium text-gray-300">קטגוריה</th>
+              <th className="text-center py-3 px-4 font-medium text-gray-300">מצב קיים</th>
+              <th className="text-center py-3 px-4 font-medium text-gray-300">מצב מוצע</th>
+              <th className="text-center py-3 px-4 font-medium text-gray-300">שינוי</th>
             </tr>
           </thead>
           <tbody className="text-sm">
-            <tr className="border-b border-glass-border/50">
+            <tr className="border-b border-gray-700/50">
               <td className="py-3 px-4 font-medium">סה"כ צבירה</td>
               <td className="text-center py-3 px-4 text-gray-400">
                 ₪{productStats.totalCurrentAmount.toLocaleString()}
@@ -884,7 +884,7 @@ ${agentData.name}`;
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-glass-border/50">
+            <tr className="border-b border-gray-700/50">
               <td className="py-3 px-4 font-medium">מספר מוצרים</td>
               <td className="text-center py-3 px-4 text-gray-400">{currentProducts.length}</td>
               <td className="text-center py-3 px-4 text-blue-400">{recommendedProducts.length}</td>
@@ -894,7 +894,7 @@ ${agentData.name}`;
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-glass-border/50">
+            <tr className="border-b border-gray-700/50">
               <td className="py-3 px-4 font-medium">ממוצע דמי ניהול (הפקדה)</td>
               <td className="text-center py-3 px-4 text-gray-400">{productStats.avgCurrentDeposit.toFixed(2)}%</td>
               <td className="text-center py-3 px-4 text-blue-400">{productStats.avgRecommendedDeposit.toFixed(2)}%</td>
