@@ -220,6 +220,31 @@ export class PensionParser {
   static async parsePensionFile(file: File): Promise<PensionFileData | null> {
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
+    // טיפול בקובץ ZIP
+    if (fileExtension === 'zip') {
+      const { XMLPensionParser } = await import('./xmlPensionParser');
+      const zipData = await XMLPensionParser.parseZIPFile(file);
+      
+      const totalByType = this.getTotalByType(zipData.products);
+      
+      return {
+        fileName: file.name,
+        parsedDate: new Date().toLocaleDateString('he-IL'),
+        summary: {
+          clientId: zipData.clientId,
+          clientName: zipData.clientName,
+          reportDate: zipData.reportDate,
+          products: zipData.products,
+          totalByType: {
+            'קרנות השתלמות': totalByType['קרן השתלמות'] || 0,
+            'קופות גמל': totalByType['קופת גמל'] || 0,
+            'חברות ביטוח': totalByType['חברת ביטוח'] || 0,
+            'קרנות פנסיה חדשות': totalByType['קרן פנסיה חדשה'] || 0
+          }
+        }
+      };
+    }
+    
     // טיפול בקובץ XML
     if (fileExtension === 'xml') {
       const { XMLPensionParser } = await import('./xmlPensionParser');
@@ -256,7 +281,7 @@ export class PensionParser {
       return this.samplePensionData;
     }
     
-    throw new Error('נתמך רק קבצי PDF או XML');
+    throw new Error('נתמך רק קבצי PDF, XML או ZIP');
   }
 
   static getProductsByType(products: PensionProduct[], type: string): PensionProduct[] {

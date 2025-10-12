@@ -34,9 +34,10 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
       setPensionData(data);
       setShowProductDetails(true);
       
+      const fileCount = file.name.toLowerCase().endsWith('.zip') ? 'מקבצים מרובים' : 'מהקובץ';
       toast({
         title: "הקובץ נפרש בהצלחה",
-        description: `נמצאו ${data?.summary.products.length} מוצרים במסלקה`,
+        description: `נמצאו ${data?.summary.products.length} מוצרים ${fileCount}`,
       });
     } catch (error) {
       toast({
@@ -125,7 +126,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
             <div className="border-2 border-dashed border-glass-border rounded-lg p-8 hover:border-primary/50 transition-colors">
               <input
                 type="file"
-                accept=".pdf,.xml"
+                accept=".pdf,.xml,.zip"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="pension-file-upload"
@@ -145,7 +146,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                     {isLoading ? "מפרש קובץ..." : "העלה קובץ מסלקה פנסיונית"}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    קבצי PDF או XML
+                    קבצי PDF, XML או ZIP (עם מספר XMLs)
                   </div>
                 </div>
               </Label>

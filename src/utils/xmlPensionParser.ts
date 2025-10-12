@@ -1,6 +1,65 @@
 import { PensionProduct } from "@/types/pension";
+import JSZip from "jszip";
 
 export class XMLPensionParser {
+  static async parseZIPFile(file: File): Promise<{
+    clientName: string;
+    clientId: string;
+    reportDate: string;
+    products: PensionProduct[];
+  }> {
+    const zip = new JSZip();
+    const zipContent = await zip.loadAsync(file);
+    
+    // מציאת כל קבצי ה-XML בתוך ה-ZIP
+    const xmlFiles = Object.keys(zipContent.files).filter(
+      filename => filename.toLowerCase().endsWith('.xml') && !zipContent.files[filename].dir
+    );
+
+    if (xmlFiles.length === 0) {
+      throw new Error("לא נמצאו קבצי XML בקובץ ה-ZIP");
+    }
+
+    // פרסור כל קבצי ה-XML
+    const allProducts: PensionProduct[] = [];
+    let clientName = "";
+    let clientId = "";
+    let reportDate = "";
+
+    for (const xmlFilename of xmlFiles) {
+      try {
+        const xmlContent = await zipContent.files[xmlFilename].async("text");
+        const blob = new Blob([xmlContent], { type: "text/xml" });
+        const xmlFile = new File([blob], xmlFilename, { type: "text/xml" });
+        
+        const result = await this.parseXMLFile(xmlFile);
+        
+        // שומרים את פרטי הלקוח מהקובץ הראשון
+        if (!clientName) {
+          clientName = result.clientName;
+          clientId = result.clientId;
+          reportDate = result.reportDate;
+        }
+        
+        // מוסיפים את המוצרים מהקובץ הנוכחי
+        allProducts.push(...result.products);
+      } catch (error) {
+        console.warn(`שגיאה בפרסור קובץ ${xmlFilename}:`, error);
+      }
+    }
+
+    if (allProducts.length === 0) {
+      throw new Error("לא נמצאו מוצרים תקינים בקבצי ה-XML");
+    }
+
+    return {
+      clientName,
+      clientId,
+      reportDate,
+      products: allProducts
+    };
+  }
+
   static async parseXMLFile(file: File): Promise<{
     clientName: string;
     clientId: string;
