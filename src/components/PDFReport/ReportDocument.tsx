@@ -9,6 +9,9 @@ import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/insurance';
 
+// Reset any previously registered fonts to avoid stale caches during HMR
+try { (Font as any).clear?.(); } catch {}
+
 // Register embedded Hebrew font (local) to avoid network and format issues
 Font.register({
   family: 'NotoSansHebrew',
