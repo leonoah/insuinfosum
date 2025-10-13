@@ -9,18 +9,12 @@ import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/insurance';
 
-// Register Hebrew font - using Alef for better Hebrew support
+// Register embedded Hebrew font (local) to avoid network and format issues
 Font.register({
-  family: 'Alef',
+  family: 'NotoSansHebrew',
   fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/alef/v21/FeVfS0NQpLYgrjJbC5FxxbU.ttf',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/alef/v21/FeVQS0NQpLYgnjJbC5FQ3Z5nm29Gww.ttf',
-      fontWeight: 700,
-    },
+    { src: '/fonts/NotoSansHebrew-Regular.ttf', fontWeight: 400 },
+    { src: '/fonts/NotoSansHebrew-Bold.ttf', fontWeight: 700 },
   ],
 });
 
