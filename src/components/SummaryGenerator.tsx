@@ -734,14 +734,31 @@ ${agentData.name}`;
 
   const generateFinalReport = async () => {
     try {
+      // First open the dialog to render the report content
+      setShowFinalReport(true);
+      
+      // Wait for dialog and content to render
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       await downloadReport();
     } catch (error) {
       console.error('Error generating PDF:', error);
+      toast({
+        title: "שגיאה ביצירת הדוח",
+        description: "אנא נסה שנית",
+        variant: "destructive",
+      });
     }
   };
 
   const downloadReport = async () => {
     try {
+      // Ensure the report element exists
+      const reportElement = document.getElementById('final-report-content');
+      if (!reportElement) {
+        throw new Error('Report element not found - please wait for dialog to render');
+      }
+      
       const pdfBase64 = await generatePDFBase64();
       
       // Convert base64 to blob and download
