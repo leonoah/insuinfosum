@@ -9,21 +9,21 @@ import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/insurance';
 
-// Reset any previously registered fonts to avoid stale caches during HMR
-try { (Font as any).clear?.(); } catch {}
+// Register hyphenation callback to avoid text measurement issues
+Font.registerHyphenationCallback((word) => [word]);
 
-// Register Helvetica alias to local Noto Sans Hebrew so fallback resolves safely
+// Register embedded Hebrew font (local) to avoid network and format issues
 Font.register({
-  family: 'Helvetica',
+  family: 'NotoSansHebrew',
   fonts: [
     { src: '/fonts/NotoSansHebrew-Regular.ttf', fontWeight: 400 },
     { src: '/fonts/NotoSansHebrew-Bold.ttf', fontWeight: 700 },
   ],
 });
 
-// Register embedded Hebrew font (local) to avoid network and format issues
+// Register Helvetica alias to local Noto Sans Hebrew so fallback resolves safely
 Font.register({
-  family: 'NotoSansHebrew',
+  family: 'Helvetica',
   fonts: [
     { src: '/fonts/NotoSansHebrew-Regular.ttf', fontWeight: 400 },
     { src: '/fonts/NotoSansHebrew-Bold.ttf', fontWeight: 700 },
