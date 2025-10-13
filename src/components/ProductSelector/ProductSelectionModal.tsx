@@ -45,12 +45,28 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     };
   });
 
+  // Find best matching product from available list
+  const findBestMatchingProduct = (productName: string): string | undefined => {
+    // Try exact match first
+    const exactMatch = uniqueProducts.find(p => p.שם === productName);
+    if (exactMatch) return productName;
+    
+    // Try partial match
+    const lowerName = productName.toLowerCase();
+    const partialMatch = uniqueProducts.find(p => 
+      p.שם.toLowerCase().includes(lowerName) || lowerName.includes(p.שם.toLowerCase())
+    );
+    
+    return partialMatch?.שם;
+  };
+
   // Update step and formData when editingProduct changes
   useEffect(() => {
     if (editingProduct) {
+      const bestMatch = findBestMatchingProduct(editingProduct.productName);
       setStep({ 
         current: 3, 
-        selectedProduct: editingProduct.productName,
+        selectedProduct: bestMatch || editingProduct.productName,
         selectedCompany: editingProduct.company 
       });
       setFormData(editingProduct);
@@ -78,11 +94,15 @@ const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   );
 
   const selectedProductData = uniqueProducts.find(p => p.שם === step.selectedProduct);
-  const availableCompanies = selectedProductData 
-    ? companies.filter(c => c.מוצרים.some(p => p.שם === step.selectedProduct))
-    : [];
   
-  const selectedCompanyData = availableCompanies.find(c => c.שם_חברה === step.selectedCompany);
+  // When editing, allow selection from ALL companies, not just those with the specific product
+  const availableCompanies = editingProduct 
+    ? companies // All companies available when editing
+    : (selectedProductData 
+        ? companies.filter(c => c.מוצרים.some(p => p.שם === step.selectedProduct))
+        : []);
+  
+  const selectedCompanyData = companies.find(c => c.שם_חברה === step.selectedCompany);
   const selectedProductFromCompany = selectedCompanyData?.מוצרים.find(p => p.שם === step.selectedProduct);
 
   const handleProductSelect = (productName: string) => {
