@@ -12,10 +12,13 @@ import { SelectedProduct } from '@/types/insurance';
 // Reset any previously registered fonts to avoid stale caches during HMR
 try { (Font as any).clear?.(); } catch {}
 
-// Register Helvetica (default fallback font for react-pdf)
+// Register Helvetica alias to local Noto Sans Hebrew so fallback resolves safely
 Font.register({
   family: 'Helvetica',
-  src: 'https://cdn.jsdelivr.net/npm/@canvas-fonts/helvetica@1.0.4/Helvetica.ttf',
+  fonts: [
+    { src: '/fonts/NotoSansHebrew-Regular.ttf', fontWeight: 400 },
+    { src: '/fonts/NotoSansHebrew-Bold.ttf', fontWeight: 700 },
+  ],
 });
 
 // Register embedded Hebrew font (local) to avoid network and format issues
