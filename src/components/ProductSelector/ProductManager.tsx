@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, BarChart3, Upload, GitCompare, Phone, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { SelectedProduct } from '@/types/insurance';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
@@ -311,6 +312,9 @@ const ProductManager: React.FC<ProductManagerProps> = ({
       {/* Pension File Import Dialog */}
       <Dialog open={showPensionImport} onOpenChange={setShowPensionImport}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <VisuallyHidden>
+            <DialogTitle>ייבוא מסמך פנסיה</DialogTitle>
+          </VisuallyHidden>
           <PensionFileImport
             onProductsSelected={handlePensionImport}
             onClose={() => setShowPensionImport(false)}

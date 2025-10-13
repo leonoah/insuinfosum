@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
   page: {
     backgroundColor: '#0f172a',
     padding: 40,
-    fontFamily: 'Heebo',
+    fontFamily: 'Rubik',
     direction: 'rtl',
   },
   

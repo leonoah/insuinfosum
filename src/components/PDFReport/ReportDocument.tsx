@@ -11,17 +11,8 @@ import { SelectedProduct } from '@/types/insurance';
 
 // Register Hebrew font
 Font.register({
-  family: 'Heebo',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/heebo/v21/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysd0mm_00.ttf',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/heebo/v21/NGSpv5_NC0k9P_v6ZUCbLRAHxK1ECSysd0mm_00.ttf',
-      fontWeight: 700,
-    },
-  ],
+  family: 'Rubik',
+  src: 'https://fonts.gstatic.com/s/rubik/v28/iJWZBXyIfDnIV5PNhY1KTN7Z-Yh-B4iFV0U1.ttf',
 });
 
 interface AgentData {
