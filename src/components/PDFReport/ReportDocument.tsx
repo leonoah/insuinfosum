@@ -1,4 +1,4 @@
-import { Document, Page, View, Text } from '@react-pdf/renderer';
+import { Document, Page, View, Text, Font } from '@react-pdf/renderer';
 import { styles } from './styles';
 import { ReportHeader } from './sections/ReportHeader';
 import { PersonalInfoSection } from './sections/PersonalInfoSection';
@@ -8,6 +8,21 @@ import { AdditionalDetailsSection } from './sections/AdditionalDetailsSection';
 import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/insurance';
+
+// Register Hebrew font
+Font.register({
+  family: 'Heebo',
+  fonts: [
+    {
+      src: 'https://fonts.gstatic.com/s/heebo/v21/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysd0mm_00.ttf',
+      fontWeight: 400,
+    },
+    {
+      src: 'https://fonts.gstatic.com/s/heebo/v21/NGSpv5_NC0k9P_v6ZUCbLRAHxK1ECSysd0mm_00.ttf',
+      fontWeight: 700,
+    },
+  ],
+});
 
 interface AgentData {
   name: string;

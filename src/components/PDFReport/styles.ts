@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
   page: {
     backgroundColor: '#0f172a',
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Heebo',
     direction: 'rtl',
   },
   
@@ -83,7 +83,7 @@ export const styles = StyleSheet.create({
     gap: 10,
   },
   infoItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 8,
     width: '48%',
@@ -91,7 +91,7 @@ export const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 10,
     color: '#94a3b8',
-    marginLeft: 8,
+    marginRight: 8,
   },
   infoValue: {
     fontSize: 11,
@@ -104,7 +104,7 @@ export const styles = StyleSheet.create({
     marginTop: 10,
   },
   bulletItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     marginBottom: 8,
     textAlign: 'right',
   },
@@ -113,7 +113,7 @@ export const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: '#06b6d4',
-    marginLeft: 8,
+    marginRight: 8,
     marginTop: 6,
   },
   bulletText: {
