@@ -12,11 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart, Loader2, FileText, Edit3, Settings, Expand, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import { pdf } from "@react-pdf/renderer";
 import { supabase } from "@/integrations/supabase/client";
 import agentLogo from "@/assets/agent-logo.png";
 import { SelectedProduct } from "@/types/insurance";
+import { ReportDocument } from "@/components/PDFReport/ReportDocument";
 
 const REPORT_SECTION_KEYS = [
   "personalInfo",
@@ -397,130 +397,20 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     });
   };
 
-  const generatePDFBase64 = async (): Promise<string> => {
-    const reportElement = document.getElementById('final-report-content') as HTMLElement | null;
-    if (!reportElement) {
-      throw new Error('Report element not found');
-    }
-
-    // Force a stable width for crisp A4 capture (content width ~190mm ≈ 720px @96dpi)
-    const ORIGINAL_INLINE_WIDTH = reportElement.style.width;
-    const CONTENT_PX_WIDTH = 720;
-    reportElement.style.width = `${CONTENT_PX_WIDTH}px`;
-    reportElement.style.backgroundColor = '#000000';
-
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10; // mm
-    const contentWidth = pageWidth - margin * 2;
-    const contentHeight = pageHeight - margin * 2;
-    const gap = 4; // space between blocks (mm)
-
-    let cursorY = margin;
-
-    const blocks = Array.from(reportElement.children) as HTMLElement[];
-
-    const renderElementToCanvas = (el: HTMLElement) =>
-      html2canvas(el, {
-        scale: 3, // higher quality
-        useCORS: true,
-        backgroundColor: '#000000',
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight,
-      });
-
-    const addCanvasSliced = async (canvas: HTMLCanvasElement) => {
-      const pxPerMm = canvas.width / contentWidth; // pixels per 1mm at target width
-      const sliceHeightPx = Math.floor(contentHeight * pxPerMm);
-      let yPx = 0;
-
-      while (yPx < canvas.height) {
-        // start each slice on a fresh page to avoid mid-slice offsets
-        if (cursorY !== margin) {
-          pdf.addPage();
-        }
-        cursorY = margin;
-
-        const remainingPx = canvas.height - yPx;
-        const currentSlicePx = Math.min(sliceHeightPx, remainingPx);
-
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = currentSlicePx;
-        const ctx = sliceCanvas.getContext('2d')!;
-        ctx.drawImage(
-          canvas,
-          0,
-          yPx,
-          canvas.width,
-          currentSlicePx,
-          0,
-          0,
-          canvas.width,
-          currentSlicePx
-        );
-
-        const sliceHeightMm = currentSlicePx / pxPerMm;
-        pdf.addImage(
-          sliceCanvas.toDataURL('image/png'),
-          'PNG',
-          margin,
-          cursorY,
-          contentWidth,
-          sliceHeightMm
-        );
-
-        yPx += currentSlicePx;
-
-        if (yPx < canvas.height) {
-          pdf.addPage();
-        }
-      }
-
-      // reset for next block
-      cursorY = margin;
-    };
-
-    for (const block of blocks) {
-      const style = window.getComputedStyle(block);
-      if (style.display === 'none' || style.visibility === 'hidden') continue;
-
-      const canvas = await renderElementToCanvas(block);
-      const targetHeightMm = (canvas.height * contentWidth) / canvas.width;
-
-      if (targetHeightMm > contentHeight) {
-        await addCanvasSliced(canvas);
-        continue;
-      }
-
-      const remainingSpaceMm = pageHeight - margin - cursorY;
-      if (targetHeightMm > remainingSpaceMm) {
-        pdf.addPage();
-        cursorY = margin;
-      }
-
-      pdf.addImage(
-        canvas.toDataURL('image/png'),
-        'PNG',
-        margin,
-        cursorY,
-        contentWidth,
-        targetHeightMm
-      );
-
-      cursorY += targetHeightMm + gap;
-    }
-
-    // Reset forced width to original
-    reportElement.style.width = ORIGINAL_INLINE_WIDTH;
-
-    return pdf.output('datauristring').split(',')[1];
+  const generateReactPDF = async (): Promise<Blob> => {
+    const blob = await pdf(
+      <ReportDocument 
+        formData={formData}
+        agentData={agentData}
+        productStats={productStats}
+        selectedSections={selectedSections}
+        additionalNotesText={additionalNotesText}
+        disclosureText={disclosureText}
+        nextStepsText={nextStepsText}
+      />
+    ).toBlob();
+    
+    return blob;
   };
 
   const validateEmail = (email: string): boolean => {
@@ -545,12 +435,19 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
 
     try {
-      setShowFinalReport(true);
+      const blob = await generateReactPDF();
       
-      // Wait a moment for the dialog to render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
       
-      const pdfBase64 = await generatePDFBase64();
+      const pdfBase64 = await base64Promise;
       
       const response = await supabase.functions.invoke('send-report-email', {
         body: {
@@ -585,12 +482,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     if (isQuickSending) return;
     
     setIsQuickSending(true);
-    setShowFinalReport(true);
     
     try {
-      // Wait for dialog to render
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
       if (method === 'email') {
         await sendReportByEmail();
       } else if (method === 'whatsapp') {
@@ -604,7 +497,6 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       console.error('Quick send error:', error);
     } finally {
       setIsQuickSending(false);
-      setShowFinalReport(false);
     }
   };
 
@@ -617,21 +509,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
 
     try {
-      setShowFinalReport(true);
-      
-      // Wait a moment for the dialog to render
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const pdfBase64 = await generatePDFBase64();
-      
-      // Convert base64 to blob for upload
-      const pdfBlob = new Blob([
-        new Uint8Array(
-          atob(pdfBase64)
-            .split('')
-            .map(char => char.charCodeAt(0))
-        )
-      ], { type: 'application/pdf' });
+      const pdfBlob = await generateReactPDF();
 
       // Upload PDF to storage
       const fileName = `reports/סיכום-ביטוח-${formData.clientName}-${Date.now()}.pdf`;
@@ -732,48 +610,15 @@ ${agentData.name}`;
     }
   };
 
-  const generateFinalReport = async () => {
-    try {
-      // First open the dialog to render the report content
-      setShowFinalReport(true);
-      
-      // Wait for dialog and content to render
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      await downloadReport();
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: "שגיאה ביצירת הדוח",
-        description: "אנא נסה שנית",
-        variant: "destructive",
-      });
-    }
-  };
 
   const downloadReport = async () => {
     try {
-      // Ensure the report element exists
-      const reportElement = document.getElementById('final-report-content');
-      if (!reportElement) {
-        throw new Error('Report element not found - please wait for dialog to render');
-      }
-      
-      const pdfBase64 = await generatePDFBase64();
-      
-      // Convert base64 to blob and download
-      const byteCharacters = atob(pdfBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const blob = await generateReactPDF();
       
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `דוח_סיכום_${formData.clientName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `דוח_סיכום_${formData.clientName || 'אנונימי'}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1300,7 +1145,7 @@ ${agentData.name}`;
               <Button variant="outline" size="sm" onClick={saveReportTemplate}>
                 שמירת תבנית
               </Button>
-              <Button onClick={generateFinalReport} className="bg-primary hover:bg-primary-hover">
+              <Button onClick={downloadReport} className="bg-primary hover:bg-primary-hover">
                 <FileText className="w-4 h-4 ml-2" />
                 יצירת דוח
               </Button>
@@ -1553,7 +1398,7 @@ ${agentData.name}`;
                   <Share className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שתף</span>
                 </Button>
-                <Button onClick={generateFinalReport} title="הורד PDF">
+                <Button onClick={downloadReport} title="הורד PDF">
                   <Download className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">הורד PDF</span>
                 </Button>
