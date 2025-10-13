@@ -9,8 +9,8 @@ import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/insurance';
 
-// Register hyphenation callback to avoid text measurement issues
-Font.registerHyphenationCallback((word) => [word]);
+// Register hyphenation callback to allow breaking very long tokens
+Font.registerHyphenationCallback((word) => (word && word.length > 25 ? word.split('') : [word]));
 
 // Register embedded Hebrew font (local) to avoid network and format issues
 Font.register({
@@ -29,6 +29,30 @@ Font.register({
     { src: '/fonts/NotoSansHebrew-Bold.ttf', fontWeight: 700 },
   ],
 });
+
+// Map other standard PDF font family names to the same Hebrew font
+const standardFamilies = [
+  'Helvetica-Bold',
+  'Helvetica-Oblique',
+  'Helvetica-BoldOblique',
+  'Times-Roman',
+  'Times-Bold',
+  'Times-Italic',
+  'Times-BoldItalic',
+  'Courier',
+  'Courier-Bold',
+  'Courier-Oblique',
+  'Courier-BoldOblique',
+];
+standardFamilies.forEach((family) =>
+  Font.register({
+    family,
+    fonts: [
+      { src: '/fonts/NotoSansHebrew-Regular.ttf', fontWeight: 400 },
+      { src: '/fonts/NotoSansHebrew-Bold.ttf', fontWeight: 700 },
+    ],
+  })
+);
 
 interface AgentData {
   name: string;

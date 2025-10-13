@@ -64,6 +64,7 @@ export const styles = StyleSheet.create({
     color: '#f1f5f9',
     lineHeight: 1.6,
     textAlign: 'right',
+    wordBreak: 'break-word',
   },
   textMuted: {
     fontSize: 10,
@@ -122,6 +123,7 @@ export const styles = StyleSheet.create({
     color: '#f1f5f9',
     lineHeight: 1.6,
     textAlign: 'right',
+    wordBreak: 'break-word',
   },
   
   // Table styles
@@ -229,6 +231,7 @@ export const styles = StyleSheet.create({
     color: '#cbd5e1',
     lineHeight: 1.5,
     textAlign: 'right',
+    wordBreak: 'break-word',
   },
   
   // Footer styles
