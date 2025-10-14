@@ -21,7 +21,6 @@ export const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
     color: '#06b6d4',
     textAlign: 'right',
   },
@@ -46,7 +45,6 @@ export const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
     color: '#06b6d4',
     marginBottom: 12,
     textAlign: 'right',
@@ -73,7 +71,6 @@ export const styles = StyleSheet.create({
     textAlign: 'right',
   },
   textBold: {
-    fontWeight: 'bold',
     color: '#f1f5f9',
   },
   
@@ -97,7 +94,6 @@ export const styles = StyleSheet.create({
   infoValue: {
     fontSize: 11,
     color: '#f1f5f9',
-    fontWeight: 'bold',
   },
   
   // Bullet points
@@ -150,7 +146,6 @@ export const styles = StyleSheet.create({
   tableHeaderCell: {
     flex: 1,
     fontSize: 11,
-    fontWeight: 'bold',
     color: '#06b6d4',
     textAlign: 'right',
     paddingHorizontal: 5,
@@ -169,7 +164,6 @@ export const styles = StyleSheet.create({
   },
   comparisonHeader: {
     fontSize: 14,
-    fontWeight: 'bold',
     color: '#06b6d4',
     textAlign: 'center',
     marginBottom: 10,
@@ -186,7 +180,6 @@ export const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 11,
-    fontWeight: 'bold',
     color: '#f1f5f9',
     marginBottom: 4,
   },
@@ -210,7 +203,6 @@ export const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: '#10b981',
     marginBottom: 4,
   },
