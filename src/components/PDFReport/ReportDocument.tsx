@@ -14,17 +14,17 @@ Font.registerHyphenationCallback((word) => (word && word.length > 25 ? word.spli
 
 // Register embedded Hebrew font (local) to avoid network and format issues
 Font.register({
-  family: 'NotoSansHebrew',
-  src: '/fonts/NotoSansHebrew-Regular.ttf',
+  family: 'Alef',
+  src: '/fonts/Alef-Regular.ttf',
 });
 
-// Register Helvetica alias to local Noto Sans Hebrew so fallback resolves safely
+// Register Helvetica alias to Alef so fallback resolves safely
 Font.register({
   family: 'Helvetica',
-  src: '/fonts/NotoSansHebrew-Regular.ttf',
+  src: '/fonts/Alef-Regular.ttf',
 });
 
-// Map other standard PDF font family names to the same Hebrew font
+// Map other standard PDF font family names to the same Alef font
 const standardFamilies = [
   'Helvetica-Bold',
   'Helvetica-Oblique',
@@ -41,7 +41,7 @@ const standardFamilies = [
 standardFamilies.forEach((family) =>
   Font.register({
     family,
-    src: '/fonts/NotoSansHebrew-Regular.ttf',
+    src: '/fonts/Alef-Regular.ttf',
   })
 );
 
