@@ -50,7 +50,7 @@ export const ComparisonTableSection = ({
           )}
           
           <View style={{ marginTop: 10, padding: 10, backgroundColor: '#334155', borderRadius: 4 }}>
-            <Text style={[styles.text, { fontWeight: 'bold', marginBottom: 5 }]}>
+            <Text style={[styles.text, { marginBottom: 5 }]}> 
               סה"כ: ₪{stats.totalCurrentAmount.toLocaleString()}
             </Text>
             <Text style={styles.textMuted}>
@@ -83,7 +83,7 @@ export const ComparisonTableSection = ({
                   <Text style={styles.productDetail}>מסלול: {product.investmentTrack}</Text>
                 )}
                 {product.riskLevelChange && product.riskLevelChange !== 'no-change' && product.riskLevelChange.trim() !== '' && (
-                  <Text style={[styles.productDetail, { color: '#8b5cf6' }]}>
+                  <Text style={[styles.productDetail, { color: '#8b5cf6' }]}> 
                     שינוי סיכון: {product.riskLevelChange}
                   </Text>
                 )}
@@ -92,7 +92,7 @@ export const ComparisonTableSection = ({
           )}
           
           <View style={{ marginTop: 10, padding: 10, backgroundColor: '#334155', borderRadius: 4 }}>
-            <Text style={[styles.text, { fontWeight: 'bold', marginBottom: 5 }]}>
+            <Text style={[styles.text, { marginBottom: 5 }]}> 
               סה"כ: ₪{stats.totalRecommendedAmount.toLocaleString()}
             </Text>
             <Text style={styles.textMuted}>
