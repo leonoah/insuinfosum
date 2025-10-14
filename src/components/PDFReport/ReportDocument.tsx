@@ -9,8 +9,8 @@ import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/insurance';
 
-// Register hyphenation callback to allow breaking very long tokens
-Font.registerHyphenationCallback((word) => (word && word.length > 25 ? word.split('') : [word]));
+// Disable hyphenation entirely to avoid RTL letter reordering
+Font.registerHyphenationCallback((word) => [word]);
 
 // Register embedded Hebrew font (local) to avoid network and format issues
 Font.register({
