@@ -575,31 +575,45 @@ ${agentData.name}`;
 
   const shareReport = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `דוח סיכום ביטוח - ${formData.clientName}`,
-          text: `דוח סיכום פגישת ביטוח עם ${formData.clientName} מתאריך ${formatDate(formData.meetingDate)}`,
-          url: window.location.href,
+      const pdfBlob = await generateReactPDF();
+
+      // Upload PDF to storage
+      const fileName = `reports/שיתוף-דוח-${formData.clientName}-${Date.now()}.pdf`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('whatsapp-reports')
+        .upload(fileName, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
         });
-        
-        toast({
-          title: "שותף בהצלחה",
-          description: "הדוח שותף בהצלחה",
-        });
-      } else {
-        // Fallback for browsers that don't support Web Share API
-        await navigator.clipboard.writeText(
-          `דוח סיכום פגישת ביטוח - ${formData.clientName}\n` +
-          `תאריך הפגישה: ${formatDate(formData.meetingDate)}\n` +
-          `נוצר על ידי: ${agentData.name}\n\n` +
-          `לצפייה בדוח: ${window.location.href}`
-        );
-        
-        toast({
-          title: "הועתק ללוח",
-          description: "פרטי הדוח הועתקו ללוח",
-        });
+
+      if (uploadError) {
+        throw uploadError;
       }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('whatsapp-reports')
+        .getPublicUrl(fileName);
+
+      const reportText = `דוח סיכום פגישת ביטוח
+
+לקוח: ${formData.clientName}
+תאריך: ${formatDate(formData.meetingDate)}
+
+📄 הדוח המלא זמין להורדה בקישור:
+${urlData.publicUrl}
+
+${agentData.name}`;
+
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reportText)}`;
+
+      window.open(whatsappUrl, '_blank');
+        
+      toast({
+        title: "שיתוף בוואטסאפ",
+        description: "וואטסאפ נפתח עם קישור לדוח",
+      });
     } catch (error) {
       console.error('Error sharing report:', error);
       toast({
