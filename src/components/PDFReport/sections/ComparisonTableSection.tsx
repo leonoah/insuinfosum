@@ -1,4 +1,4 @@
-import { View, Text } from '@react-pdf/renderer';
+import { View, Text, Svg, Rect, Path } from '@react-pdf/renderer';
 import { styles } from '../styles';
 import { SelectedProduct } from '@/types/insurance';
 
@@ -34,7 +34,11 @@ export const ComparisonTableSection = ({
         {/* Current State Card */}
         <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
           <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 20 }}>📊</Text>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Rect x={3} y={10} width={4} height={11} rx={1} fill="#94a3b8" />
+              <Rect x={10} y={6} width={4} height={15} rx={1} fill="#94a3b8" />
+              <Rect x={17} y={13} width={4} height={8} rx={1} fill="#94a3b8" />
+            </Svg>
           </View>
           <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>מצב קיים</Text>
           <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>₪{stats.totalCurrentAmount.toLocaleString()}</Text>
@@ -44,7 +48,9 @@ export const ComparisonTableSection = ({
         {/* Recommended State Card */}
         <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
           <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 20 }}>🎁</Text>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Path d="M20 6L9 17l-5-5" stroke="#94a3b8" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
           </View>
           <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>מצב מוצע</Text>
           <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>₪{stats.totalRecommendedAmount.toLocaleString()}</Text>
@@ -54,7 +60,15 @@ export const ComparisonTableSection = ({
         {/* Difference Card */}
         <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
           <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 20 }}>💰</Text>
+            {difference >= 0 ? (
+              <Svg width={24} height={24} viewBox="0 0 24 24">
+                <Path d="M3 17 L9 11 L13 15 L21 7" stroke="#10b981" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            ) : (
+              <Svg width={24} height={24} viewBox="0 0 24 24">
+                <Path d="M3 7 L9 13 L13 9 L21 17" stroke="#ef4444" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            )}
           </View>
           <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>הפרש</Text>
           <Text style={{ fontSize: 18, color: difference >= 0 ? '#10b981' : '#ef4444', marginBottom: 3 }}>
