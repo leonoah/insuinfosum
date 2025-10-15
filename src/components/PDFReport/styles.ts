@@ -12,8 +12,7 @@ export const styles = StyleSheet.create({
   
   // Header styles
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     alignItems: 'center',
     marginBottom: 30,
     paddingBottom: 20,
@@ -22,12 +21,13 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     color: '#06b6d4',
-    textAlign: 'right',
+    textAlign: 'center',
   },
   headerDate: {
     fontSize: 12,
     color: '#cbd5e1',
     marginTop: 5,
+    textAlign: 'center',
   },
   logo: {
     width: 80,
