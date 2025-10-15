@@ -20,88 +20,98 @@ export const ComparisonTableSection = ({
   recommendedProducts,
   stats
 }: ComparisonTableSectionProps) => {
+  const difference = stats.totalRecommendedAmount - stats.totalCurrentAmount;
+  const productsDiff = recommendedProducts.length - currentProducts.length;
+  const depositFeeDiff = stats.avgRecommendedDeposit - stats.avgCurrentDeposit;
+  const accumulationFeeDiff = stats.avgRecommendedAccumulation - stats.avgCurrentAccumulation;
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>השוואת מצב קיים מול מצב מוצע</Text>
+      <Text style={styles.sectionTitle}>השוואת תיקים - מצב קיים מול מוצע</Text>
       
-      <View style={styles.comparisonGrid}>
-        {/* Current Products Column */}
-        <View style={styles.comparisonColumn}>
-          <Text style={styles.comparisonHeader}>מצב קיים</Text>
-          {currentProducts.length === 0 ? (
-            <Text style={styles.textMuted}>לא הוזנו מוצרים קיימים</Text>
-          ) : (
-            currentProducts.map((product, index) => (
-              <View key={index} style={styles.comparisonCard}>
-                <Text style={styles.productName}>{product.productName}</Text>
-                <Text style={styles.productDetail}>חברה: {product.company}</Text>
-                <Text style={styles.productDetail}>סכום: ₪{product.amount.toLocaleString()}</Text>
-                <Text style={styles.productDetail}>
-                  דמי ניהול הפקדה: {product.managementFeeOnDeposit}%
-                </Text>
-                <Text style={styles.productDetail}>
-                  דמי ניהול צבירה: {product.managementFeeOnAccumulation}%
-                </Text>
-                {product.investmentTrack && (
-                  <Text style={styles.productDetail}>מסלול: {product.investmentTrack}</Text>
-                )}
-              </View>
-            ))
-          )}
-          
-          <View style={{ marginTop: 10, padding: 10, backgroundColor: '#334155', borderRadius: 4 }}>
-            <Text style={[styles.text, { marginBottom: 5 }]}> 
-              סה"כ: ₪{stats.totalCurrentAmount.toLocaleString()}
-            </Text>
-            <Text style={styles.textMuted}>
-              ממוצע דמי ניהול הפקדה: {stats.avgCurrentDeposit.toFixed(2)}%
-            </Text>
-            <Text style={styles.textMuted}>
-              ממוצע דמי ניהול צבירה: {stats.avgCurrentAccumulation.toFixed(2)}%
-            </Text>
+      {/* Summary Cards */}
+      <View style={{ flexDirection: 'row', gap: 15, marginBottom: 20 }}>
+        {/* Current State Card */}
+        <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
+          <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 20 }}>📊</Text>
           </View>
+          <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>מצב קיים</Text>
+          <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>₪{stats.totalCurrentAmount.toLocaleString()}</Text>
+          <Text style={{ fontSize: 10, color: '#94a3b8' }}>{currentProducts.length} מוצרים</Text>
         </View>
 
-        {/* Recommended Products Column */}
-        <View style={styles.comparisonColumn}>
-          <Text style={styles.comparisonHeader}>מצב מוצע</Text>
-          {recommendedProducts.length === 0 ? (
-            <Text style={styles.textMuted}>לא הוזנו מוצרים מומלצים</Text>
-          ) : (
-            recommendedProducts.map((product, index) => (
-              <View key={index} style={styles.comparisonCard}>
-                <Text style={styles.productName}>{product.productName}</Text>
-                <Text style={styles.productDetail}>חברה: {product.company}</Text>
-                <Text style={styles.productDetail}>סכום: ₪{product.amount.toLocaleString()}</Text>
-                <Text style={styles.productDetail}>
-                  דמי ניהול הפקדה: {product.managementFeeOnDeposit}%
-                </Text>
-                <Text style={styles.productDetail}>
-                  דמי ניהול צבירה: {product.managementFeeOnAccumulation}%
-                </Text>
-                {product.investmentTrack && (
-                  <Text style={styles.productDetail}>מסלול: {product.investmentTrack}</Text>
-                )}
-                {product.riskLevelChange && product.riskLevelChange !== 'no-change' && product.riskLevelChange.trim() !== '' && (
-                  <Text style={[styles.productDetail, { color: '#8b5cf6' }]}> 
-                    שינוי סיכון: {product.riskLevelChange}
-                  </Text>
-                )}
-              </View>
-            ))
-          )}
-          
-          <View style={{ marginTop: 10, padding: 10, backgroundColor: '#334155', borderRadius: 4 }}>
-            <Text style={[styles.text, { marginBottom: 5 }]}> 
-              סה"כ: ₪{stats.totalRecommendedAmount.toLocaleString()}
-            </Text>
-            <Text style={styles.textMuted}>
-              ממוצע דמי ניהול הפקדה: {stats.avgRecommendedDeposit.toFixed(2)}%
-            </Text>
-            <Text style={styles.textMuted}>
-              ממוצע דמי ניהול צבירה: {stats.avgRecommendedAccumulation.toFixed(2)}%
-            </Text>
+        {/* Recommended State Card */}
+        <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
+          <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 20 }}>🎁</Text>
           </View>
+          <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>מצב מוצע</Text>
+          <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>₪{stats.totalRecommendedAmount.toLocaleString()}</Text>
+          <Text style={{ fontSize: 10, color: '#94a3b8' }}>{recommendedProducts.length} מוצרים</Text>
+        </View>
+
+        {/* Difference Card */}
+        <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
+          <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 20 }}>💰</Text>
+          </View>
+          <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>הפרש</Text>
+          <Text style={{ fontSize: 18, color: difference >= 0 ? '#10b981' : '#ef4444', marginBottom: 3 }}>
+            {difference >= 0 ? '+' : ''}₪{Math.abs(difference).toLocaleString()}
+          </Text>
+          <Text style={{ fontSize: 10, color: '#94a3b8' }}>מוצרים</Text>
+        </View>
+      </View>
+
+      {/* Comparison Table */}
+      <View style={styles.table}>
+        {/* Table Header */}
+        <View style={[styles.tableRow, styles.tableHeaderRow]}>
+          <Text style={[styles.tableHeaderCell, { flex: 2 }]}>קטגוריה</Text>
+          <Text style={styles.tableHeaderCell}>מצב קיים</Text>
+          <Text style={styles.tableHeaderCell}>מצב מוצע</Text>
+          <Text style={styles.tableHeaderCell}>שינוי</Text>
+        </View>
+
+        {/* Total Accumulation Row */}
+        <View style={styles.tableRow}>
+          <Text style={[styles.tableCell, { flex: 2 }]}>סה"כ צבירה</Text>
+          <Text style={styles.tableCell}>₪{stats.totalCurrentAmount.toLocaleString()}</Text>
+          <Text style={styles.tableCell}>₪{stats.totalRecommendedAmount.toLocaleString()}</Text>
+          <Text style={[styles.tableCell, { color: difference >= 0 ? '#10b981' : '#ef4444' }]}>
+            {difference >= 0 ? '+' : ''}₪{Math.abs(difference).toLocaleString()}
+          </Text>
+        </View>
+
+        {/* Number of Products Row */}
+        <View style={styles.tableRow}>
+          <Text style={[styles.tableCell, { flex: 2 }]}>מספר מוצרים</Text>
+          <Text style={styles.tableCell}>{currentProducts.length}</Text>
+          <Text style={styles.tableCell}>{recommendedProducts.length}</Text>
+          <Text style={[styles.tableCell, { color: productsDiff >= 0 ? '#10b981' : '#ef4444' }]}>
+            {productsDiff >= 0 ? '+' : ''}{productsDiff}
+          </Text>
+        </View>
+
+        {/* Average Deposit Fee Row */}
+        <View style={styles.tableRow}>
+          <Text style={[styles.tableCell, { flex: 2 }]}>ממוצע דמי ניהול (הפקדה)</Text>
+          <Text style={styles.tableCell}>{stats.avgCurrentDeposit.toFixed(2)}%</Text>
+          <Text style={styles.tableCell}>{stats.avgRecommendedDeposit.toFixed(2)}%</Text>
+          <Text style={[styles.tableCell, { color: depositFeeDiff <= 0 ? '#10b981' : '#ef4444' }]}>
+            {depositFeeDiff >= 0 ? '+' : ''}{depositFeeDiff.toFixed(2)}%
+          </Text>
+        </View>
+
+        {/* Average Accumulation Fee Row */}
+        <View style={styles.tableRow}>
+          <Text style={[styles.tableCell, { flex: 2 }]}>ממוצע דמי ניהול (צבירה)</Text>
+          <Text style={styles.tableCell}>{stats.avgCurrentAccumulation.toFixed(2)}%</Text>
+          <Text style={styles.tableCell}>{stats.avgRecommendedAccumulation.toFixed(2)}%</Text>
+          <Text style={[styles.tableCell, { color: accumulationFeeDiff <= 0 ? '#10b981' : '#ef4444' }]}>
+            {accumulationFeeDiff >= 0 ? '+' : ''}{accumulationFeeDiff.toFixed(2)}%
+          </Text>
         </View>
       </View>
     </View>
