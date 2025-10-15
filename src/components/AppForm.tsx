@@ -456,7 +456,7 @@ const AppForm = () => {
           {/* Progress */}
           <div className="mt-6 glass p-4 rounded-2xl">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">התקדmות</span>
+              <span className="text-sm text-muted-foreground">התקדמות</span>
               <span className="text-sm font-medium">{Math.round(calculateProgress())}%</span>
             </div>
             <Progress value={calculateProgress()} className="h-2" />
