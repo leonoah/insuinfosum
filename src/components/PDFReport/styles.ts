@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
   // Page styles
   page: {
     backgroundColor: '#0f172a',
-    padding: 40,
+    padding: 30,
     fontFamily: 'Alef',
     direction: 'rtl',
   },
@@ -14,19 +14,19 @@ export const styles = StyleSheet.create({
   header: {
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: 30,
-    paddingBottom: 20,
+    marginBottom: 20,
+    paddingBottom: 15,
     borderBottom: '2px solid #1e293b',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 32,
     color: '#06b6d4',
     textAlign: 'center',
   },
   headerDate: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#cbd5e1',
-    marginTop: 5,
+    marginTop: 4,
     textAlign: 'center',
   },
   logo: {
@@ -37,35 +37,35 @@ export const styles = StyleSheet.create({
   
   // Section styles
   section: {
-    marginBottom: 20,
-    padding: 15,
+    marginBottom: 15,
+    padding: 12,
     backgroundColor: '#1e293b',
     borderRadius: 8,
     border: '1px solid #334155',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#06b6d4',
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: 'right',
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#cbd5e1',
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'right',
   },
   
   // Text styles
   text: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#f1f5f9',
     lineHeight: 1.6,
     textAlign: 'right',
     wordBreak: 'break-word',
   },
   textMuted: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#94a3b8',
     lineHeight: 1.5,
     textAlign: 'right',
@@ -87,12 +87,12 @@ export const styles = StyleSheet.create({
     width: '48%',
   },
   infoLabel: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#94a3b8',
     marginRight: 8,
   },
   infoValue: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#f1f5f9',
   },
   
@@ -115,7 +115,7 @@ export const styles = StyleSheet.create({
   },
   bulletText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 13,
     color: '#f1f5f9',
     lineHeight: 1.6,
     textAlign: 'right',
@@ -138,14 +138,14 @@ export const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 12,
     color: '#f1f5f9',
     textAlign: 'right',
     paddingHorizontal: 5,
   },
   tableHeaderCell: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 13,
     color: '#06b6d4',
     textAlign: 'right',
     paddingHorizontal: 5,
@@ -228,26 +228,35 @@ export const styles = StyleSheet.create({
   
   // Footer styles
   footer: {
-    marginTop: 30,
-    paddingTop: 20,
+    marginTop: 20,
+    paddingTop: 15,
     borderTop: '2px solid #1e293b',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#94a3b8',
-    textAlign: 'right',
+    textAlign: 'center',
+    marginBottom: 3,
   },
   footerBrand: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#06b6d4',
-    marginTop: 5,
+    marginTop: 4,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   footerLogo: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     objectFit: 'contain',
+  },
+  footerInMindsLogo: {
+    width: 80,
+    height: 30,
+    objectFit: 'contain',
+    marginTop: 5,
   },
 });

@@ -1,5 +1,6 @@
 import { View, Text, Image } from '@react-pdf/renderer';
 import { styles } from '../styles';
+import inMindsLogo from '@/assets/inminds-logo-final-transparent.png';
 
 interface ReportFooterProps {
   agentName: string;
@@ -11,18 +12,22 @@ interface ReportFooterProps {
 export const ReportFooter = ({ agentName, agentPhone, agentEmail, logoUrl }: ReportFooterProps) => {
   return (
     <View style={styles.footer}>
-      <View style={{ flex: 1 }}>
+      <View style={{ alignItems: 'center', width: '100%' }}>
         <Text style={styles.footerText}>סוכן: {agentName}</Text>
         {agentPhone && <Text style={styles.footerText}>טלפון: {agentPhone}</Text>}
         {agentEmail && <Text style={styles.footerText}>דוא"ל: {agentEmail}</Text>}
+        {logoUrl && (
+          <Image 
+            src={logoUrl} 
+            style={{ ...styles.footerLogo, marginTop: 10, marginBottom: 10 }}
+          />
+        )}
         <Text style={styles.footerBrand}>דוח זה נוצר בעזרת מערכת InMinds</Text>
-      </View>
-      {logoUrl && (
         <Image 
-          src={logoUrl} 
-          style={styles.footerLogo}
+          src={inMindsLogo} 
+          style={styles.footerInMindsLogo}
         />
-      )}
+      </View>
     </View>
   );
 };
