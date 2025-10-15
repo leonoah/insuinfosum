@@ -109,7 +109,7 @@ export const ReportDocument = ({
 }: ReportDocumentProps) => {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size={{ width: 595.28, height: 5669.29 }} style={styles.page} wrap={false}>
         {/* Header - always visible */}
         <ReportHeader
           title="דוח סיכום שיחה"
