@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Play } from "lucide-react";
 import logo from "@/assets/logo-final.png";
+import heroImage from "@/assets/hero-agent-client.jpg";
 const Hero = () => {
   return <section 
     className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16 relative"
     style={{
-      backgroundImage: `url('https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
+      backgroundImage: `url(${heroImage})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
