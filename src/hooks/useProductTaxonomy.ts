@@ -36,13 +36,10 @@ export const useProductTaxonomy = () => {
       if (fetchError) throw fetchError;
 
       if (!data || data.length === 0) {
-        console.warn('No products found in database');
-        setHierarchy({
-          categories: [],
-          subCategories: new Map(),
-          companies: new Map(),
-          exposureData: new Map()
-        });
+        console.warn('No products found in database, using demo data');
+        // נתוני דמו זמניים עד שיועלו הנתונים האמיתיים
+        const demoData = createDemoData();
+        setHierarchy(demoData);
         setLoading(false);
         return;
       }
@@ -116,3 +113,51 @@ export const useProductTaxonomy = () => {
     reload: loadProductTaxonomy
   };
 };
+
+// נתוני דמו זמניים
+function createDemoData(): ProductHierarchy {
+  const categories = ['קרן פנסיה', 'קרן השתלמות', 'קופת גמל', 'ביטוח מנהלים'];
+  
+  const subCategoriesMap = new Map<string, string[]>();
+  subCategoriesMap.set('קרן פנסיה', ['מסלול כללי', 'מסלול יעד 2040-2050', 'מסלול יעד 2050-2060', 'מסלול מניות']);
+  subCategoriesMap.set('קרן השתלמות', ['מסלול כללי', 'מסלול סולידי', 'מסלול מניות']);
+  subCategoriesMap.set('קופת גמל', ['מסלול כללי', 'מסלול סולידי', 'מסלול מניות']);
+  subCategoriesMap.set('ביטוח מנהלים', ['מסלול כללי', 'מסלול יעד 2040-2050', 'מסלול מניות']);
+  
+  const companiesMap = new Map<string, Map<string, string[]>>();
+  categories.forEach(cat => {
+    const subMap = new Map<string, string[]>();
+    const subs = subCategoriesMap.get(cat) || [];
+    subs.forEach(sub => {
+      subMap.set(sub, ['מגדל', 'הראל', 'הפניקס', 'מנורה', 'כלל']);
+    });
+    companiesMap.set(cat, subMap);
+  });
+  
+  const exposureMap = new Map<string, ProductTaxonomy>();
+  categories.forEach(cat => {
+    const subs = subCategoriesMap.get(cat) || [];
+    subs.forEach(sub => {
+      const companies = ['מגדל', 'הראל', 'הפניקס', 'מנורה', 'כלל'];
+      companies.forEach(company => {
+        const key = `${cat}|${sub}|${company}`;
+        exposureMap.set(key, {
+          category: cat,
+          subCategory: sub,
+          company: company,
+          exposureStocks: Math.floor(Math.random() * 60) + 20,
+          exposureBonds: Math.floor(Math.random() * 50) + 30,
+          exposureForeignCurrency: Math.floor(Math.random() * 40) + 10,
+          exposureForeignInvestments: Math.floor(Math.random() * 50) + 20
+        });
+      });
+    });
+  });
+  
+  return {
+    categories,
+    subCategories: subCategoriesMap,
+    companies: companiesMap,
+    exposureData: exposureMap
+  };
+}
