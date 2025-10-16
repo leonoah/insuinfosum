@@ -339,9 +339,14 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           savingsProduct.policyNumber ? `פוליסה: ${savingsProduct.policyNumber}` : ''
         ].filter(Boolean);
 
+        const baseCategory =
+          toBaseSavingsCategory(savingsProduct.productType || savingsProduct.productName) ||
+          toBaseSavingsCategory(savingsProduct.productName) ||
+          toBaseSavingsCategory(savingsProduct.planName);
+
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
-          category: savingsProduct.productName || savingsProduct.productType || 'מוצר חיסכון',
+          category: baseCategory || (savingsProduct.productName || savingsProduct.productType || 'מוצר חיסכון'),
           subCategory: savingsProduct.planName || savingsProduct.productType || '',
           company: savingsProduct.manufacturer || savingsProduct.productType || 'לא צוין',
           amount: savingsProduct.accumulation,
@@ -355,7 +360,6 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
         selectedProducts.push(product);
       }
     });
-
     // Generate products from selected insurance
     selectedInsurance.forEach(index => {
       const insuranceProduct = importedData.insurance[index];
@@ -413,6 +417,18 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
 
   const formatPercentage = (percentage: number) => {
     return `${(percentage || 0).toFixed(2)}%`;
+  };
+
+  // Map raw Excel savings labels to base product categories used by the app
+  const toBaseSavingsCategory = (text: string | undefined): string => {
+    if (!text) return '';
+    const t = text.toString().replace(/[\u200E\u200F]/g, '').trim();
+    // Broad matches first
+    if (t.includes('קרן פנסיה') || t.includes('פנסיה')) return 'קרן פנסיה';
+    if (t.includes('קרן השתלמות') || t.includes('השתלמות')) return 'קרן השתלמות';
+    if (t.includes('קופת גמל') || t.includes('גמל')) return 'קופת גמל';
+    if (t.includes('ביטוח מנהלים') || t.includes('מנהלים')) return 'ביטוח מנהלים';
+    return '';
   };
 
   return (
