@@ -265,6 +265,37 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     };
   };
 
+  // Normalize raw labels to base savings categories used by the app
+  const toBaseSavingsCategory = (text: string | undefined): string => {
+    if (!text) return '';
+    const t = text
+      .toString()
+      .replace(/[\u200E\u200F]/g, '')
+      .replace(/["'\-()\[\]{}.,:;!?]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const aliases: Array<{ test: RegExp; result: string }> = [
+      { test: /(קרן\s*)?פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
+      { test: /פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
+      { test: /(קרן\s*)?השתלמות/u, result: 'קרן השתלמות' },
+      { test: /(קופת\s*)?גמל(\s*להשקעה)?/u, result: 'קופת גמל' },
+      { test: /ביטוח\s*מנהלים/u, result: 'ביטוח מנהלים' },
+      { test: /מנהלים/u, result: 'ביטוח מנהלים' }
+    ];
+
+    for (const { test, result } of aliases) {
+      if (test.test(t)) return result;
+    }
+
+    if (t.includes('פנסיה')) return 'קרן פנסיה';
+    if (t.includes('השתלמות')) return 'קרן השתלמות';
+    if (t.includes('גמל')) return 'קופת גמל';
+    if (t.includes('מנהלים')) return 'ביטוח מנהלים';
+
+    return '';
+  };
+
   // Filter and search logic
   const { filteredSavings, filteredInsurance, manufacturers, categories } = useMemo(() => {
     if (!importedData) return { filteredSavings: [], filteredInsurance: [], manufacturers: [], categories: [] };
@@ -354,10 +385,14 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       const savingsProduct = importedData.savings[index];
       if (savingsProduct) {
         productCounter++;
+        const baseCategory =
+          toBaseSavingsCategory(savingsProduct.productType || savingsProduct.productName) ||
+          toBaseSavingsCategory(savingsProduct.productName);
+
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
-          category: savingsProduct.productName || savingsProduct.productType,
-          subCategory: '',
+          category: baseCategory || savingsProduct.productName || savingsProduct.productType,
+          subCategory: savingsProduct.planName || savingsProduct.productType || 'מסלול כללי',
           company: savingsProduct.manufacturer,
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee || 0,

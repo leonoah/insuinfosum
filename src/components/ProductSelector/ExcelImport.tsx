@@ -430,6 +430,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       .replace(/\s+/g, ' ')
       .trim();
 
+    console.log('toBaseSavingsCategory input:', text, '-> normalized:', t);
+
     // Helpful aliases commonly seen in reports
     const aliases: Array<{ test: RegExp; result: string }> = [
       // Pension fund variations
@@ -445,15 +447,22 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     ];
 
     for (const { test, result } of aliases) {
-      if (test.test(t)) return result;
+      if (test.test(t)) {
+        console.log(`Matched regex ${test} -> ${result}`);
+        return result;
+      }
     }
 
     // Fallback contains checks
-    if (t.includes('פנסיה')) return 'קרן פנסיה';
+    if (t.includes('פנסיה')) {
+      console.log('Fallback match: פנסיה -> קרן פנסיה');
+      return 'קרן פנסיה';
+    }
     if (t.includes('השתלמות')) return 'קרן השתלמות';
     if (t.includes('גמל')) return 'קופת גמל';
     if (t.includes('מנהלים')) return 'ביטוח מנהלים';
 
+    console.log('No match found for:', t);
     return '';
   };
   return (
