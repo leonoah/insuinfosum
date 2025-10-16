@@ -155,19 +155,65 @@ export class PensionParser {
   };
 
   static convertPensionProductToInsuranceProduct(pensionProduct: PensionProduct): SelectedProduct {
+    // מיפוי סוג מוצר לקטגוריה ב-DB
+    const categoryMapping: Record<string, string> = {
+      'קרן השתלמות': 'קרן השתלמות',
+      'קופת גמל': 'קופת גמל',
+      'חברת ביטוח': 'ביטוח מנהלים',
+      'קרן פנסיה חדשה': 'קרן פנסיה',
+      'ביטוח משכנתא': 'ביטוח חיים'
+    };
+    
+    const category = categoryMapping[pensionProduct.productType] || pensionProduct.productType;
+    
+    // ניקוי שם החברה
+    const company = this.normalizeCompanyName(pensionProduct.company);
+    
     return {
       id: pensionProduct.id,
-      category: this.getProductDisplayName(pensionProduct.productType, pensionProduct.company),
-      subCategory: pensionProduct.productType,
-      company: pensionProduct.company,
+      category: category,
+      subCategory: 'כללי', // ברירת מחדל - המשתמש יכול לשנות
+      company: company,
       type: 'current',
       amount: pensionProduct.currentBalance,
       managementFeeOnDeposit: pensionProduct.managementFeeFromDeposit,
       managementFeeOnAccumulation: pensionProduct.managementFeeFromBalance,
       riskLevelChange: 'no-change',
       notes: this.generateProductNotes(pensionProduct),
-      investmentTrack: pensionProduct.status === 'פעיל' ? 'פעיל' : 'לא פעיל'
+      investmentTrack: pensionProduct.status === 'פעיל' ? 'כללי' : 'לא פעיל'
     };
+  }
+
+  private static normalizeCompanyName(company: string): string {
+    // ניקוי והתאמת שמות חברות
+    const normalized = company
+      .replace(/בע"מ/g, '')
+      .replace(/ניהול קופות גמל/g, '')
+      .replace(/קרן השתלמות/g, '')
+      .replace(/-/g, ' ')
+      .trim();
+    
+    // מיפוי שמות ידועים
+    const companyMapping: Record<string, string> = {
+      'לאומי מקפת': 'מגדל',
+      'לאומי': 'מגדל',
+      'שחם': 'מגדל',
+      'לפידות': 'מגדל',
+      'מנורה': 'מנורה מבטחים',
+      'כלל': 'כלל ביטוח',
+      'הפניקס': 'הפניקס',
+      'איילון': 'איילון',
+      'הראל': 'הראל'
+    };
+    
+    // חיפוש התאמה
+    for (const [key, value] of Object.entries(companyMapping)) {
+      if (normalized.includes(key)) {
+        return value;
+      }
+    }
+    
+    return normalized;
   }
 
   private static getProductDisplayName(productType: string, company: string): string {
