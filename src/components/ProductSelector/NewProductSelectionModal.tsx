@@ -272,13 +272,27 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   const progressValue = (step.current / 3) * 100;
 
+  // Get available options, and add the current values if they don't exist (KEEP ORIGINAL case)
+  const availableCategories = [...hierarchy.categories];
+  if (editingProduct && step.selectedCategory && !availableCategories.includes(step.selectedCategory)) {
+    availableCategories.push(step.selectedCategory);
+  }
+
   const availableSubCategories = step.selectedCategory 
     ? hierarchy.subCategories.get(step.selectedCategory) || []
     : [];
+  const availableSubCategoriesWithCurrent = [...availableSubCategories];
+  if (editingProduct && step.selectedSubCategory && !availableSubCategoriesWithCurrent.includes(step.selectedSubCategory)) {
+    availableSubCategoriesWithCurrent.push(step.selectedSubCategory);
+  }
 
   const availableCompanies = (step.selectedCategory && step.selectedSubCategory)
     ? hierarchy.companies.get(step.selectedCategory)?.get(step.selectedSubCategory) || []
     : [];
+  const availableCompaniesWithCurrent = [...availableCompanies];
+  if (editingProduct && step.selectedCompany && !availableCompaniesWithCurrent.includes(step.selectedCompany)) {
+    availableCompaniesWithCurrent.push(step.selectedCompany);
+  }
 
   if (loading) {
     return (
@@ -501,7 +515,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                           <SelectValue placeholder="בחר קטגוריה" />
                         </SelectTrigger>
                         <SelectContent className="glass z-[100]">
-                          {hierarchy.categories.map((category) => (
+                          {availableCategories.map((category) => (
                             <SelectItem key={category} value={category}>
                               {PRODUCT_ICONS[category] || '📄'} {category}
                             </SelectItem>
@@ -521,7 +535,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                           <SelectValue placeholder="בחר תת קטגוריה" />
                         </SelectTrigger>
                         <SelectContent className="glass z-[100]">
-                          {availableSubCategories.map((subCategory) => (
+                          {availableSubCategoriesWithCurrent.map((subCategory) => (
                             <SelectItem key={subCategory} value={subCategory}>
                               {subCategory}
                             </SelectItem>
@@ -541,7 +555,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                           <SelectValue placeholder="בחר חברה" />
                         </SelectTrigger>
                         <SelectContent className="glass z-[100]">
-                          {availableCompanies.map((company) => (
+                          {availableCompaniesWithCurrent.map((company) => (
                             <SelectItem key={company} value={company}>
                               {company}
                             </SelectItem>
