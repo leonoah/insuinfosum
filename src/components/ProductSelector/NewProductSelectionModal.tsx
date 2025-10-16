@@ -10,6 +10,8 @@ import { SelectedProduct, ProductSelectionStep, PRODUCT_ICONS } from '@/types/pr
 import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import VoiceProductInput from './VoiceProductInput';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface NewProductSelectionModalProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 }) => {
   const { hierarchy, loading, error, getExposureData } = useProductTaxonomy();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
+  const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
@@ -217,8 +220,44 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     handleClose();
   };
 
+  const handleVoiceProductAnalyzed = (voiceData: any) => {
+    console.log('Voice product analyzed:', voiceData);
+    
+    // Find matching category
+    const matchedCategory = hierarchy.categories.find(cat => 
+      voiceData.productName?.includes(cat) || voiceData.category?.includes(cat)
+    );
+    
+    // If we found a matching category, set up the step and form data
+    if (matchedCategory) {
+      const subCats = hierarchy.subCategories.get(matchedCategory) || [];
+      const defaultSubCat = subCats[0] || 'מסלול כללי';
+      
+      setStep({
+        current: 3,
+        selectedCategory: matchedCategory,
+        selectedSubCategory: defaultSubCat,
+        selectedCompany: voiceData.company || ''
+      });
+      
+      setFormData({
+        type: productType,
+        amount: voiceData.amount || 0,
+        managementFeeOnDeposit: voiceData.managementFeeOnDeposit || 0,
+        managementFeeOnAccumulation: voiceData.managementFeeOnAccumulation || 0,
+        investmentTrack: voiceData.investmentTrack || '',
+        riskLevelChange: 'no-change',
+        notes: voiceData.transcribedText || ''
+      });
+      
+      // Switch to manual mode to show the form
+      setInputMode('manual');
+    }
+  };
+
   const handleClose = () => {
     setStep({ current: 1 });
+    setInputMode('manual');
     setFormData({
       type: productType,
       amount: 0,
@@ -296,70 +335,105 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>שלב {step.current} מתוך 3</span>
-              <span>
-                {step.current === 1 && 'בחירת קטגוריה'}
-                {step.current === 2 && 'בחירת מסלול'}
-                {step.current === 3 && 'בחירת חברה ופרטים'}
-              </span>
-            </div>
-            <Progress value={progressValue} className="h-2" />
-          </div>
-
-          {/* Step 1: Category Selection */}
-          {step.current === 1 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">בחר קטגוריה</h3>
+          {/* Voice/Manual Toggle */}
+          {!editingProduct && step.current === 1 && (
+            <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'manual' | 'voice')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="manual">בחירה ידנית</TabsTrigger>
+                <TabsTrigger value="voice">
+                  <Mic className="h-4 w-4 ml-2" />
+                  הקלטה קולית
+                </TabsTrigger>
+              </TabsList>
               
-              {/* Duplicate existing products */}
-              {existingProducts.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-md font-medium text-muted-foreground">העתק מוצר קיים</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {existingProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="glass-hover p-3 cursor-pointer"
-                        onClick={() => handleDuplicate(product)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{PRODUCT_ICONS[product.category] || '📄'}</span>
-                            <div>
-                              <div className="font-medium">{product.category}</div>
-                              <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
+              <TabsContent value="voice" className="mt-4">
+                <VoiceProductInput onProductAnalyzed={handleVoiceProductAnalyzed} />
+              </TabsContent>
+              
+              <TabsContent value="manual" className="mt-4">
+                <div className="space-y-6">
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>שלב {step.current} מתוך 3</span>
+                      <span>בחירת קטגוריה</span>
+                    </div>
+                    <Progress value={progressValue} className="h-2" />
+                  </div>
+
+                  {/* Category Selection Content */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">בחר קטגוריה</h3>
+                    
+                    {/* Duplicate existing products */}
+                    {existingProducts.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="text-md font-medium text-muted-foreground">העתק מוצר קיים</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {existingProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              className="glass-hover p-3 cursor-pointer"
+                              onClick={() => handleDuplicate(product)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{PRODUCT_ICONS[product.category] || '📄'}</span>
+                                  <div>
+                                    <div className="font-medium">{product.category}</div>
+                                    <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
+                                  </div>
+                                </div>
+                                <Copy className="h-4 w-4 text-muted-foreground" />
+                              </div>
                             </div>
-                          </div>
-                          <Copy className="h-4 w-4 text-muted-foreground" />
+                          ))}
+                        </div>
+                        <div className="border-t pt-4">
+                          <h4 className="text-md font-medium text-muted-foreground mb-3">או בחר קטגוריה חדשה</h4>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="border-t pt-4">
-                    <h4 className="text-md font-medium text-muted-foreground mb-3">או בחר קטגוריה חדשה</h4>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {hierarchy.categories.map((category) => (
+                        <div
+                          key={category}
+                          className="glass-hover p-4 text-center cursor-pointer"
+                          onClick={() => handleCategorySelect(category)}
+                        >
+                          <div className="text-4xl mb-2">
+                            {PRODUCT_ICONS[category] || '📄'}
+                          </div>
+                          <div className="font-medium text-sm">{category}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {hierarchy.categories.map((category) => (
-                  <div
-                    key={category}
-                    className="glass-hover p-4 text-center cursor-pointer"
-                    onClick={() => handleCategorySelect(category)}
-                  >
-                    <div className="text-4xl mb-2">
-                      {PRODUCT_ICONS[category] || '📄'}
-                    </div>
-                    <div className="font-medium text-sm">{category}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
+
+          {/* Show progress bar and content for steps 2 and 3, or when editing */}
+          {(step.current !== 1 || editingProduct) && (
+            <>
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>שלב {step.current} מתוך 3</span>
+                  <span>
+                    {step.current === 1 && 'בחירת קטגוריה'}
+                    {step.current === 2 && 'בחירת מסלול'}
+                    {step.current === 3 && 'בחירת חברה ופרטים'}
+                  </span>
+                </div>
+                <Progress value={progressValue} className="h-2" />
+              </div>
+            </>
+          )}
+
+          {/* Step 1: Category Selection (when already selected or editing) - Content moved to Tabs above */}
 
           {/* Step 2: Sub-Category Selection */}
           {step.current === 2 && (
