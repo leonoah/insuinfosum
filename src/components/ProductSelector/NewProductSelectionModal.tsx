@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SelectedProduct, ProductSelectionStep, PRODUCT_ICONS } from '@/types/products';
 import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,6 +78,51 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   const handleCompanySelect = (company: string) => {
     // Get exposure data and populate form
+    if (step.selectedCategory && step.selectedSubCategory) {
+      const exposureData = getExposureData(step.selectedCategory, step.selectedSubCategory, company);
+      setFormData(prev => ({
+        ...prev,
+        ...exposureData
+      }));
+    }
+    setStep({ ...step, selectedCompany: company });
+  };
+
+  // Handle category change in edit mode
+  const handleCategoryChange = (category: string) => {
+    setStep({ 
+      current: 3,
+      selectedCategory: category,
+      selectedSubCategory: undefined,
+      selectedCompany: undefined
+    });
+    setFormData(prev => ({
+      ...prev,
+      exposureStocks: undefined,
+      exposureBonds: undefined,
+      exposureForeignCurrency: undefined,
+      exposureForeignInvestments: undefined
+    }));
+  };
+
+  // Handle sub-category change in edit mode
+  const handleSubCategoryChange = (subCategory: string) => {
+    setStep({ 
+      ...step,
+      selectedSubCategory: subCategory,
+      selectedCompany: undefined
+    });
+    setFormData(prev => ({
+      ...prev,
+      exposureStocks: undefined,
+      exposureBonds: undefined,
+      exposureForeignCurrency: undefined,
+      exposureForeignInvestments: undefined
+    }));
+  };
+
+  // Handle company change in edit mode
+  const handleCompanyChange = (company: string) => {
     if (step.selectedCategory && step.selectedSubCategory) {
       const exposureData = getExposureData(step.selectedCategory, step.selectedSubCategory, company);
       setFormData(prev => ({
@@ -334,14 +380,77 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
           {/* Step 3: Details Form (after company selected) */}
           {step.current === 3 && step.selectedCompany && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, selectedCompany: undefined })}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h3 className="text-lg font-semibold">
-                  פרטי המוצר: {step.selectedCategory} - {step.selectedSubCategory} - {step.selectedCompany}
-                </h3>
-              </div>
+              {editingProduct ? (
+                <div className="space-y-4 mb-4">
+                  <h3 className="text-lg font-semibold">עריכת מוצר</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 glass p-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">קטגוריה</label>
+                      <Select value={step.selectedCategory} onValueChange={handleCategoryChange}>
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר קטגוריה" />
+                        </SelectTrigger>
+                        <SelectContent className="glass z-[100]">
+                          {hierarchy.categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {PRODUCT_ICONS[category] || '📄'} {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">תת קטגוריה</label>
+                      <Select 
+                        value={step.selectedSubCategory} 
+                        onValueChange={handleSubCategoryChange}
+                        disabled={!step.selectedCategory}
+                      >
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר תת קטגוריה" />
+                        </SelectTrigger>
+                        <SelectContent className="glass z-[100]">
+                          {availableSubCategories.map((subCategory) => (
+                            <SelectItem key={subCategory} value={subCategory}>
+                              {subCategory}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">חברה</label>
+                      <Select 
+                        value={step.selectedCompany} 
+                        onValueChange={handleCompanyChange}
+                        disabled={!step.selectedSubCategory}
+                      >
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר חברה" />
+                        </SelectTrigger>
+                        <SelectContent className="glass z-[100]">
+                          {availableCompanies.map((company) => (
+                            <SelectItem key={company} value={company}>
+                              {company}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mb-4">
+                  <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, selectedCompany: undefined })}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <h3 className="text-lg font-semibold">
+                    פרטי המוצר: {step.selectedCategory} - {step.selectedSubCategory} - {step.selectedCompany}
+                  </h3>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
