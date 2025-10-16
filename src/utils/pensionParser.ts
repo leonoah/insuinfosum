@@ -172,7 +172,7 @@ export class PensionParser {
     return {
       id: pensionProduct.id,
       category: category,
-      subCategory: 'אחר', // ברירת מחדל - "אחר" כשלא ניתן להתאים
+      subCategory: 'מסלול כללי', // ברירת מחדל
       company: company,
       type: 'current',
       amount: pensionProduct.currentBalance,

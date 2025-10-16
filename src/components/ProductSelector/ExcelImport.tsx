@@ -347,7 +347,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
           category: baseCategory || (savingsProduct.productName || savingsProduct.productType || 'מוצר חיסכון'),
-          subCategory: savingsProduct.planName || savingsProduct.productType || '',
+          subCategory: savingsProduct.planName || savingsProduct.productType || 'מסלול כללי',
           company: savingsProduct.manufacturer || savingsProduct.productType || 'לא צוין',
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee || 0,
