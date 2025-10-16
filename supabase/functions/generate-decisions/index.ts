@@ -142,7 +142,7 @@ serve(async (req) => {
           {
             role: 'system',
             content: autoFillMode 
-              ? 'אתה סוכן ביטוח וייעוץ פנסיוני מומחה עם ניסיון רב בהסברת מוצרים פיננסיים ללקוחות. אתה מנתח מצב ביטוחי ופנסיוני בצורה מקצועית ומעמיקה, מסביר את המשמעות של כל מעבר או שינוי, ומספק ניתוח רציונלי מבוסס על הנתונים שסופקו בלבד. אל תמציא נתונים שלא סופקו. חזור תמיד עם JSON תקין כפי שנדרש.'
+              ? 'אתה סוכן ביטוח וייעוץ פנסיוני מומחה עם ניסיון רב בהסברת מוצרים פיננסיים ללקוחות. אתה מנתח מצב ביטוחי ופנסיוני בצורה מקצועית ומעמיקה, מסביר את המשמעות של כל מעבר או שינוי, ומספק ניתוח רציונלי מבוסס על הנתונים שסופקו בלבד. אל תמציא נתונים שלא סופקו. חזור תמיד עם JSON תקין ושלם. CRITICAL: You must return complete, valid JSON without truncation.'
               : 'אתה יועץ ביטוח מקצועי המסייע בכתיבת החלטות לקוחות בפורמט HTML מובנה וקריא. חזור תמיד עם HTML תקין ומסודר.'
           },
           {
@@ -150,8 +150,8 @@ serve(async (req) => {
             content: prompt
           }
         ],
-        max_tokens: 2500,
-        temperature: 0.4
+        max_tokens: 4000,
+        temperature: 0.3
       }),
     });
 
@@ -181,36 +181,57 @@ serve(async (req) => {
       // Parse JSON response for auto-fill mode
       try {
         // Try to extract JSON from the response (in case it's wrapped in markdown)
-        let jsonContent = generatedContent;
+        let jsonContent = generatedContent.trim();
         const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonMatch) {
-          jsonContent = jsonMatch[1];
+          jsonContent = jsonMatch[1].trim();
           console.log('Extracted JSON from markdown code block');
+        }
+        
+        // Try to complete incomplete JSON if needed
+        if (!jsonContent.endsWith('}')) {
+          console.log('JSON appears incomplete, attempting to complete it');
+          
+          // Count braces to determine how many are missing
+          const openBraces = (jsonContent.match(/{/g) || []).length;
+          const closeBraces = (jsonContent.match(/}/g) || []).length;
+          const missingBraces = openBraces - closeBraces;
+          
+          // Add missing closing braces and quotes if needed
+          if (missingBraces > 0) {
+            // Check if last field is incomplete
+            if (!jsonContent.trim().endsWith('"')) {
+              jsonContent += '"';
+            }
+            // Add missing braces
+            jsonContent += '}'.repeat(missingBraces);
+            console.log(`Added ${missingBraces} missing closing braces`);
+          }
         }
         
         // Try to parse as-is first
         let parsedContent;
         try {
           parsedContent = JSON.parse(jsonContent);
+          console.log('Successfully parsed JSON on first attempt');
         } catch (firstError) {
           console.log('First parse attempt failed, trying to fix common issues');
           
-          // Try to fix common JSON issues - escape unescaped quotes in values
-          // This regex finds quotes that are inside string values and not properly escaped
-          let fixedContent = jsonContent;
+          // Fix common issues: escape quotes in Hebrew text and complete truncated strings
+          let fixedContent = jsonContent
+            .replace(/ש"ח/g, 'ש\\"ח')
+            .replace(/למנכ"ל/g, 'למנכ\\"ל')
+            .replace(/מע"מ/g, 'מע\\"מ')
+            .replace(/אג"ח/g, 'אג\\"ח');
           
-          // Find all string values and escape quotes within them
-          fixedContent = fixedContent.replace(
-            /"([^"]*?)"/g, 
-            (match, content) => {
-              // Only process if this looks like a value (not a key)
-              // Skip if it's after a colon (likely a key)
-              return `"${content.replace(/"/g, '\\"')}"`;
+          // If the last field appears truncated, try to close it properly
+          if (fixedContent.includes(': "') && !fixedContent.trim().endsWith('"}')) {
+            const lastQuoteIndex = fixedContent.lastIndexOf('"');
+            const lastColonIndex = fixedContent.lastIndexOf('":');
+            if (lastColonIndex > lastQuoteIndex) {
+              fixedContent += '"';
             }
-          );
-          
-          // Alternative approach: escape all problematic Hebrew quotes
-          fixedContent = jsonContent.replace(/ש"ח/g, 'ש\\"ח');
+          }
           
           console.log('Attempting parse with fixed content');
           try {
