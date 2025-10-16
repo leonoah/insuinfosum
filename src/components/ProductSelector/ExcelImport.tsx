@@ -422,15 +422,40 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
   // Map raw Excel savings labels to base product categories used by the app
   const toBaseSavingsCategory = (text: string | undefined): string => {
     if (!text) return '';
-    const t = text.toString().replace(/[\u200E\u200F]/g, '').trim();
-    // Broad matches first
-    if (t.includes('קרן פנסיה') || t.includes('פנסיה')) return 'קרן פנסיה';
-    if (t.includes('קרן השתלמות') || t.includes('השתלמות')) return 'קרן השתלמות';
-    if (t.includes('קופת גמל') || t.includes('גמל')) return 'קופת גמל';
-    if (t.includes('ביטוח מנהלים') || t.includes('מנהלים')) return 'ביטוח מנהלים';
+    // Remove RTL marks, punctuation, and collapse spaces
+    const t = text
+      .toString()
+      .replace(/[\u200E\u200F]/g, '')
+      .replace(/["'\-()\[\]{}.,:;!?]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Helpful aliases commonly seen in reports
+    const aliases: Array<{ test: RegExp; result: string }> = [
+      // Pension fund variations
+      { test: /(קרן\s*)?פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
+      { test: /פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
+      // Study fund
+      { test: /(קרן\s*)?השתלמות/u, result: 'קרן השתלמות' },
+      // Provident fund (including investment variations)
+      { test: /(קופת\s*)?גמל(\s*להשקעה)?/u, result: 'קופת גמל' },
+      // Managers insurance
+      { test: /ביטוח\s*מנהלים/u, result: 'ביטוח מנהלים' },
+      { test: /מנהלים/u, result: 'ביטוח מנהלים' }
+    ];
+
+    for (const { test, result } of aliases) {
+      if (test.test(t)) return result;
+    }
+
+    // Fallback contains checks
+    if (t.includes('פנסיה')) return 'קרן פנסיה';
+    if (t.includes('השתלמות')) return 'קרן השתלמות';
+    if (t.includes('גמל')) return 'קופת גמל';
+    if (t.includes('מנהלים')) return 'ביטוח מנהלים';
+
     return '';
   };
-
   return (
     <div className="space-y-6">
       {/* Upload Section */}
@@ -582,15 +607,15 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
                       checked={selectedSavings.has(index)}
                       onCheckedChange={(checked) => handleSavingsSelection(index, checked as boolean)}
                     />
-                    <div className="space-y-1 text-right">
-                      <div className="font-medium">{product.productName || product.productType}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {[product.manufacturer, product.productType].filter(Boolean).join(' | ')}
+                      <div className="space-y-1 text-right">
+                        <div className="font-medium">{toBaseSavingsCategory(product.productName || product.productType) || product.productName || product.productType}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {[product.manufacturer, product.productType].filter(Boolean).join(' | ')}
+                        </div>
+                        {product.planName && (
+                          <Badge variant="outline">{product.planName}</Badge>
+                        )}
                       </div>
-                      {product.planName && (
-                        <Badge variant="outline">{product.planName}</Badge>
-                      )}
-                    </div>
                   </div>
                   <div className="text-left space-y-1">
                     <div className="font-bold">{formatCurrency(product.accumulation)}</div>
@@ -669,7 +694,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
               {importedData.savings.slice(0, 5).map((product, index) => (
                 <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
-                    <div className="font-medium">{product.productType}</div>
+                    <div className="font-medium">{toBaseSavingsCategory(product.productType || product.productName) || product.productType || product.productName}</div>
                     <div className="text-sm text-muted-foreground">
                       {product.manufacturer} | {product.productName}
                     </div>
