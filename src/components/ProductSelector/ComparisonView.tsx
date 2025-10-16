@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, ArrowRight, TrendingUp, TrendingDown, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
+import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
 
 interface ComparisonViewProps {
   currentProducts: SelectedProduct[];
@@ -89,11 +89,11 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
               currentProducts.map((product) => (
                 <div key={product.id} className="bg-background/30 p-4 rounded-lg">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xl">{PRODUCT_ICONS[product.productName] || '📄'}</span>
+                    <span className="text-xl">{PRODUCT_ICONS[product.category] || '📄'}</span>
                     <div>
-                      <div className="font-medium">{product.productName}</div>
+                      <div className="font-medium">{product.category}</div>
                       <div className="text-sm text-muted-foreground">
-                        {product.company} - {product.subType}
+                        {product.company} - {product.subCategory}
                       </div>
                     </div>
                   </div>
@@ -134,11 +134,11 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
               recommendedProducts.map((product) => (
                 <div key={product.id} className="bg-background/30 p-4 rounded-lg border-l-4 border-primary">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xl">{PRODUCT_ICONS[product.productName] || '📄'}</span>
+                    <span className="text-xl">{PRODUCT_ICONS[product.category] || '📄'}</span>
                     <div className="flex-1">
-                      <div className="font-medium">{product.productName}</div>
+                      <div className="font-medium">{product.category}</div>
                       <div className="text-sm text-muted-foreground">
-                        {product.company} - {product.subType}
+                        {product.company} - {product.subCategory}
                       </div>
                     </div>
                     {product.riskLevelChange && (

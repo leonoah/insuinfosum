@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, TrendingUp, TrendingDown, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
+import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
 interface ComparisonSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];

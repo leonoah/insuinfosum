@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { pdf } from "@react-pdf/renderer";
 import { supabase } from "@/integrations/supabase/client";
 import agentLogo from "@/assets/agent-logo.png";
-import { SelectedProduct } from "@/types/insurance";
+import { SelectedProduct } from "@/types/products";
 import { ReportDocument } from "@/components/PDFReport/ReportDocument";
 
 const REPORT_SECTION_KEYS = [
@@ -946,10 +946,10 @@ ${agentData.name}`;
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <div className="font-medium text-cyan-400">
-                          {product.productName} ({product.company})
+                          {product.category} ({product.company})
                         </div>
                         <div className="text-sm text-gray-300">
-                          <div>מסלול: {product.subType}</div>
+                          <div>מסלול: {product.subCategory}</div>
                           <div>סכום צבירה: ₪{product.amount.toLocaleString()}</div>
                           <div>
                             דמי ניהול: {product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה

@@ -1,5 +1,5 @@
 import { PensionProduct, PensionSummary, PensionFileData } from "@/types/pension";
-import { SelectedProduct } from "@/types/insurance";
+import { SelectedProduct } from "@/types/products";
 
 export class PensionParser {
   static samplePensionData: PensionFileData = {
@@ -157,9 +157,9 @@ export class PensionParser {
   static convertPensionProductToInsuranceProduct(pensionProduct: PensionProduct): SelectedProduct {
     return {
       id: pensionProduct.id,
+      category: this.getProductDisplayName(pensionProduct.productType, pensionProduct.company),
+      subCategory: pensionProduct.productType,
       company: pensionProduct.company,
-      productName: this.getProductDisplayName(pensionProduct.productType, pensionProduct.company),
-      subType: pensionProduct.productType,
       type: 'current',
       amount: pensionProduct.currentBalance,
       managementFeeOnDeposit: pensionProduct.managementFeeFromDeposit,

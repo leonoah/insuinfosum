@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
+import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
 
 interface ProductComparisonModalProps {
   isOpen: boolean;
@@ -75,15 +75,15 @@ const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <span className="text-2xl">
-                      {PRODUCT_ICONS[currentProduct.productName] || '📄'}
+                      {PRODUCT_ICONS[currentProduct.category] || '📄'}
                     </span>
                     מצב קיים
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="font-medium">{currentProduct.productName}</div>
+                  <div className="font-medium">{currentProduct.category}</div>
                   <div className="text-sm text-muted-foreground">
-                    {currentProduct.company} - {currentProduct.subType}
+                    {currentProduct.company} - {currentProduct.subCategory}
                   </div>
                 </CardContent>
               </Card>
@@ -92,15 +92,15 @@ const ProductComparisonModal: React.FC<ProductComparisonModalProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <span className="text-2xl">
-                      {PRODUCT_ICONS[recommendedProduct.productName] || '📄'}
+                      {PRODUCT_ICONS[recommendedProduct.category] || '📄'}
                     </span>
                     מצב מוצע
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="font-medium">{recommendedProduct.productName}</div>
+                  <div className="font-medium">{recommendedProduct.category}</div>
                   <div className="text-sm text-muted-foreground">
-                    {recommendedProduct.company} - {recommendedProduct.subType}
+                    {recommendedProduct.company} - {recommendedProduct.subCategory}
                   </div>
                 </CardContent>
               </Card>

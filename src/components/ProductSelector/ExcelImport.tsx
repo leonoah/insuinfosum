@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SelectedProduct } from '@/types/insurance';
+import { SelectedProduct } from '@/types/products';
 import * as XLSX from 'xlsx';
 
 interface ExcelData {
@@ -341,9 +341,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
 
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
+          category: savingsProduct.productName || savingsProduct.productType || 'מוצר חיסכון',
+          subCategory: savingsProduct.planName || savingsProduct.productType || '',
           company: savingsProduct.manufacturer || savingsProduct.productType || 'לא צוין',
-          productName: savingsProduct.productName || savingsProduct.productType || 'מוצר חיסכון',
-          subType: savingsProduct.planName || savingsProduct.productType || '',
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee || 0,
           managementFeeOnAccumulation: savingsProduct.accumulationFee || 0,
@@ -363,9 +363,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
         productCounter++;
         const product: SelectedProduct = {
           id: `insurance-${Date.now()}-${productCounter}`,
+          category: insuranceProduct.product || insuranceProduct.productType || 'מוצר ביטוח',
+          subCategory: insuranceProduct.productType || '',
           company: insuranceProduct.manufacturer || insuranceProduct.productType || 'לא צוין',
-          productName: insuranceProduct.product || insuranceProduct.productType || 'מוצר ביטוח',
-          subType: insuranceProduct.productType || '',
           amount: insuranceProduct.premium,
           managementFeeOnDeposit: 0,
           managementFeeOnAccumulation: 0,

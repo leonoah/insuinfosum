@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SelectedProduct } from '@/types/insurance';
+import { SelectedProduct } from '@/types/products';
 import * as XLSX from 'xlsx';
 
 interface ExcelData {
@@ -356,9 +356,9 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         productCounter++;
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
+          category: savingsProduct.productName || savingsProduct.productType,
+          subCategory: '',
           company: savingsProduct.manufacturer,
-          productName: savingsProduct.productName || savingsProduct.productType,
-          subType: '',
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee || 0,
           managementFeeOnAccumulation: savingsProduct.accumulationFee || 0,
@@ -377,9 +377,9 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         productCounter++;
         const product: SelectedProduct = {
           id: `insurance-${Date.now()}-${productCounter}`,
+          category: insuranceProduct.product || insuranceProduct.productType,
+          subCategory: '',
           company: insuranceProduct.manufacturer,
-          productName: insuranceProduct.product || insuranceProduct.productType,
-          subType: '',
           amount: insuranceProduct.premium,
           managementFeeOnDeposit: 0,
           managementFeeOnAccumulation: 0,

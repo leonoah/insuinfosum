@@ -387,7 +387,7 @@ const AppForm = () => {
     }
 
     const createProductKey = (product: SelectedProduct) => (
-      `${product.type}|${product.company.trim().toLowerCase()}|${product.productName.trim().toLowerCase()}`
+      `${product.type}|${product.company.trim().toLowerCase()}|${product.category.trim().toLowerCase()}`
     );
 
     let addedCount = 0;

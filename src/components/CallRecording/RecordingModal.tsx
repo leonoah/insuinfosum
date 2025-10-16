@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Mic, Square, Play, CheckCircle, Loader2, MessageCircle, User, Upload, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { SelectedProduct } from "@/types/insurance";
+import { SelectedProduct } from "@/types/products";
 
 interface RecordingModalProps {
   isOpen: boolean;
@@ -797,8 +797,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
                     <div className="space-y-2">
                       {extractedData.currentProducts.map((product, index) => (
                         <div key={index} className="bg-accent/30 border border-border p-3 rounded-lg">
-                          <p className="font-medium text-foreground">{product.company} - {product.productName}</p>
-                          <p className="text-sm text-muted-foreground">{product.subType}</p>
+                          <p className="font-medium text-foreground">{product.company} - {product.category}</p>
+                          <p className="text-sm text-muted-foreground">{product.subCategory}</p>
                           <p className="text-sm text-foreground">סכום: ₪{product.amount.toLocaleString()}</p>
                         </div>
                       ))}
@@ -812,8 +812,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
                     <div className="space-y-2">
                       {extractedData.suggestedProducts.map((product, index) => (
                         <div key={index} className="bg-primary/20 border border-primary/30 p-3 rounded-lg">
-                          <p className="font-medium text-foreground">{product.company} - {product.productName}</p>
-                          <p className="text-sm text-muted-foreground">{product.subType}</p>
+                          <p className="font-medium text-foreground">{product.company} - {product.category}</p>
+                          <p className="text-sm text-muted-foreground">{product.subCategory}</p>
                           <p className="text-sm text-foreground">סכום: ₪{product.amount.toLocaleString()}</p>
                         </div>
                       ))}

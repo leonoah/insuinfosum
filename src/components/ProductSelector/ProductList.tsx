@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SelectedProduct, PRODUCT_ICONS } from '@/types/insurance';
+import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
 
 interface ProductListProps {
   products: SelectedProduct[];
@@ -43,12 +43,12 @@ const ProductItem: React.FC<{
                 className="mt-1"
               />
               <span className="text-2xl">
-                {PRODUCT_ICONS[product.productName] || '📄'}
+                {PRODUCT_ICONS[product.category] || '📄'}
               </span>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <div className="font-medium">{product.productName}</div>
+                <div className="font-medium">{product.category}</div>
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
@@ -60,7 +60,7 @@ const ProductItem: React.FC<{
                 </CollapsibleTrigger>
               </div>
               <div className="text-sm text-muted-foreground">
-                {product.subType}
+                {product.subCategory}
               </div>
               <div className="text-sm text-muted-foreground">
                 {product.company}

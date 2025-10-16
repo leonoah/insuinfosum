@@ -1,6 +1,6 @@
 import { View, Text, Svg, Rect, Path } from '@react-pdf/renderer';
 import { styles } from '../styles';
-import { SelectedProduct } from '@/types/insurance';
+import { SelectedProduct } from '@/types/products';
 
 interface ComparisonTableSectionProps {
   currentProducts: SelectedProduct[];

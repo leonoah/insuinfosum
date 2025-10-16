@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileUp, FileText, Eye, Plus, Loader2, CheckCircle } from "lucide-react";
 import { PensionParser } from "@/utils/pensionParser";
 import { PensionFileData, PensionProduct } from "@/types/pension";
-import { SelectedProduct } from "@/types/insurance";
+import { SelectedProduct } from "@/types/products";
 
 interface PensionFileImportProps {
   onProductsSelected: (products: SelectedProduct[]) => void;

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { SelectedProduct } from '@/types/products';
 import ExposureComparisonTable from './ExposureComparisonTable';
-import ProductSelectionModal from './ProductSelectionModal';
+import NewProductSelectionModal from './NewProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonSection from './ComparisonSection';
 import ExcelImportDialog from './ExcelImportDialog';
@@ -152,9 +152,9 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
     const product: SelectedProduct = {
       id: `${Date.now()}`,
+      category: excelProduct.productName || excelProduct.product || excelProduct.productType || 'מוצר',
+      subCategory: excelProduct.planName || excelProduct.productType || '',
       company: excelProduct.manufacturer || excelProduct.productType || 'לא צוין',
-      productName: excelProduct.productName || excelProduct.product || excelProduct.productType || 'מוצר',
-      subType: excelProduct.planName || excelProduct.productType || '',
       amount: excelProduct.accumulation || excelProduct.premium || 0,
       managementFeeOnDeposit: excelProduct.depositFee || 0,
       managementFeeOnAccumulation: excelProduct.accumulationFee || 0,
@@ -294,7 +294,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
       )}
 
       {/* Selection Modal */}
-      <ProductSelectionModal
+      <NewProductSelectionModal
         isOpen={modalOpen}
         onClose={() => {
           setModalOpen(false);
