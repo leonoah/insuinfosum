@@ -108,11 +108,37 @@ export const useProductTaxonomy = () => {
     return hierarchy.exposureData.get(key);
   };
 
+  // Get all unique values for matching
+  const getAllCategories = (): string[] => {
+    return hierarchy.categories;
+  };
+
+  const getAllSubCategories = (): string[] => {
+    const subCategories = new Set<string>();
+    hierarchy.subCategories.forEach(subCatArray => {
+      subCatArray.forEach(subCat => subCategories.add(subCat));
+    });
+    return Array.from(subCategories);
+  };
+
+  const getAllCompanies = (): string[] => {
+    const companies = new Set<string>();
+    hierarchy.companies.forEach(categoryMap => {
+      categoryMap.forEach(companyArray => {
+        companyArray.forEach(company => companies.add(company));
+      });
+    });
+    return Array.from(companies);
+  };
+
   return {
     hierarchy,
     loading,
     error,
     getExposureData,
-    reload: loadProductTaxonomy
+    reload: loadProductTaxonomy,
+    getAllCategories,
+    getAllSubCategories,
+    getAllCompanies
   };
 };

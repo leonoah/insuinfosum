@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SelectedProduct } from '@/types/products';
 import * as XLSX from 'xlsx';
+import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
+import { matchCategory, matchSubCategory, matchCompany } from '@/utils/productMatcher';
 
 interface ExcelData {
   savings: SavingsProduct[];
@@ -56,6 +58,9 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
   const [selectedSavings, setSelectedSavings] = useState<Set<number>>(new Set());
   const [selectedInsurance, setSelectedInsurance] = useState<Set<number>>(new Set());
   const [showProductSelection, setShowProductSelection] = useState(false);
+  
+  // Load taxonomy for smart matching
+  const { getAllCategories, getAllSubCategories, getAllCompanies, loading: taxonomyLoading } = useProductTaxonomy();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -334,21 +339,24 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       const savingsProduct = importedData.savings[index];
       if (savingsProduct) {
         productCounter++;
+        
+        // Smart match the product
+        const matched = smartMatchProduct(
+          savingsProduct.productType || savingsProduct.productName,
+          savingsProduct.investmentTrack || savingsProduct.planName || '',
+          savingsProduct.manufacturer
+        );
+        
         const notesParts = [
           savingsProduct.planName ? `תוכנית: ${savingsProduct.planName}` : '',
           savingsProduct.policyNumber ? `פוליסה: ${savingsProduct.policyNumber}` : ''
         ].filter(Boolean);
 
-        const baseCategory =
-          toBaseSavingsCategory(savingsProduct.productType || savingsProduct.productName) ||
-          toBaseSavingsCategory(savingsProduct.productName) ||
-          toBaseSavingsCategory(savingsProduct.planName);
-
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
-          category: baseCategory || (savingsProduct.productName || savingsProduct.productType || 'מוצר חיסכון'),
-          subCategory: savingsProduct.planName || savingsProduct.productType || 'מסלול כללי',
-          company: savingsProduct.manufacturer || savingsProduct.productType || 'לא צוין',
+          category: matched.category || savingsProduct.productType || 'מוצר חיסכון',
+          subCategory: matched.subCategory,
+          company: matched.company || savingsProduct.manufacturer || 'לא צוין',
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee || 0,
           managementFeeOnAccumulation: savingsProduct.accumulationFee || 0,
@@ -365,11 +373,19 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       const insuranceProduct = importedData.insurance[index];
       if (insuranceProduct) {
         productCounter++;
+        
+        // Smart match the insurance product
+        const matched = smartMatchProduct(
+          insuranceProduct.productType || insuranceProduct.product,
+          '',
+          insuranceProduct.manufacturer
+        );
+        
         const product: SelectedProduct = {
           id: `insurance-${Date.now()}-${productCounter}`,
-          category: insuranceProduct.product || insuranceProduct.productType || 'מוצר ביטוח',
-          subCategory: insuranceProduct.productType || '',
-          company: insuranceProduct.manufacturer || insuranceProduct.productType || 'לא צוין',
+          category: matched.category || insuranceProduct.productType || 'מוצר ביטוח',
+          subCategory: matched.subCategory,
+          company: matched.company || insuranceProduct.manufacturer || 'לא צוין',
           amount: insuranceProduct.premium,
           managementFeeOnDeposit: 0,
           managementFeeOnAccumulation: 0,
@@ -419,51 +435,25 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     return `${(percentage || 0).toFixed(2)}%`;
   };
 
-  // Map raw Excel savings labels to base product categories used by the app
-  const toBaseSavingsCategory = (text: string | undefined): string => {
-    if (!text) return '';
-    // Remove RTL marks, punctuation, and collapse spaces
-    const t = text
-      .toString()
-      .replace(/[\u200E\u200F]/g, '')
-      .replace(/["'\-()\[\]{}.,:;!?]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    console.log('toBaseSavingsCategory input:', text, '-> normalized:', t);
-
-    // Helpful aliases commonly seen in reports
-    const aliases: Array<{ test: RegExp; result: string }> = [
-      // Pension fund variations
-      { test: /(קרן\s*)?פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
-      { test: /פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
-      // Study fund
-      { test: /(קרן\s*)?השתלמות/u, result: 'קרן השתלמות' },
-      // Provident fund (including investment variations)
-      { test: /(קופת\s*)?גמל(\s*להשקעה)?/u, result: 'קופת גמל' },
-      // Managers insurance
-      { test: /ביטוח\s*מנהלים/u, result: 'ביטוח מנהלים' },
-      { test: /מנהלים/u, result: 'ביטוח מנהלים' }
-    ];
-
-    for (const { test, result } of aliases) {
-      if (test.test(t)) {
-        console.log(`Matched regex ${test} -> ${result}`);
-        return result;
-      }
-    }
-
-    // Fallback contains checks
-    if (t.includes('פנסיה')) {
-      console.log('Fallback match: פנסיה -> קרן פנסיה');
-      return 'קרן פנסיה';
-    }
-    if (t.includes('השתלמות')) return 'קרן השתלמות';
-    if (t.includes('גמל')) return 'קופת גמל';
-    if (t.includes('מנהלים')) return 'ביטוח מנהלים';
-
-    console.log('No match found for:', t);
-    return '';
+  // Smart matching function using the new architecture
+  const smartMatchProduct = (productType: string, subCategory: string, company: string) => {
+    const categories = getAllCategories();
+    const subCategories = getAllSubCategories();
+    const companies = getAllCompanies();
+    
+    const matchedCategory = matchCategory(productType, categories);
+    const matchedSubCategory = matchSubCategory(subCategory, subCategories);
+    const matchedCompany = matchCompany(company, companies);
+    
+    console.log('🔍 Excel Product Matching Summary:');
+    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}"`);
+    console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
+    
+    return {
+      category: matchedCategory,
+      subCategory: matchedSubCategory,
+      company: matchedCompany
+    };
   };
   return (
     <div className="space-y-6">
@@ -617,7 +607,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
                       onCheckedChange={(checked) => handleSavingsSelection(index, checked as boolean)}
                     />
                       <div className="space-y-1 text-right">
-                        <div className="font-medium">{toBaseSavingsCategory(product.productName || product.productType) || product.productName || product.productType}</div>
+                        <div className="font-medium">{product.productName || product.productType}</div>
                         <div className="text-sm text-muted-foreground">
                           {[product.manufacturer, product.productType].filter(Boolean).join(' | ')}
                         </div>
@@ -703,7 +693,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
               {importedData.savings.slice(0, 5).map((product, index) => (
                 <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
-                    <div className="font-medium">{toBaseSavingsCategory(product.productType || product.productName) || product.productType || product.productName}</div>
+                    <div className="font-medium">{product.productType || product.productName}</div>
                     <div className="text-sm text-muted-foreground">
                       {product.manufacturer} | {product.productName}
                     </div>

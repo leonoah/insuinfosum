@@ -164,16 +164,19 @@ export class PensionParser {
       'ביטוח משכנתא': 'ביטוח חיים'
     };
     
-    const category = categoryMapping[pensionProduct.productType] || pensionProduct.productType;
+    const initialCategory = categoryMapping[pensionProduct.productType] || pensionProduct.productType;
+    const initialCompany = this.normalizeCompanyName(pensionProduct.company);
     
-    // ניקוי שם החברה
-    const company = this.normalizeCompanyName(pensionProduct.company);
+    console.log('🔍 Pension Product Initial Mapping:');
+    console.log(`   Input: Type="${pensionProduct.productType}", Company="${pensionProduct.company}"`);
+    console.log(`   Initial: Category="${initialCategory}", Company="${initialCompany}"`);
+    console.log(`   Note: Smart matching will be applied by caller`);
     
     return {
       id: pensionProduct.id,
-      category: category,
-      subCategory: 'מסלול כללי', // ברירת מחדל
-      company: company,
+      category: initialCategory,
+      subCategory: 'מסלול כללי', // ברירת מחדל - will be matched by caller
+      company: initialCompany,
       type: 'current',
       amount: pensionProduct.currentBalance,
       managementFeeOnDeposit: pensionProduct.managementFeeFromDeposit,

@@ -3,6 +3,8 @@ import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
+import { matchCategory, matchSubCategory, matchCompany } from '@/utils/productMatcher';
 
 interface VoiceProductInputProps {
   onProductAnalyzed: (productData: any) => void;
@@ -14,6 +16,9 @@ const VoiceProductInput: React.FC<VoiceProductInputProps> = ({ onProductAnalyzed
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
+  
+  // Load taxonomy for smart matching
+  const { getAllCategories, getAllSubCategories, getAllCompanies } = useProductTaxonomy();
 
   const startRecording = async () => {
     try {
@@ -121,12 +126,33 @@ const VoiceProductInput: React.FC<VoiceProductInputProps> = ({ onProductAnalyzed
         throw new Error('שגיאה בניתוח: ' + analysisError.message);
       }
 
-      const productData = analysisResult.productData;
-      console.log('Analyzed product data:', productData);
+      let productData = analysisResult.productData;
+      console.log('Analyzed product data (before matching):', productData);
+      
+      // Smart match the voice-recognized product
+      const categories = getAllCategories();
+      const subCategories = getAllSubCategories();
+      const companies = getAllCompanies();
+      
+      const matchedCategory = matchCategory(productData.category || '', categories);
+      const matchedSubCategory = matchSubCategory(productData.subCategory || '', subCategories);
+      const matchedCompany = matchCompany(productData.company || '', companies);
+      
+      console.log('🔍 Voice Product Matching Summary:');
+      console.log(`   Input: Category="${productData.category}", SubCategory="${productData.subCategory}", Company="${productData.company}"`);
+      console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
+      
+      // Update product data with matched values
+      productData = {
+        ...productData,
+        category: matchedCategory || productData.category,
+        subCategory: matchedSubCategory,
+        company: matchedCompany || productData.company
+      };
 
       toast({
         title: "הקלטה עובדה בהצלחה",
-        description: `זוהה: ${productData.productName} של ${productData.company}`,
+        description: `זוהה: ${productData.productName || productData.category} של ${productData.company}`,
       });
 
       onProductAnalyzed({

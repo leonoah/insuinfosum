@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SelectedProduct } from '@/types/products';
 import * as XLSX from 'xlsx';
+import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
+import { matchCategory, matchSubCategory, matchCompany } from '@/utils/productMatcher';
 
 interface ExcelData {
   savings: SavingsProduct[];
@@ -67,6 +69,9 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [manufacturerFilter, setManufacturerFilter] = useState<string>('all');
+  
+  // Load taxonomy for smart matching
+  const { getAllCategories, getAllSubCategories, getAllCompanies, loading: taxonomyLoading } = useProductTaxonomy();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -265,35 +270,25 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     };
   };
 
-  // Normalize raw labels to base savings categories used by the app
-  const toBaseSavingsCategory = (text: string | undefined): string => {
-    if (!text) return '';
-    const t = text
-      .toString()
-      .replace(/[\u200E\u200F]/g, '')
-      .replace(/["'\-()\[\]{}.,:;!?]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const aliases: Array<{ test: RegExp; result: string }> = [
-      { test: /(קרן\s*)?פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
-      { test: /פנסיה(\s*חדשה)?(\s*מקיפה)?/u, result: 'קרן פנסיה' },
-      { test: /(קרן\s*)?השתלמות/u, result: 'קרן השתלמות' },
-      { test: /(קופת\s*)?גמל(\s*להשקעה)?/u, result: 'קופת גמל' },
-      { test: /ביטוח\s*מנהלים/u, result: 'ביטוח מנהלים' },
-      { test: /מנהלים/u, result: 'ביטוח מנהלים' }
-    ];
-
-    for (const { test, result } of aliases) {
-      if (test.test(t)) return result;
-    }
-
-    if (t.includes('פנסיה')) return 'קרן פנסיה';
-    if (t.includes('השתלמות')) return 'קרן השתלמות';
-    if (t.includes('גמל')) return 'קופת גמל';
-    if (t.includes('מנהלים')) return 'ביטוח מנהלים';
-
-    return '';
+  // Smart matching function using the new architecture
+  const smartMatchProduct = (productType: string, subCategory: string, company: string) => {
+    const categories = getAllCategories();
+    const subCategories = getAllSubCategories();
+    const companies = getAllCompanies();
+    
+    const matchedCategory = matchCategory(productType, categories);
+    const matchedSubCategory = matchSubCategory(subCategory, subCategories);
+    const matchedCompany = matchCompany(company, companies);
+    
+    console.log('🔍 Excel Dialog Product Matching Summary:');
+    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}"`);
+    console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
+    
+    return {
+      category: matchedCategory,
+      subCategory: matchedSubCategory,
+      company: matchedCompany
+    };
   };
 
   // Filter and search logic
@@ -385,15 +380,19 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       const savingsProduct = importedData.savings[index];
       if (savingsProduct) {
         productCounter++;
-        const baseCategory =
-          toBaseSavingsCategory(savingsProduct.productType || savingsProduct.productName) ||
-          toBaseSavingsCategory(savingsProduct.productName);
+        
+        // Smart match the product
+        const matched = smartMatchProduct(
+          savingsProduct.productType || savingsProduct.productName,
+          savingsProduct.investmentTrack || savingsProduct.planName || '',
+          savingsProduct.manufacturer
+        );
 
         const product: SelectedProduct = {
           id: `savings-${Date.now()}-${productCounter}`,
-          category: baseCategory || savingsProduct.productName || savingsProduct.productType,
-          subCategory: savingsProduct.planName || savingsProduct.productType || 'מסלול כללי',
-          company: savingsProduct.manufacturer,
+          category: matched.category || savingsProduct.productType,
+          subCategory: matched.subCategory,
+          company: matched.company || savingsProduct.manufacturer,
           amount: savingsProduct.accumulation,
           managementFeeOnDeposit: savingsProduct.depositFee || 0,
           managementFeeOnAccumulation: savingsProduct.accumulationFee || 0,
@@ -410,11 +409,19 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       const insuranceProduct = importedData.insurance[index];
       if (insuranceProduct) {
         productCounter++;
+        
+        // Smart match the insurance product
+        const matched = smartMatchProduct(
+          insuranceProduct.productType || insuranceProduct.product,
+          '',
+          insuranceProduct.manufacturer
+        );
+        
         const product: SelectedProduct = {
           id: `insurance-${Date.now()}-${productCounter}`,
-          category: insuranceProduct.product || insuranceProduct.productType,
-          subCategory: '',
-          company: insuranceProduct.manufacturer,
+          category: matched.category || insuranceProduct.productType,
+          subCategory: matched.subCategory,
+          company: matched.company || insuranceProduct.manufacturer,
           amount: insuranceProduct.premium,
           managementFeeOnDeposit: 0,
           managementFeeOnAccumulation: 0,
