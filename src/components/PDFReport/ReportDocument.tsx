@@ -7,7 +7,8 @@ import { ComparisonTableSection } from './sections/ComparisonTableSection';
 import { AdditionalDetailsSection } from './sections/AdditionalDetailsSection';
 import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
-import { SelectedProduct } from '@/types/insurance';
+import { SelectedProduct } from '@/types/products';
+import { ExposureTableSection } from './sections/ExposureTableSection';
 
 // Disable hyphenation entirely to avoid RTL letter reordering
 Font.registerHyphenationCallback((word) => [word]);
@@ -153,6 +154,14 @@ export const ReportDocument = ({
               avgCurrentAccumulation: productStats.avgCurrentAccumulation,
               avgRecommendedAccumulation: productStats.avgRecommendedAccumulation,
             }}
+          />
+        )}
+
+        {/* Exposure Table */}
+        {selectedSections.detailedBreakdown && (
+          <ExposureTableSection
+            currentProducts={productStats.currentProducts}
+            recommendedProducts={productStats.recommendedProducts}
           />
         )}
 

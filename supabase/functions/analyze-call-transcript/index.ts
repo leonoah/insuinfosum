@@ -21,23 +21,42 @@ serve(async (req) => {
 
     console.log('Analyzing call transcript...');
 
-    const systemPrompt = `אתה מומחה לניתוח שיחות ביטוח ולהפקת מידע מובנה. 
+    const systemPrompt = `אתה מומחה לניתוח שיחות ביטוח פנסיוני ולהפקת מידע מובנה. 
     מתפקידך לנתח תמליל של שיחה בין סוכן ביטוח ללקוח ולחלץ את המידע הבא:
     
-    חברות ביטוח מוכרות בישראל:
-    - מגדל, כלל, הפניקס, מנורה מבטחים, הכשרה, איילון, מגדלור, AIG, הלמן אלדובי, 
-    - עמיתים, אלטשולר שחם, הראל, ביטוח ישיר, לאומי, בנק הפועלים, מזרחי טפחות,
-    - כלל פנסיה וגמל, מנורה פנסיה, מגדל פנסיה, הפניקס פנסיה, הכשרה פנסיה
+    חברות ביטוח וקרנות פנסיה מוכרות בישראל:
+    - מגדל, כלל, הפניקס, מנורה מבטחים, הראל, אלטשולר שחם, מיטב, מור
+    - ילין לפידות, אנליסט, אינפיניטי, עמי
     
-    מוצרי ביטוח נפוצים:
-    - פנסיה תקציבית, פנסיה כללית, ביטוח מנהלים, קופת גמל להשקעה,
-    - ביטוח חיים, בריאות פרטית, ביטוח סיעוד, ביטוח אובדן כושר עבודה,
-    - ביטוח רכב, ביטוח דירה, ביטוח נסיעות לחו"ל, ביטוח אחריות מקצועית
+    קטגוריות מוצרים:
+    - קרן פנסיה
+    - קרן השתלמות
+    - קופת גמל
+    - ביטוח מנהלים
+    
+    תתי קטגוריות נפוצות:
+    - מסלול יעד גיל עד 50
+    - מסלול יעד גיל 50-60
+    - מסלול יעד גיל 60+
+    - מסלול כללי
+    - מסלול מניות
+    - מסלול אג"ח
+    - מסלול אג"ח ממשלות
+    - מסלול כספי (שקלי)
+    - מסלול מחקה מדד
+    - מסלול הלכה
     
     1. מצב הלקוח הנוכחי - תיאור קצר של מצבו הכלכלי והביטוחי
     2. מוצרי ביטוח קיימים של הלקוח (השתמש רק בחברות מהרשימה)
     3. מוצרי ביטוח מומלצים על בסיס השיחה (השתמש רק בחברות מהרשימה)
     4. סיכום השיחה עם הדגשות צבעוניות
+    
+    **חשוב מאוד:** המבנה החדש של מוצרים הוא:
+    - category (קטגוריה): קרן פנסיה / קרן השתלמות / קופת גמל / ביטוח מנהלים
+    - subCategory (תת קטגוריה): מסלול יעד גיל עד 50 / מסלול כללי וכו'
+    - company (חברה): מגדל / הראל / מנורה מבטחים וכו'
+    
+    אם לא ניתן לזהות תת קטגוריה - השתמש ב"מסלול כללי" כברירת מחדל.
     
     החזר תשובה בפורמט JSON בלבד עם המבנה הבא:
     {
@@ -47,9 +66,9 @@ serve(async (req) => {
       "currentProducts": [
         {
           "id": "unique-id",
+          "category": "קרן פנסיה",
+          "subCategory": "מסלול כללי",
           "company": "שם חברת הביטוח מהרשימה בלבד",
-          "productName": "שם המוצר",
-          "subType": "תת סוג",
           "amount": מספר,
           "managementFeeOnDeposit": מספר,
           "managementFeeOnAccumulation": מספר,
@@ -61,13 +80,13 @@ serve(async (req) => {
       "suggestedProducts": [
         {
           "id": "unique-id",
+          "category": "קרן פנסיה",
+          "subCategory": "מסלול מניות",
           "company": "שם חברת הביטוח מהרשימה בלבד",
-          "productName": "שם המוצר",
-          "subType": "תת סוג", 
           "amount": מספר,
           "managementFeeOnDeposit": מספר,
           "managementFeeOnAccumulation": מספר,
-          "investmentTrack": "כללי",
+          "investmentTrack": "מניות",
           "notes": "הערות",
           "type": "recommended"
         }
@@ -132,9 +151,9 @@ serve(async (req) => {
     const processProducts = (products: any[], type: 'current' | 'recommended') => {
       return products.map((product, index) => ({
         id: `${type}-${Date.now()}-${index}`,
+        category: product.category || "קרן פנסיה",
+        subCategory: product.subCategory || "מסלול כללי",
         company: product.company || "חברה לא מזוהה",
-        productName: product.productName || "מוצר לא מזוהה",
-        subType: product.subType || "סוג לא מזוהה",
         amount: product.amount || 0,
         managementFeeOnDeposit: product.managementFeeOnDeposit || 0,
         managementFeeOnAccumulation: product.managementFeeOnAccumulation || 0,

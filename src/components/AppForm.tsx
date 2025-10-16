@@ -14,7 +14,7 @@ import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import RecordingModal from "./CallRecording/RecordingModal";
 import VoiceTextInput from "./VoiceTextInput";
-import { SelectedProduct } from "@/types/insurance";
+import { SelectedProduct } from "@/types/products";
 // Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
 import {

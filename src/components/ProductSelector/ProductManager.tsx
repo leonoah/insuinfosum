@@ -3,7 +3,8 @@ import { Plus, BarChart3, Upload, GitCompare, Phone, FileUp } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { SelectedProduct } from '@/types/insurance';
+import { SelectedProduct } from '@/types/products';
+import ExposureComparisonTable from './ExposureComparisonTable';
 import ProductSelectionModal from './ProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonSection from './ComparisonSection';
@@ -268,6 +269,12 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
       {/* Comparison Section - Always Visible */}
       <ComparisonSection 
+        currentProducts={currentProducts}
+        recommendedProducts={recommendedProducts}
+      />
+
+      {/* Exposure Comparison Table */}
+      <ExposureComparisonTable
         currentProducts={currentProducts}
         recommendedProducts={recommendedProducts}
       />

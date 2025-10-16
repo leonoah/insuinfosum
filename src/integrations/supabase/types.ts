@@ -1234,6 +1234,45 @@ export type Database = {
           },
         ]
       }
+      products_taxonomy: {
+        Row: {
+          category: string
+          company: string
+          created_at: string | null
+          exposure_bonds: number | null
+          exposure_foreign_currency: number | null
+          exposure_foreign_investments: number | null
+          exposure_stocks: number | null
+          id: string
+          sub_category: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          company: string
+          created_at?: string | null
+          exposure_bonds?: number | null
+          exposure_foreign_currency?: number | null
+          exposure_foreign_investments?: number | null
+          exposure_stocks?: number | null
+          id?: string
+          sub_category: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          company?: string
+          created_at?: string | null
+          exposure_bonds?: number | null
+          exposure_foreign_currency?: number | null
+          exposure_foreign_investments?: number | null
+          exposure_stocks?: number | null
+          id?: string
+          sub_category?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           bio: string | null
