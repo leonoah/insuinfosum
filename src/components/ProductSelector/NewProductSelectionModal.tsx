@@ -90,35 +90,71 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   // Handle category change in edit mode
   const handleCategoryChange = (category: string) => {
-    setStep({ 
+    const newSubCategories = hierarchy.subCategories.get(category) || [];
+    const firstSubCategory = newSubCategories[0];
+    
+    // Check if current company exists in the new category/subcategory combination
+    const currentCompany = step.selectedCompany;
+    const newCompanies = hierarchy.companies.get(category)?.get(firstSubCategory) || [];
+    const companyStillExists = currentCompany && newCompanies.includes(currentCompany);
+    
+    const newStep = {
       current: 3,
       selectedCategory: category,
-      selectedSubCategory: undefined,
-      selectedCompany: undefined
-    });
-    setFormData(prev => ({
-      ...prev,
-      exposureStocks: undefined,
-      exposureBonds: undefined,
-      exposureForeignCurrency: undefined,
-      exposureForeignInvestments: undefined
-    }));
+      selectedSubCategory: firstSubCategory,
+      selectedCompany: companyStillExists ? currentCompany : undefined
+    };
+    
+    setStep(newStep as ProductSelectionStep);
+    
+    // Update exposure data if company still exists
+    if (companyStillExists && firstSubCategory) {
+      const exposureData = getExposureData(category, firstSubCategory, currentCompany!);
+      setFormData(prev => ({
+        ...prev,
+        ...exposureData
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        exposureStocks: undefined,
+        exposureBonds: undefined,
+        exposureForeignCurrency: undefined,
+        exposureForeignInvestments: undefined
+      }));
+    }
   };
 
   // Handle sub-category change in edit mode
   const handleSubCategoryChange = (subCategory: string) => {
+    const currentCompany = step.selectedCompany;
+    const newCompanies = step.selectedCategory 
+      ? hierarchy.companies.get(step.selectedCategory)?.get(subCategory) || []
+      : [];
+    const companyStillExists = currentCompany && newCompanies.includes(currentCompany);
+    
     setStep({ 
       ...step,
       selectedSubCategory: subCategory,
-      selectedCompany: undefined
+      selectedCompany: companyStillExists ? currentCompany : undefined
     });
-    setFormData(prev => ({
-      ...prev,
-      exposureStocks: undefined,
-      exposureBonds: undefined,
-      exposureForeignCurrency: undefined,
-      exposureForeignInvestments: undefined
-    }));
+    
+    // Update exposure data if company still exists
+    if (companyStillExists && step.selectedCategory) {
+      const exposureData = getExposureData(step.selectedCategory, subCategory, currentCompany!);
+      setFormData(prev => ({
+        ...prev,
+        ...exposureData
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        exposureStocks: undefined,
+        exposureBonds: undefined,
+        exposureForeignCurrency: undefined,
+        exposureForeignInvestments: undefined
+      }));
+    }
   };
 
   // Handle company change in edit mode
