@@ -200,20 +200,23 @@ export class PensionParser {
       'שחם': 'מגדל',
       'לפידות': 'מגדל',
       'מנורה': 'מנורה מבטחים',
-      'כלל': 'כלל ביטוח',
+      'כלל': 'כלל',
       'הפניקס': 'הפניקס',
       'איילון': 'איילון',
-      'הראל': 'הראל'
+      'הראל': 'הראל',
+      'אלטשולר שחם': 'אלטשולר שחם',
+      'אלטשולר': 'אלטשולר שחם'
     };
     
     // חיפוש התאמה
     for (const [key, value] of Object.entries(companyMapping)) {
-      if (normalized.includes(key)) {
+      if (normalized.toLowerCase().includes(key.toLowerCase())) {
         return value;
       }
     }
     
-    return normalized;
+    // אם לא נמצאה התאמה, מחזירים את השם המנוקה או ברירת מחדל
+    return normalized || 'מגדל';
   }
 
   private static getProductDisplayName(productType: string, company: string): string {
