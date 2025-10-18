@@ -80,13 +80,24 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   };
 
   const handleCompanySelect = (company: string) => {
-    // Get exposure data and populate form
+    // Get exposure data and populate form - pass productNumber if available
     if (step.selectedCategory && step.selectedSubCategory) {
-      const exposureData = getExposureData(step.selectedCategory, step.selectedSubCategory, company);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
+      const trackName = step.selectedSubCategory || '';
+      const productNumber = formData.productNumber;
+      const exposureData = getExposureData(company, step.selectedCategory, trackName, productNumber);
+      
+      if (exposureData) {
+        setFormData(prev => ({
+          ...prev,
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        }));
+      }
     }
     setStep({ ...step, selectedCompany: company });
   };
@@ -142,11 +153,22 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     
     // Update exposure data if company still exists
     if (companyStillExists && step.selectedCategory) {
-      const exposureData = getExposureData(step.selectedCategory, subCategory, currentCompany!);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
+      const trackName = subCategory || '';
+      const productNumber = formData.productNumber;
+      const exposureData = getExposureData(currentCompany!, step.selectedCategory, trackName, productNumber);
+      
+      if (exposureData) {
+        setFormData(prev => ({
+          ...prev,
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,
@@ -161,11 +183,22 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   // Handle company change in edit mode
   const handleCompanyChange = (company: string) => {
     if (step.selectedCategory && step.selectedSubCategory) {
-      const exposureData = getExposureData(step.selectedCategory, step.selectedSubCategory, company);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
+      const trackName = step.selectedSubCategory || '';
+      const productNumber = formData.productNumber;
+      const exposureData = getExposureData(company, step.selectedCategory, trackName, productNumber);
+      
+      if (exposureData) {
+        setFormData(prev => ({
+          ...prev,
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        }));
+      }
     }
     setStep({ ...step, selectedCompany: company });
   };
@@ -210,7 +243,10 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       exposureStocks: formData.exposureStocks,
       exposureBonds: formData.exposureBonds,
       exposureForeignCurrency: formData.exposureForeignCurrency,
-      exposureForeignInvestments: formData.exposureForeignInvestments
+      exposureForeignInvestments: formData.exposureForeignInvestments,
+      exposureIsrael: formData.exposureIsrael,
+      exposureIlliquidAssets: formData.exposureIlliquidAssets,
+      assetComposition: formData.assetComposition
     };
 
     console.log('Submitting product:', product);

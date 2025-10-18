@@ -60,7 +60,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
   const [showProductSelection, setShowProductSelection] = useState(false);
   
   // Load taxonomy for smart matching
-  const { getAllCategories, getAllSubCategories, getAllCompanies, loading: taxonomyLoading } = useProductTaxonomy();
+  const { getAllCategories, getAllSubCategories, getAllCompanies, getExposureData, loading: taxonomyLoading } = useProductTaxonomy();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -436,7 +436,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
   };
 
   // Smart matching function using the new architecture
-  const smartMatchProduct = (productType: string, subCategory: string, company: string) => {
+  const smartMatchProduct = (productType: string, subCategory: string, company: string, productNumber?: string) => {
     const categories = getAllCategories();
     const subCategories = getAllSubCategories();
     const companies = getAllCompanies();
@@ -446,13 +446,23 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     const matchedCompany = matchCompany(company, companies);
     
     console.log('🔍 Excel Product Matching Summary:');
-    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}"`);
+    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
     console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
+    
+    // Get exposure data
+    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, productNumber);
     
     return {
       category: matchedCategory,
       subCategory: matchedSubCategory,
-      company: matchedCompany
+      company: matchedCompany,
+      exposureStocks: exposureData?.exposureStocks,
+      exposureBonds: exposureData?.exposureBonds,
+      exposureForeignCurrency: exposureData?.exposureForeignCurrency,
+      exposureForeignInvestments: exposureData?.exposureForeignInvestments,
+      exposureIsrael: exposureData?.exposureIsrael,
+      exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
+      assetComposition: exposureData?.assetComposition
     };
   };
   return (
