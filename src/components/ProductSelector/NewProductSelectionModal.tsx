@@ -30,7 +30,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   existingProducts = [],
   editingProduct = null
 }) => {
-  const { hierarchy, loading, error, getExposureData, getCompaniesForCategoryAndSubCategory, getSubCategoriesForCategory } = useProductTaxonomy();
+  const { hierarchy, loading, error, getExposureData, getCompaniesForCategory, getSubCategoriesForCategoryAndCompany } = useProductTaxonomy();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
@@ -75,16 +75,16 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     setStep({ current: 2, selectedCategory: category });
   };
 
-  const handleSubCategorySelect = (subCategory: string) => {
-    setStep({ ...step, current: 3, selectedSubCategory: subCategory });
+  const handleCompanySelect = (company: string) => {
+    setStep({ ...step, current: 3, selectedCompany: company });
   };
 
-  const handleCompanySelect = (company: string) => {
+  const handleSubCategorySelect = (subCategory: string) => {
     // Get exposure data and populate form - pass productNumber if available
-    if (step.selectedCategory && step.selectedSubCategory) {
-      const trackName = step.selectedSubCategory || '';
+    if (step.selectedCategory && step.selectedCompany) {
+      const trackName = subCategory || '';
       const productNumber = formData.productNumber;
-      const exposureData = getExposureData(company, step.selectedCategory, trackName, productNumber);
+      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName, productNumber);
       
       if (exposureData) {
         setFormData(prev => ({
@@ -99,93 +99,73 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         }));
       }
     }
-    setStep({ ...step, selectedCompany: company });
+    setStep({ ...step, selectedSubCategory: subCategory });
   };
 
   // Handle category change in edit mode
   const handleCategoryChange = (category: string) => {
-    const subCategoriesSet = hierarchy.subCategories.get(category);
-    const newSubCategories = subCategoriesSet ? Array.from(subCategoriesSet) : [];
-    const firstSubCategory = newSubCategories[0];
-    
     // Check if current company exists in the new category
     const currentCompany = step.selectedCompany;
-    const companyStillExists = currentCompany && hierarchy.companies.includes(currentCompany);
+    const companiesInCategory = getCompaniesForCategory(category);
+    const companyStillExists = currentCompany && companiesInCategory.includes(currentCompany);
     
+    // Reset subcategory when category changes
     const newStep = {
       current: 3,
       selectedCategory: category,
-      selectedSubCategory: firstSubCategory,
-      selectedCompany: companyStillExists ? currentCompany : undefined
+      selectedCompany: companyStillExists ? currentCompany : undefined,
+      selectedSubCategory: undefined
     };
     
     setStep(newStep as ProductSelectionStep);
     
-    // Update exposure data if company still exists
-    if (companyStillExists && firstSubCategory) {
-      const exposureData = getExposureData(category, firstSubCategory, currentCompany!);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        exposureStocks: undefined,
-        exposureBonds: undefined,
-        exposureForeignCurrency: undefined,
-        exposureForeignInvestments: undefined
-      }));
-    }
-  };
-
-  // Handle sub-category change in edit mode
-  const handleSubCategoryChange = (subCategory: string) => {
-    const currentCompany = step.selectedCompany;
-    // In new structure, companies are not nested - check if company exists in all companies list
-    const companyStillExists = currentCompany && hierarchy.companies.includes(currentCompany);
-    
-    setStep({ 
-      ...step,
-      selectedSubCategory: subCategory,
-      selectedCompany: companyStillExists ? currentCompany : undefined
-    });
-    
-    // Update exposure data if company still exists
-    if (companyStillExists && step.selectedCategory) {
-      const trackName = subCategory || '';
-      const productNumber = formData.productNumber;
-      const exposureData = getExposureData(currentCompany!, step.selectedCategory, trackName, productNumber);
-      
-      if (exposureData) {
-        setFormData(prev => ({
-          ...prev,
-          exposureStocks: exposureData.exposureStocks,
-          exposureBonds: exposureData.exposureBonds,
-          exposureForeignCurrency: exposureData.exposureForeignCurrency,
-          exposureForeignInvestments: exposureData.exposureForeignInvestments,
-          exposureIsrael: exposureData.exposureIsrael,
-          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
-          assetComposition: exposureData.assetComposition
-        }));
-      }
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        exposureStocks: undefined,
-        exposureBonds: undefined,
-        exposureForeignCurrency: undefined,
-        exposureForeignInvestments: undefined
-      }));
-    }
+    // Clear exposure data
+    setFormData(prev => ({
+      ...prev,
+      exposureStocks: undefined,
+      exposureBonds: undefined,
+      exposureForeignCurrency: undefined,
+      exposureForeignInvestments: undefined,
+      exposureIsrael: undefined,
+      exposureIlliquidAssets: undefined,
+      assetComposition: undefined
+    }));
   };
 
   // Handle company change in edit mode
   const handleCompanyChange = (company: string) => {
-    if (step.selectedCategory && step.selectedSubCategory) {
-      const trackName = step.selectedSubCategory || '';
+    // Reset subcategory when company changes
+    setStep({ 
+      ...step,
+      selectedCompany: company,
+      selectedSubCategory: undefined
+    });
+    
+    // Clear exposure data
+    setFormData(prev => ({
+      ...prev,
+      exposureStocks: undefined,
+      exposureBonds: undefined,
+      exposureForeignCurrency: undefined,
+      exposureForeignInvestments: undefined,
+      exposureIsrael: undefined,
+      exposureIlliquidAssets: undefined,
+      assetComposition: undefined
+    }));
+  };
+
+  // Handle sub-category change in edit mode
+  const handleSubCategoryChange = (subCategory: string) => {
+    setStep({ 
+      ...step,
+      selectedSubCategory: subCategory
+    });
+    
+    // Update exposure data
+    if (step.selectedCompany && step.selectedCategory) {
+      const trackName = subCategory || '';
       const productNumber = formData.productNumber;
-      const exposureData = getExposureData(company, step.selectedCategory, trackName, productNumber);
+      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName, productNumber);
       
       if (exposureData) {
         setFormData(prev => ({
@@ -200,7 +180,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         }));
       }
     }
-    setStep({ ...step, selectedCompany: company });
   };
 
   const handleDuplicate = (existingProduct: SelectedProduct) => {
@@ -312,21 +291,22 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     availableCategories.push(step.selectedCategory);
   }
 
-  const availableSubCategories = step.selectedCategory 
-    ? getSubCategoriesForCategory(step.selectedCategory)
-    : [];
-  const availableSubCategoriesWithCurrent = [...availableSubCategories];
-  if (editingProduct && step.selectedSubCategory && !availableSubCategoriesWithCurrent.includes(step.selectedSubCategory)) {
-    availableSubCategoriesWithCurrent.push(step.selectedSubCategory);
-  }
-
-  // Filter companies by category and subcategory
-  const availableCompanies = step.selectedCategory && step.selectedSubCategory
-    ? getCompaniesForCategoryAndSubCategory(step.selectedCategory, step.selectedSubCategory)
+  // Filter companies by category
+  const availableCompanies = step.selectedCategory
+    ? getCompaniesForCategory(step.selectedCategory)
     : hierarchy.companies;
   const availableCompaniesWithCurrent = [...availableCompanies];
   if (editingProduct && step.selectedCompany && !availableCompaniesWithCurrent.includes(step.selectedCompany)) {
     availableCompaniesWithCurrent.push(step.selectedCompany);
+  }
+
+  // Filter subcategories by category and company
+  const availableSubCategories = step.selectedCategory && step.selectedCompany
+    ? getSubCategoriesForCategoryAndCompany(step.selectedCategory, step.selectedCompany)
+    : [];
+  const availableSubCategoriesWithCurrent = [...availableSubCategories];
+  if (editingProduct && step.selectedSubCategory && !availableSubCategoriesWithCurrent.includes(step.selectedSubCategory)) {
+    availableSubCategoriesWithCurrent.push(step.selectedSubCategory);
   }
 
   if (loading) {
@@ -380,8 +360,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
           </DialogTitle>
           <DialogDescription>
             {step.current === 1 && 'בחר קטגוריה'}
-            {step.current === 2 && 'בחר תת קטגוריה / מסלול'}
-            {step.current === 3 && 'בחר חברה והזן פרטים'}
+            {step.current === 2 && 'בחר חברה'}
+            {step.current === 3 && 'בחר תת קטגוריה / מסלול והזן פרטים'}
           </DialogDescription>
         </DialogHeader>
 
@@ -475,8 +455,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <span>שלב {step.current} מתוך 3</span>
                   <span>
                     {step.current === 1 && 'בחירת קטגוריה'}
-                    {step.current === 2 && 'בחירת מסלול'}
-                    {step.current === 3 && 'בחירת חברה ופרטים'}
+                    {step.current === 2 && 'בחירת חברה'}
+                    {step.current === 3 && 'בחירת מסלול ופרטים'}
                   </span>
                 </div>
                 <Progress value={progressValue} className="h-2" />
@@ -486,7 +466,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
           {/* Step 1: Category Selection (when already selected or editing) - Content moved to Tabs above */}
 
-          {/* Step 2: Sub-Category Selection */}
+          {/* Step 2: Company Selection */}
           {step.current === 2 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -494,33 +474,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <h3 className="text-lg font-semibold">
-                  בחר מסלול עבור: {step.selectedCategory}
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {availableSubCategories.map((subCategory) => (
-                  <div
-                    key={subCategory}
-                    className="glass-hover p-4 text-center cursor-pointer"
-                    onClick={() => handleSubCategorySelect(subCategory)}
-                  >
-                    <div className="font-medium">{subCategory}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Company Selection & Details */}
-          {step.current === 3 && !step.selectedCompany && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, current: 2, selectedSubCategory: undefined })}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h3 className="text-lg font-semibold">
-                  בחר חברה: {step.selectedCategory} - {step.selectedSubCategory}
+                  בחר חברה עבור: {step.selectedCategory}
                 </h3>
               </div>
 
@@ -538,8 +492,34 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
             </div>
           )}
 
-          {/* Step 3: Details Form (after company selected) */}
-          {step.current === 3 && step.selectedCompany && (
+          {/* Step 3: Sub-Category Selection & Details */}
+          {step.current === 3 && !step.selectedSubCategory && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, current: 2, selectedCompany: undefined })}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <h3 className="text-lg font-semibold">
+                  בחר מסלול: {step.selectedCategory} - {step.selectedCompany}
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {availableSubCategories.map((subCategory) => (
+                  <div
+                    key={subCategory}
+                    className="glass-hover p-4 text-center cursor-pointer"
+                    onClick={() => handleSubCategorySelect(subCategory)}
+                  >
+                    <div className="font-medium">{subCategory}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Details Form (after subcategory selected) */}
+          {step.current === 3 && step.selectedSubCategory && (
             <div className="space-y-4">
               {editingProduct ? (
                 <div className="space-y-4 mb-4">
@@ -562,31 +542,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">תת קטגוריה</label>
-                      <Select 
-                        value={step.selectedSubCategory} 
-                        onValueChange={handleSubCategoryChange}
-                        disabled={!step.selectedCategory}
-                      >
-                        <SelectTrigger className="glass">
-                          <SelectValue placeholder="בחר תת קטגוריה" />
-                        </SelectTrigger>
-                        <SelectContent className="glass z-[100]">
-                          {availableSubCategoriesWithCurrent.map((subCategory) => (
-                            <SelectItem key={subCategory} value={subCategory}>
-                              {subCategory}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
                       <Select 
                         value={step.selectedCompany} 
                         onValueChange={handleCompanyChange}
-                        disabled={!step.selectedSubCategory}
+                        disabled={!step.selectedCategory}
                       >
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר חברה" />
@@ -600,15 +560,35 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">תת קטגוריה</label>
+                      <Select 
+                        value={step.selectedSubCategory} 
+                        onValueChange={handleSubCategoryChange}
+                        disabled={!step.selectedCompany}
+                      >
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר תת קטגוריה" />
+                        </SelectTrigger>
+                        <SelectContent className="glass z-[100]">
+                          {availableSubCategoriesWithCurrent.map((subCategory) => (
+                            <SelectItem key={subCategory} value={subCategory}>
+                              {subCategory}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 mb-4">
-                  <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, selectedCompany: undefined })}>
+                  <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, selectedSubCategory: undefined })}>
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <h3 className="text-lg font-semibold">
-                    פרטי המוצר: {step.selectedCategory} - {step.selectedSubCategory} - {step.selectedCompany}
+                    פרטי המוצר: {step.selectedCategory} - {step.selectedCompany} - {step.selectedSubCategory}
                   </h3>
                 </div>
               )}

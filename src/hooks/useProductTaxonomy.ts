@@ -184,14 +184,13 @@ export const useProductTaxonomy = () => {
   };
 
   /**
-   * Get filtered companies for a specific category and subcategory
+   * Get filtered companies for a specific category
    */
-  const getCompaniesForCategoryAndSubCategory = (category: string, subCategory: string): string[] => {
+  const getCompaniesForCategory = (category: string): string[] => {
     const companies = new Set<string>();
     
     hierarchy.products.forEach(product => {
-      if (product.category === category && 
-          (product.newTrackName === subCategory || product.oldTrackName === subCategory)) {
+      if (product.category === category) {
         companies.add(product.company);
       }
     });
@@ -200,11 +199,19 @@ export const useProductTaxonomy = () => {
   };
 
   /**
-   * Get filtered subcategories for a specific category
+   * Get filtered subcategories for a specific category and company
    */
-  const getSubCategoriesForCategory = (category: string): string[] => {
-    const subCats = hierarchy.subCategories.get(category);
-    if (!subCats) return [];
+  const getSubCategoriesForCategoryAndCompany = (category: string, company: string): string[] => {
+    const subCats = new Set<string>();
+    
+    hierarchy.products.forEach(product => {
+      if (product.category === category && product.company === company) {
+        if (product.newTrackName) {
+          subCats.add(product.newTrackName);
+        }
+      }
+    });
+    
     return Array.from(subCats).sort((a, b) => a.localeCompare(b, 'he'));
   };
 
@@ -216,8 +223,8 @@ export const useProductTaxonomy = () => {
     getAllCategories,
     getAllCompanies,
     getAllSubCategories,
-    getCompaniesForCategoryAndSubCategory,
-    getSubCategoriesForCategory,
+    getCompaniesForCategory,
+    getSubCategoriesForCategoryAndCompany,
     reload: loadProductTaxonomy,
   };
 };
