@@ -297,6 +297,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
           <DialogHeader>
             <DialogTitle>טוען מוצרים...</DialogTitle>
+            <DialogDescription>אנא המתן בזמן שאנו טוענים את רשימת המוצרים</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Skeleton className="h-12 w-full" />
@@ -314,6 +315,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
           <DialogHeader>
             <DialogTitle>שגיאה</DialogTitle>
+            <DialogDescription>אירעה שגיאה בטעינת המוצרים</DialogDescription>
           </DialogHeader>
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
