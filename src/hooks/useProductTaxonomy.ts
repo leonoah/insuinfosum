@@ -183,6 +183,31 @@ export const useProductTaxonomy = () => {
     return Array.from(allSubs).sort();
   };
 
+  /**
+   * Get filtered companies for a specific category and subcategory
+   */
+  const getCompaniesForCategoryAndSubCategory = (category: string, subCategory: string): string[] => {
+    const companies = new Set<string>();
+    
+    hierarchy.products.forEach(product => {
+      if (product.category === category && 
+          (product.newTrackName === subCategory || product.oldTrackName === subCategory)) {
+        companies.add(product.company);
+      }
+    });
+    
+    return Array.from(companies).sort((a, b) => a.localeCompare(b, 'he'));
+  };
+
+  /**
+   * Get filtered subcategories for a specific category
+   */
+  const getSubCategoriesForCategory = (category: string): string[] => {
+    const subCats = hierarchy.subCategories.get(category);
+    if (!subCats) return [];
+    return Array.from(subCats).sort((a, b) => a.localeCompare(b, 'he'));
+  };
+
   return {
     hierarchy,
     loading,
@@ -191,6 +216,8 @@ export const useProductTaxonomy = () => {
     getAllCategories,
     getAllCompanies,
     getAllSubCategories,
+    getCompaniesForCategoryAndSubCategory,
+    getSubCategoriesForCategory,
     reload: loadProductTaxonomy,
   };
 };

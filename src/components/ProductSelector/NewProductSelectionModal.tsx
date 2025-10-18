@@ -30,7 +30,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   existingProducts = [],
   editingProduct = null
 }) => {
-  const { hierarchy, loading, error, getExposureData } = useProductTaxonomy();
+  const { hierarchy, loading, error, getExposureData, getCompaniesForCategoryAndSubCategory, getSubCategoriesForCategory } = useProductTaxonomy();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
@@ -313,15 +313,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   }
 
   const availableSubCategories = step.selectedCategory 
-    ? Array.from(hierarchy.subCategories.get(step.selectedCategory) || [])
+    ? getSubCategoriesForCategory(step.selectedCategory)
     : [];
   const availableSubCategoriesWithCurrent = [...availableSubCategories];
   if (editingProduct && step.selectedSubCategory && !availableSubCategoriesWithCurrent.includes(step.selectedSubCategory)) {
     availableSubCategoriesWithCurrent.push(step.selectedSubCategory);
   }
 
-  // For companies, we use all available companies (not filtered by category/subcategory in new structure)
-  const availableCompanies = hierarchy.companies;
+  // Filter companies by category and subcategory
+  const availableCompanies = step.selectedCategory && step.selectedSubCategory
+    ? getCompaniesForCategoryAndSubCategory(step.selectedCategory, step.selectedSubCategory)
+    : hierarchy.companies;
   const availableCompaniesWithCurrent = [...availableCompanies];
   if (editingProduct && step.selectedCompany && !availableCompaniesWithCurrent.includes(step.selectedCompany)) {
     availableCompaniesWithCurrent.push(step.selectedCompany);
