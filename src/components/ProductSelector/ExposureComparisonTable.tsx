@@ -217,4 +217,5 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   );
 };
 
+export { ExposureComparisonTable };
 export default ExposureComparisonTable;

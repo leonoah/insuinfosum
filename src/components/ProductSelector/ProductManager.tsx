@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { SelectedProduct } from '@/types/products';
-import ExposureComparisonTable from './ExposureComparisonTable';
+import { ExposureComparisonTable } from './ExposureComparisonTable';
 import NewProductSelectionModal from './NewProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonSection from './ComparisonSection';

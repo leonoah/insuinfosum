@@ -93,13 +93,13 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   // Handle category change in edit mode
   const handleCategoryChange = (category: string) => {
-    const newSubCategories = hierarchy.subCategories.get(category) || [];
+    const subCategoriesSet = hierarchy.subCategories.get(category);
+    const newSubCategories = subCategoriesSet ? Array.from(subCategoriesSet) : [];
     const firstSubCategory = newSubCategories[0];
     
-    // Check if current company exists in the new category/subcategory combination
+    // Check if current company exists in the new category
     const currentCompany = step.selectedCompany;
-    const newCompanies = hierarchy.companies.get(category)?.get(firstSubCategory) || [];
-    const companyStillExists = currentCompany && newCompanies.includes(currentCompany);
+    const companyStillExists = currentCompany && hierarchy.companies.includes(currentCompany);
     
     const newStep = {
       current: 3,
@@ -131,10 +131,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   // Handle sub-category change in edit mode
   const handleSubCategoryChange = (subCategory: string) => {
     const currentCompany = step.selectedCompany;
-    const newCompanies = step.selectedCategory 
-      ? hierarchy.companies.get(step.selectedCategory)?.get(subCategory) || []
-      : [];
-    const companyStillExists = currentCompany && newCompanies.includes(currentCompany);
+    // In new structure, companies are not nested - check if company exists in all companies list
+    const companyStillExists = currentCompany && hierarchy.companies.includes(currentCompany);
     
     setStep({ 
       ...step,
@@ -279,16 +277,15 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   }
 
   const availableSubCategories = step.selectedCategory 
-    ? hierarchy.subCategories.get(step.selectedCategory) || []
+    ? Array.from(hierarchy.subCategories.get(step.selectedCategory) || [])
     : [];
   const availableSubCategoriesWithCurrent = [...availableSubCategories];
   if (editingProduct && step.selectedSubCategory && !availableSubCategoriesWithCurrent.includes(step.selectedSubCategory)) {
     availableSubCategoriesWithCurrent.push(step.selectedSubCategory);
   }
 
-  const availableCompanies = (step.selectedCategory && step.selectedSubCategory)
-    ? hierarchy.companies.get(step.selectedCategory)?.get(step.selectedSubCategory) || []
-    : [];
+  // For companies, we use all available companies (not filtered by category/subcategory in new structure)
+  const availableCompanies = hierarchy.companies;
   const availableCompaniesWithCurrent = [...availableCompanies];
   if (editingProduct && step.selectedCompany && !availableCompaniesWithCurrent.includes(step.selectedCompany)) {
     availableCompaniesWithCurrent.push(step.selectedCompany);

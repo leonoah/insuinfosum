@@ -1,7 +1,3 @@
-/**
- * Main hook for product taxonomy - loads from Excel file
- * Replaces the old Supabase-based taxonomy with new Excel-based structure
- */
 import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { ProductTaxonomy } from '@/types/products';
@@ -15,7 +11,7 @@ interface ProductHierarchy {
   productsByCompanyAndTrack: Map<string, ProductTaxonomy[]>;
 }
 
-export const useProductTaxonomy = () => {
+export const useProductTaxonomyFromExcel = () => {
   const [hierarchy, setHierarchy] = useState<ProductHierarchy>({
     categories: [],
     companies: [],
@@ -40,6 +36,7 @@ export const useProductTaxonomy = () => {
         throw new Error('הקובץ ריק או לא תקין');
       }
 
+      const headers = data[0];
       const products: ProductTaxonomy[] = [];
       const categoriesSet = new Set<string>();
       const companiesSet = new Set<string>();
@@ -47,7 +44,7 @@ export const useProductTaxonomy = () => {
       const productsByNumber = new Map<string, ProductTaxonomy>();
       const productsByCompanyAndTrack = new Map<string, ProductTaxonomy[]>();
 
-      // Parse data rows (skip header row)
+      // Parse data rows
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
         if (!row || row.length === 0) continue;
@@ -88,21 +85,12 @@ export const useProductTaxonomy = () => {
           productsByNumber.set(product.productNumber, product);
         }
 
-        // Index by company and track name (both new and old)
-        if (product.newTrackName) {
-          const trackKey = `${product.company}:${product.newTrackName}`;
-          if (!productsByCompanyAndTrack.has(trackKey)) {
-            productsByCompanyAndTrack.set(trackKey, []);
-          }
-          productsByCompanyAndTrack.get(trackKey)!.push(product);
+        // Index by company and track name
+        const trackKey = `${product.company}:${product.newTrackName || product.oldTrackName}`;
+        if (!productsByCompanyAndTrack.has(trackKey)) {
+          productsByCompanyAndTrack.set(trackKey, []);
         }
-        if (product.oldTrackName && product.oldTrackName !== product.newTrackName) {
-          const trackKey = `${product.company}:${product.oldTrackName}`;
-          if (!productsByCompanyAndTrack.has(trackKey)) {
-            productsByCompanyAndTrack.set(trackKey, []);
-          }
-          productsByCompanyAndTrack.get(trackKey)!.push(product);
-        }
+        productsByCompanyAndTrack.get(trackKey)!.push(product);
       }
 
       setHierarchy({
@@ -191,6 +179,6 @@ export const useProductTaxonomy = () => {
     getAllCategories,
     getAllCompanies,
     getAllSubCategories,
-    reload: loadProductTaxonomy,
+    reloadTaxonomy: loadProductTaxonomy,
   };
 };
