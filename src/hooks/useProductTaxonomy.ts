@@ -1,9 +1,8 @@
 /**
- * Main hook for product taxonomy - loads from Excel file
- * Replaces the old Supabase-based taxonomy with new Excel-based structure
+ * Main hook for product taxonomy - loads from Supabase database
  */
 import { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
 import { ProductTaxonomy } from '@/types/products';
 
 interface ProductHierarchy {
@@ -30,14 +29,19 @@ export const useProductTaxonomy = () => {
   const loadProductTaxonomy = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/src/data/products_taxonomy.xlsx');
-      const arrayBuffer = await response.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+      
+      // Load data from Supabase database
+      const { data, error: fetchError } = await supabase
+        .from('products_taxonomy')
+        .select('*')
+        .order('company', { ascending: true });
 
-      if (data.length < 2) {
-        throw new Error('הקובץ ריק או לא תקין');
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('לא נמצאו נתונים בטבלת המוצרים');
       }
 
       const products: ProductTaxonomy[] = [];
@@ -47,35 +51,32 @@ export const useProductTaxonomy = () => {
       const productsByNumber = new Map<string, ProductTaxonomy>();
       const productsByCompanyAndTrack = new Map<string, ProductTaxonomy[]>();
 
-      // Parse data rows (skip header row)
-      for (let i = 1; i < data.length; i++) {
-        const row = data[i];
-        if (!row || row.length === 0) continue;
-
+      // Parse database rows
+      data.forEach((row) => {
         const product: ProductTaxonomy = {
-          company: String(row[0] || '').trim(),
-          category: String(row[1] || '').trim(),
-          oldTrackName: String(row[2] || '').trim(),
-          newTrackName: String(row[3] || '').trim(),
-          productNumber: String(row[4] || '').trim(),
-          policyChange: String(row[5] || '').trim(),
-          trackMerger: String(row[6] || '').trim(),
-          exposureForeignCurrency: parseFloat(String(row[7] || '0').replace('%', '')) || 0,
-          exposureForeignInvestments: parseFloat(String(row[8] || '0').replace('%', '')) || 0,
-          exposureIsrael: parseFloat(String(row[9] || '0').replace('%', '')) || 0,
-          exposureStocks: parseFloat(String(row[10] || '0').replace('%', '')) || 0,
-          exposureBonds: parseFloat(String(row[11] || '0').replace('%', '')) || 0,
-          exposureIlliquidAssets: parseFloat(String(row[12] || '0').replace('%', '')) || 0,
-          assetComposition: String(row[13] || '').trim(),
+          company: row.company || '',
+          category: row.category || '',
+          oldTrackName: row.sub_category || '',
+          newTrackName: row.sub_category || '',
+          productNumber: '',
+          policyChange: '',
+          trackMerger: '',
+          exposureForeignCurrency: row.exposure_foreign_currency || 0,
+          exposureForeignInvestments: row.exposure_foreign_investments || 0,
+          exposureIsrael: 0,
+          exposureStocks: row.exposure_stocks || 0,
+          exposureBonds: row.exposure_bonds || 0,
+          exposureIlliquidAssets: 0,
+          assetComposition: '',
         };
 
-        if (!product.company || !product.category) continue;
+        if (!product.company || !product.category) return;
 
         products.push(product);
         categoriesSet.add(product.category);
         companiesSet.add(product.company);
 
-        // Track subcategories (new track names)
+        // Track subcategories
         if (product.newTrackName) {
           if (!subCategoriesMap.has(product.category)) {
             subCategoriesMap.set(product.category, new Set());
@@ -103,7 +104,7 @@ export const useProductTaxonomy = () => {
           }
           productsByCompanyAndTrack.get(trackKey)!.push(product);
         }
-      }
+      });
 
       setHierarchy({
         categories: Array.from(categoriesSet).sort(),
@@ -114,7 +115,7 @@ export const useProductTaxonomy = () => {
         productsByCompanyAndTrack,
       });
 
-      console.log('✅ טעינת טקסונומיית מוצרים מאקסל הושלמה:', {
+      console.log('✅ טעינת טקסונומיית מוצרים מ-database הושלמה:', {
         categories: categoriesSet.size,
         companies: companiesSet.size,
         products: products.length,
