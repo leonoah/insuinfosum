@@ -8,6 +8,8 @@ export class XMLPensionParser {
   ): Promise<{
     clientName: string;
     clientId: string;
+    clientPhone?: string;
+    clientEmail?: string;
     reportDate: string;
     products: PensionProduct[];
   }> {
@@ -23,6 +25,26 @@ export class XMLPensionParser {
     const clientName =
       this.getElementText(clientElement, "SHEM-PRATI") + " " + this.getElementText(clientElement, "SHEM-MISHPACHA");
     const clientId = this.getElementText(clientElement, "MISPAR-ZIHUY-LAKOACH");
+
+    // חילוץ פרטי התקשרות
+    const clientPhone = this.getFirstTextByTags(clientElement || xmlDoc, [
+      "MISPAR-CELLULARI",
+      "MISPAR-SELULARI",
+      "CELLULAR",
+      "MOBILE",
+      "TELEFON",
+      "MISPAR-TELEFON",
+      "TELEPHONE",
+      "PHONE",
+      "MISPAR-PHONE",
+    ]);
+    const clientEmail = this.getFirstTextByTags(clientElement || xmlDoc, [
+      "DO-EL",
+      "DOAR-ELECTRONI",
+      "DUAR-ELECTRONI",
+      "EMAIL",
+      "E-MAIL",
+    ]);
 
     const reportDate = this.formatDate(this.getElementText(xmlDoc, "TAARICH-BITZUA"));
 
@@ -54,6 +76,8 @@ export class XMLPensionParser {
     return {
       clientName,
       clientId,
+      clientPhone: clientPhone || undefined,
+      clientEmail: clientEmail || undefined,
       reportDate,
       products,
     };
