@@ -136,6 +136,7 @@ interface FormData {
   documents: string[];
   timeframes: string;
   approvals: string;
+  includeDecisionsInReport: boolean;
 }
 
 interface SummaryGeneratorProps {
@@ -153,6 +154,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     const defaultSections = { ...REPORT_SECTIONS_DEFAULT };
     if (formData.isAnonymous) {
       defaultSections.personalInfo = false;
+    }
+    // Apply includeDecisionsInReport setting
+    if (!formData.includeDecisionsInReport) {
+      defaultSections.nextSteps = false;
     }
     return defaultSections;
   });

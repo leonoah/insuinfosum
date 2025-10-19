@@ -63,6 +63,7 @@ interface FormData {
   documents: string[];
   timeframes: string;
   approvals: string;
+  includeDecisionsInReport: boolean;
 }
 
 const insuranceTopics = [
@@ -97,7 +98,8 @@ const AppForm = () => {
     decisions: "",
     documents: [],
     timeframes: "",
-    approvals: ""
+    approvals: "",
+    includeDecisionsInReport: true
   });
 
   // Required fields: current situation, and client details only if not anonymous
@@ -836,6 +838,27 @@ const AppForm = () => {
                     className="mt-2 bg-input rounded-xl"
                     placeholder="חתימת בן/בת זוג, אישור רופא..."
                   />
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <Checkbox
+                      id="includeDecisionsInReport"
+                      checked={formData.includeDecisionsInReport}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, includeDecisionsInReport: checked === true }))
+                      }
+                    />
+                    <Label 
+                      htmlFor="includeDecisionsInReport" 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      כלול החלטות זו בדוח המסכם
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 mr-6">
+                    בחר אם להציג את פרטי ההחלטות, המסמכים וטווחי הזמן בדוח ה-PDF הסופי
+                  </p>
                 </div>
               </CardContent>
             </Card>
