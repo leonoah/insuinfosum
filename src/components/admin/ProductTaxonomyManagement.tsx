@@ -164,10 +164,28 @@ export const ProductTaxonomyManagement = () => {
         const subCategory = row['תת קטגוריה'] || row['sub_category'] || '';
         const productNumber = row['מספר קופה/קרן'] || row['product_number'] || '';
         
-        // שילוב תת קטגוריה עם מספר מוצר אם קיים
+        // חילוץ מספר הקרן הראשון מהטקסט
+        const extractFirstNumber = (text: string): string => {
+          // חיפוש כל המספרים בסוגריים
+          const numbersInParentheses = text.match(/\((\d+)\)/g);
+          if (numbersInParentheses && numbersInParentheses.length > 0) {
+            // החזרת המספר הראשון בלי הסוגריים
+            return numbersInParentheses[0].replace(/[()]/g, '');
+          }
+          // אם אין סוגריים, חיפוש מספר כללי
+          const numbers = text.match(/\d+/);
+          return numbers ? numbers[0] : text;
+        };
+        
+        // קביעת תת הקטגוריה הסופית
         let finalSubCategory = subCategory;
-        if (productNumber && !subCategory.includes(productNumber)) {
-          finalSubCategory = productNumber; // רק המספר
+        
+        // אם יש מספר קופה/קרן, נשתמש בו
+        if (productNumber) {
+          finalSubCategory = extractFirstNumber(productNumber);
+        } else if (subCategory) {
+          // אחרת, ננסה לחלץ מספר מתת הקטגוריה
+          finalSubCategory = extractFirstNumber(subCategory);
         }
         
         return {
