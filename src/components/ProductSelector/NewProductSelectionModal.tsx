@@ -394,7 +394,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass" onEscapeKeyDown={(e) => {
           e.preventDefault();
-          handleCloseRequest();
         }}>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
