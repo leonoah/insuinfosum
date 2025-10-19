@@ -36,7 +36,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const { hierarchy, loading, error, getExposureData, getCompaniesForCategory, getSubCategoriesForCategoryAndCompany } = useProductTaxonomy();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
-  const [isEditingExposure, setIsEditingExposure] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [initialFormData, setInitialFormData] = useState<Partial<SelectedProduct> | null>(null);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
@@ -66,7 +65,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       });
       setFormData(editingProduct);
       setInitialFormData(editingProduct);
-      setIsEditingExposure(false);
     } else {
       setStep({ current: 1 });
       const initialData: Partial<SelectedProduct> = {
@@ -81,7 +79,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       };
       setFormData(initialData);
       setInitialFormData(initialData);
-      setIsEditingExposure(false);
     }
   }, [editingProduct, productType]);
 
@@ -300,7 +297,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const handleClose = () => {
     setStep({ current: 1 });
     setInputMode('manual');
-    setIsEditingExposure(false);
     setShowCloseConfirm(false);
     const resetData: Partial<SelectedProduct> = {
       type: productType,
@@ -696,16 +692,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
               <div className="space-y-4 mt-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">נתוני חשיפות</h4>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const hasExposure = formData.exposureStocks !== undefined;
-                      if (hasExposure) {
-                        // Toggle edit mode
-                        setIsEditingExposure(!isEditingExposure);
-                      } else {
-                        // Initialize exposure data for manual entry
+                  {formData.exposureStocks === undefined && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
                         setFormData({
                           ...formData,
                           exposureStocks: 0,
@@ -713,15 +704,14 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                           exposureForeignCurrency: 0,
                           exposureForeignInvestments: 0
                         });
-                        setIsEditingExposure(true);
-                      }
-                    }}
-                  >
-                    {isEditingExposure ? 'בטל עריכה' : 'ערוך ידנית'}
-                  </Button>
+                      }}
+                    >
+                      הוסף נתוני חשיפה
+                    </Button>
+                  )}
                 </div>
 
-                {formData.exposureStocks === undefined && !isEditingExposure ? (
+                {formData.exposureStocks === undefined ? (
                   <div className="glass p-4 text-center text-muted-foreground">
                     אין נתוני חשיפה
                   </div>
@@ -734,7 +724,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         step="0.01"
                         min="0"
                         max="100"
-                        className={isEditingExposure ? "glass" : "glass bg-muted"}
+                        className="glass"
                         value={formData.exposureStocks ?? 0}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -744,7 +734,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                             setFormData({ ...formData, exposureStocks: 0 });
                           }
                         }}
-                        readOnly={!isEditingExposure}
                       />
                     </div>
 
@@ -755,7 +744,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         step="0.01"
                         min="0"
                         max="100"
-                        className={isEditingExposure ? "glass" : "glass bg-muted"}
+                        className="glass"
                         value={formData.exposureBonds ?? 0}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -765,7 +754,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                             setFormData({ ...formData, exposureBonds: 0 });
                           }
                         }}
-                        readOnly={!isEditingExposure}
                       />
                     </div>
 
@@ -776,7 +764,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         step="0.01"
                         min="0"
                         max="100"
-                        className={isEditingExposure ? "glass" : "glass bg-muted"}
+                        className="glass"
                         value={formData.exposureForeignCurrency ?? 0}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -786,7 +774,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                             setFormData({ ...formData, exposureForeignCurrency: 0 });
                           }
                         }}
-                        readOnly={!isEditingExposure}
                       />
                     </div>
 
@@ -797,7 +784,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         step="0.01"
                         min="0"
                         max="100"
-                        className={isEditingExposure ? "glass" : "glass bg-muted"}
+                        className="glass"
                         value={formData.exposureForeignInvestments ?? 0}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
@@ -807,7 +794,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                             setFormData({ ...formData, exposureForeignInvestments: 0 });
                           }
                         }}
-                        readOnly={!isEditingExposure}
                       />
                     </div>
                   </div>
