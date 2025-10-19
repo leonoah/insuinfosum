@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Copy, Mic } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Copy, Mic, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import VoiceProductInput from './VoiceProductInput';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 interface NewProductSelectionModalProps {
   isOpen: boolean;
@@ -34,10 +35,13 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   editingProduct = null
 }) => {
   const { hierarchy, loading, error, getExposureData, getCompaniesForCategory, getSubCategoriesForCategoryAndCompany } = useProductTaxonomy();
+  const { toast } = useToast();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [initialFormData, setInitialFormData] = useState<Partial<SelectedProduct> | null>(null);
+  const [searchingExposure, setSearchingExposure] = useState(false);
+  const [exposureSearchResults, setExposureSearchResults] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
@@ -285,6 +289,85 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       
       // Switch to manual mode to show the form
       setInputMode('manual');
+    }
+  };
+
+  const handleSearchExposure = async () => {
+    if (!step.selectedCompany || !step.selectedCategory || !step.selectedSubCategory) {
+      toast({
+        title: "שגיאה",
+        description: "נא לבחור קטגוריה, חברה ותת קטגוריה לפני החיפוש",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSearchingExposure(true);
+    setExposureSearchResults(null);
+
+    try {
+      const searchQuery = `${step.selectedCompany} ${step.selectedCategory} ${step.selectedSubCategory} ${formData.investmentTrack || ''} חשיפות מניות אגח מטח השקעות חול ישראל תמהיל נכסים`;
+      
+      toast({
+        title: "מחפש ברשת...",
+        description: `מחפש נתוני חשיפות עבור ${step.selectedCompany} - ${step.selectedSubCategory}`
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-exposure`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          company: step.selectedCompany,
+          category: step.selectedCategory,
+          subCategory: step.selectedSubCategory,
+          investmentTrack: formData.investmentTrack || '',
+          searchQuery
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search exposure data');
+      }
+
+      const data = await response.json();
+      
+      if (data.exposureData) {
+        setExposureSearchResults(data.summary);
+        
+        // Automatically populate the form with found data
+        setFormData({
+          ...formData,
+          exposureStocks: data.exposureData.exposureStocks ?? formData.exposureStocks,
+          exposureBonds: data.exposureData.exposureBonds ?? formData.exposureBonds,
+          exposureForeignCurrency: data.exposureData.exposureForeignCurrency ?? formData.exposureForeignCurrency,
+          exposureForeignInvestments: data.exposureData.exposureForeignInvestments ?? formData.exposureForeignInvestments,
+          exposureIsrael: data.exposureData.exposureIsrael ?? formData.exposureIsrael,
+          exposureIlliquidAssets: data.exposureData.exposureIlliquidAssets ?? formData.exposureIlliquidAssets
+        });
+
+        toast({
+          title: "נמצאו נתוני חשיפות!",
+          description: "הנתונים עודכנו בטופס"
+        });
+      } else {
+        toast({
+          title: "לא נמצאו נתונים",
+          description: "לא הצלחנו למצוא נתוני חשיפות למוצר זה",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error searching exposure:', error);
+      toast({
+        title: "שגיאה בחיפוש",
+        description: "אירעה שגיאה בחיפוש נתוני החשיפות",
+        variant: "destructive"
+      });
+    } finally {
+      setSearchingExposure(false);
     }
   };
 
@@ -702,24 +785,45 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
               <div className="space-y-4 mt-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">נתוני חשיפות</h4>
-                  {formData.exposureStocks === undefined && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFormData({
-                          ...formData,
-                          exposureStocks: 0,
-                          exposureBonds: 0,
-                          exposureForeignCurrency: 0,
-                          exposureForeignInvestments: 0
-                        });
-                      }}
-                    >
-                      הוסף נתוני חשיפה
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {step.selectedCompany && step.selectedCategory && step.selectedSubCategory && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSearchExposure}
+                        disabled={searchingExposure}
+                      >
+                        <Search className="h-4 w-4 ml-2" />
+                        {searchingExposure ? 'מחפש...' : 'חפש ערכי חשיפות'}
+                      </Button>
+                    )}
+                    {formData.exposureStocks === undefined && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            exposureStocks: 0,
+                            exposureBonds: 0,
+                            exposureForeignCurrency: 0,
+                            exposureForeignInvestments: 0
+                          });
+                        }}
+                      >
+                        הוסף נתוני חשיפה
+                      </Button>
+                    )}
+                  </div>
                 </div>
+
+                {exposureSearchResults && (
+                  <Alert className="bg-primary/10">
+                    <AlertDescription>
+                      <strong>תוצאות חיפוש:</strong> {exposureSearchResults}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {formData.exposureStocks === undefined ? (
                   <div className="glass p-4 text-center text-muted-foreground">
