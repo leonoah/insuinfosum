@@ -19,19 +19,21 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   currentProducts,
   recommendedProducts
 }) => {
-  // Only show products that have exposure data
+  // Only show products that are marked to be included in exposure summary
   const currentWithExposure = currentProducts.filter(p => 
-    p.exposureStocks !== undefined || 
+    p.includeExposureData === true &&
+    (p.exposureStocks !== undefined || 
     p.exposureBonds !== undefined ||
     p.exposureForeignCurrency !== undefined ||
-    p.exposureForeignInvestments !== undefined
+    p.exposureForeignInvestments !== undefined)
   );
 
   const recommendedWithExposure = recommendedProducts.filter(p => 
-    p.exposureStocks !== undefined || 
+    p.includeExposureData === true &&
+    (p.exposureStocks !== undefined || 
     p.exposureBonds !== undefined ||
     p.exposureForeignCurrency !== undefined ||
-    p.exposureForeignInvestments !== undefined
+    p.exposureForeignInvestments !== undefined)
   );
 
   if (currentWithExposure.length === 0 && recommendedWithExposure.length === 0) {
