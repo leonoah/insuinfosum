@@ -58,7 +58,7 @@ export const useProductTaxonomy = () => {
           category: row.category || '',
           oldTrackName: row.sub_category || '',
           newTrackName: row.sub_category || '',
-          productNumber: '',
+          productNumber: row.product_number || '', // מספר קופה מה-DB
           policyChange: '',
           trackMerger: '',
           exposureForeignCurrency: row.exposure_foreign_currency || 0,
@@ -84,7 +84,7 @@ export const useProductTaxonomy = () => {
           subCategoriesMap.get(product.category)!.add(product.newTrackName);
         }
 
-        // Index by product number
+        // Index by product number (מספר קופה/קרן)
         if (product.productNumber) {
           productsByNumber.set(product.productNumber, product);
         }

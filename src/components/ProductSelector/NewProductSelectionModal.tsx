@@ -692,21 +692,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 )}
               </div>
 
-              {/* Include Exposure Data Checkbox */}
-              {formData.exposureStocks !== undefined && (
-                <div className="flex items-center gap-2 pt-4">
-                  <Checkbox
-                    id="includeExposureData"
-                    checked={formData.includeExposureData || false}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, includeExposureData: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="includeExposureData" className="cursor-pointer">
-                    להוסיף מידע על חשיפה לדוח?
-                  </Label>
-                </div>
-              )}
+              {/* Exposure info removed - will be asked globally for all products */}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">הערות</label>

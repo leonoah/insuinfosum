@@ -26,6 +26,7 @@ interface SavingsProduct {
   accumulationFee: number;
   investmentTrack: string;
   policyNumber: string;
+  productNumber?: string; // מספר קופה/קרן
 }
 
 interface InsuranceProduct {
@@ -34,6 +35,7 @@ interface InsuranceProduct {
   product: string;
   premium: number;
   policyNumber: string;
+  productNumber?: string; // מספר קופה/קרן
 }
 
 interface KPIData {
@@ -186,7 +188,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           depositFee: getColumnIndex(headers, ['דמי ניהול מהפקדה']),
           accumulationFee: getColumnIndex(headers, ['דמי ניהול מצבירה']),
           investmentTrack: getColumnIndex(headers, ['מסלולי השקעה', 'מסלול השקעה']),
-          policyNumber: getColumnIndex(headers, ['פוליסה', 'מספר חשבון', 'מספר פוליסה'])
+          policyNumber: getColumnIndex(headers, ['פוליסה', 'מספר חשבון', 'מספר פוליסה']),
+          productNumber: getColumnIndex(headers, ['מספר קופה', 'מספר קרן', 'מספר מוצר'])
         };
 
         dataRows.forEach(row => {
@@ -208,7 +211,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
             depositFee: idx.depositFee >= 0 ? parsePercentage(row[idx.depositFee]) : 0,
             accumulationFee: idx.accumulationFee >= 0 ? parsePercentage(row[idx.accumulationFee]) : 0,
             investmentTrack: idx.investmentTrack >= 0 ? normalizeText(row[idx.investmentTrack]) : '',
-            policyNumber: idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : ''
+            policyNumber: idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : '',
+            productNumber: idx.productNumber >= 0 ? normalizeText(row[idx.productNumber]) : ''
           };
 
           const key = [
@@ -259,7 +263,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           manufacturer: getColumnIndex(headers, ['יצרן', 'חברה', 'ספק']),
           product: getColumnIndex(headers, ['מוצר', 'שם מוצר']),
           premium: getColumnIndex(headers, ['פרמיה', 'פרמיה חודשית']),
-          policyNumber: getColumnIndex(headers, ['פוליסה', 'מספר פוליסה'])
+          policyNumber: getColumnIndex(headers, ['פוליסה', 'מספר פוליסה']),
+          productNumber: getColumnIndex(headers, ['מספר קופה', 'מספר קרן', 'מספר מוצר'])
         };
 
         dataRows.forEach(row => {
@@ -277,7 +282,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
             manufacturer: idx.manufacturer >= 0 ? normalizeText(row[idx.manufacturer]) : '',
             product: productName,
             premium,
-            policyNumber: idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : ''
+            policyNumber: idx.policyNumber >= 0 ? normalizeText(row[idx.policyNumber]) : '',
+            productNumber: idx.productNumber >= 0 ? normalizeText(row[idx.productNumber]) : ''
           };
 
           const key = [
@@ -340,11 +346,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       if (savingsProduct) {
         productCounter++;
         
-        // Smart match the product
+        // Smart match the product - product number first!
         const matched = smartMatchProduct(
           savingsProduct.productType || savingsProduct.productName,
           savingsProduct.investmentTrack || savingsProduct.planName || '',
-          savingsProduct.manufacturer
+          savingsProduct.manufacturer,
+          savingsProduct.productNumber
         );
         
         const notesParts = [
@@ -374,11 +381,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       if (insuranceProduct) {
         productCounter++;
         
-        // Smart match the insurance product
+        // Smart match the insurance product - product number first!
         const matched = smartMatchProduct(
           insuranceProduct.productType || insuranceProduct.product,
           '',
-          insuranceProduct.manufacturer
+          insuranceProduct.manufacturer,
+          insuranceProduct.productNumber
         );
         
         const product: SelectedProduct = {
@@ -437,6 +445,31 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
 
   // Smart matching function using the new architecture
   const smartMatchProduct = (productType: string, subCategory: string, company: string, productNumber?: string) => {
+    console.log('🔍 Excel Product Matching - Stage 1: Input');
+    console.log(`   Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
+    
+    // PRIORITY 1: Search by product number first (if available)
+    if (productNumber) {
+      const directMatch = getExposureData('', '', '', productNumber);
+      if (directMatch) {
+        console.log('✅ FOUND by Product Number:', directMatch);
+        return {
+          category: directMatch.category,
+          subCategory: directMatch.newTrackName,
+          company: directMatch.company,
+          exposureStocks: directMatch.exposureStocks,
+          exposureBonds: directMatch.exposureBonds,
+          exposureForeignCurrency: directMatch.exposureForeignCurrency,
+          exposureForeignInvestments: directMatch.exposureForeignInvestments,
+          exposureIsrael: directMatch.exposureIsrael,
+          exposureIlliquidAssets: directMatch.exposureIlliquidAssets,
+          productNumber: directMatch.productNumber
+        };
+      }
+      console.log('⚠️ Product number not found in taxonomy, falling back to semantic matching');
+    }
+    
+    // PRIORITY 2: Semantic matching
     const categories = getAllCategories();
     const subCategories = getAllSubCategories();
     const companies = getAllCompanies();
@@ -445,8 +478,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     const matchedSubCategory = matchSubCategory(subCategory, subCategories);
     const matchedCompany = matchCompany(company, companies);
     
-    console.log('🔍 Excel Product Matching Summary:');
-    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
+    console.log('🔍 Excel Product Matching - Stage 2: Semantic Match');
     console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
     
     // Get exposure data
