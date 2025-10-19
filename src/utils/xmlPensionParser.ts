@@ -136,8 +136,27 @@ export class XMLPensionParser {
 
     // סוג מוצר
     const sugMutzar = this.getFirstTextByTags(mutzar, ["SUG-MUTZAR","SUG-MUTZAR-TEXT","SHEM-SUG-MUTZAR","SUG-MUTZAR-MILULI"]) || "";
-    const productType = this.mapProductType(sugMutzar);
-    if (!productType) return null;
+    let productType = this.mapProductType(sugMutzar);
+    if (!productType) {
+      const contextText = [
+        this.getFirstTextByTags(heshbon, ["SHEM-TOCHNIT","SHEM-GUF-MENAHAL","SHEM-MASLUL"]),
+        this.getFirstTextByTags(mutzar, ["SHEM-MUTZAR","SUG-MUTZAR-TEXT","SUG-MUTZAR-MILULI"]) ,
+      ].filter(Boolean).join(" ");
+      productType = this.mapProductType(contextText) || undefined;
+
+      // ניסיון נוסף לפי מילות מפתח בטקסט ההקשר
+      if (!productType) {
+        const low = contextText.toLowerCase();
+        if (low.includes("השתלמ")) productType = "קרן השתלמות";
+        else if (low.includes("גמל")) productType = "קופת גמל";
+        else if (low.includes("פנסי")) productType = "קרן פנסיה חדשה";
+        else if (low.includes("משכנת")) productType = "ביטוח משכנתא";
+        else if (low.includes("ביטוח") || low.includes("פוליס")) productType = "חברת ביטוח";
+      }
+    }
+
+    // אם עדיין לא הצלחנו לסווג – לא נוותר על המוצר
+    if (!productType) productType = "קופת גמל";
 
     // חברה
     const company = this.getFirstTextByTags(heshbon, ["SHEM-TOCHNIT","SHEM-GUF-MENAHAL"]) || 
@@ -349,17 +368,35 @@ export class XMLPensionParser {
     return "";
   }
 
+  // מציאת אב לפי שם תג (Case-Insensitive)
+  private static getAncestorByTagName(el: Element | null, names: string[]): Element | null {
+    if (!el) return null;
+    const targets = names.map((n) => n.toLowerCase());
+    let cur: Element | null = el;
+    while (cur) {
+      if (targets.includes(cur.tagName.toLowerCase())) return cur;
+      cur = cur.parentElement;
+    }
+    return null;
+  }
+
   // איסוף כל מכולות המוצרים האפשריות ממבני XML שונים
   private static getProductContainers(xmlDoc: Document): Element[] {
     const set = new Set<Element>();
     // מבנים נפוצים של "Mutzar"
-    xmlDoc.querySelectorAll("Mutzar, Mutzarim > Mutzar, PerutMutzarim > Mutzar").forEach((e) => set.add(e));
+    xmlDoc.querySelectorAll("Mutzar, Mutzarim > Mutzar, PerutMutzarim > Mutzar, PrateiMutzarim > Mutzar").forEach((e) => set.add(e));
     // מכולות שיש בהן חשבון/פוליסה – נעלה לרמה של ההורה
     xmlDoc
       .querySelectorAll("HeshbonOPolisa, Heshbon-O-Polisa, Heshbon, Polisa")
       .forEach((h) => {
         if (h.parentElement) set.add(h.parentElement);
       });
+    // מציאת מוצרים לפי מופע של MISPAR-POLISA-O-HESHBON בכל מקום
+    xmlDoc.querySelectorAll("MISPAR-POLISA-O-HESHBON, MISPAR-POLISA, MISPAR-HESHBON").forEach((n) => {
+      const el = n as Element;
+      const container = this.getAncestorByTagName(el.parentElement, ["Mutzar"]) || el.parentElement;
+      if (container) set.add(container);
+    });
     return Array.from(set);
   }
 
