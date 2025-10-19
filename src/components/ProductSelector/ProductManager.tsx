@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, BarChart3, Upload, GitCompare, Phone, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { SelectedProduct } from '@/types/products';
 import { ExposureComparisonTable } from './ExposureComparisonTable';
@@ -321,6 +321,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
           <VisuallyHidden>
             <DialogTitle>ייבוא מסמך פנסיה</DialogTitle>
+            <DialogDescription>טעינת מוצרים ממסלקה פנסיונית</DialogDescription>
           </VisuallyHidden>
           <PensionFileImport
             onProductsSelected={handlePensionImport}
