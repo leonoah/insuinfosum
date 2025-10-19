@@ -32,6 +32,20 @@ function calculateSimilarity(input: string, target: string): number {
     return 0.85;
   }
   
+  // בדיקה אם שני המחרוזות הן בעיקר מספרים (קופות/קרנות)
+  const inputIsNumeric = /^\d+/.test(normalizedInput);
+  const targetIsNumeric = /^\d+/.test(normalizedTarget);
+  
+  if (inputIsNumeric && targetIsNumeric) {
+    // עבור מספרים - נשתמש ב-Levenshtein עם משקל גבוה יותר
+    const numericSimilarity = calculateCharacterSimilarity(normalizedInput, normalizedTarget);
+    // אם המרחק קטן (דומה מאוד), נחזיר ציון גבוה
+    if (numericSimilarity >= 0.75) {
+      return 0.8 + (numericSimilarity * 0.2); // 0.8-1.0
+    }
+    return numericSimilarity * 0.7; // אחרת, ציון נמוך יותר
+  }
+  
   // Split into words and check word matching
   const inputWords = normalizedInput.split(/\s+/);
   const targetWords = normalizedTarget.split(/\s+/);
@@ -39,8 +53,20 @@ function calculateSimilarity(input: string, target: string): number {
   let matchingWords = 0;
   for (const inputWord of inputWords) {
     for (const targetWord of targetWords) {
-      if (inputWord === targetWord || inputWord.includes(targetWord) || targetWord.includes(inputWord)) {
+      // התאמה מדויקת
+      if (inputWord === targetWord) {
         matchingWords++;
+        break;
+      }
+      // התאמה חלקית
+      if (inputWord.includes(targetWord) || targetWord.includes(inputWord)) {
+        matchingWords += 0.7;
+        break;
+      }
+      // Levenshtein למילים דומות (כולל מספרים)
+      const wordSimilarity = calculateCharacterSimilarity(inputWord, targetWord);
+      if (wordSimilarity >= 0.75) {
+        matchingWords += wordSimilarity;
         break;
       }
     }
@@ -48,7 +74,7 @@ function calculateSimilarity(input: string, target: string): number {
   
   const wordMatchScore = matchingWords / Math.max(inputWords.length, targetWords.length);
   
-  // Character-level similarity (Levenshtein-like simple approach)
+  // Character-level similarity
   const charScore = calculateCharacterSimilarity(normalizedInput, normalizedTarget);
   
   // Weighted combination
@@ -56,7 +82,40 @@ function calculateSimilarity(input: string, target: string): number {
 }
 
 /**
- * Calculate character-level similarity
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[len1][len2];
+}
+
+/**
+ * Calculate character-level similarity using Levenshtein distance
  */
 function calculateCharacterSimilarity(str1: string, str2: string): number {
   const longer = str1.length > str2.length ? str1 : str2;
@@ -64,14 +123,11 @@ function calculateCharacterSimilarity(str1: string, str2: string): number {
   
   if (longer.length === 0) return 1.0;
   
-  let matches = 0;
-  for (let i = 0; i < shorter.length; i++) {
-    if (longer.includes(shorter[i])) {
-      matches++;
-    }
-  }
+  const distance = levenshteinDistance(str1, str2);
+  const maxLength = Math.max(str1.length, str2.length);
   
-  return matches / longer.length;
+  // המרה למספר בין 0 ל-1 (1 = זהה לחלוטין)
+  return 1 - (distance / maxLength);
 }
 
 /**

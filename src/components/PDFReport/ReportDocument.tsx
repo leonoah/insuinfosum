@@ -177,7 +177,7 @@ export const ReportDocument = ({
         )}
 
         {/* Next Steps */}
-        {selectedSections.nextSteps && nextStepsText && (
+        {selectedSections.nextSteps && nextStepsText && nextStepsText.trim() && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>משימות והמשך טיפול</Text>
             <Text style={styles.text}>{nextStepsText}</Text>

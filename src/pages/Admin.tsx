@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InsuranceManagement } from "@/components/admin/InsuranceManagement";
 import { AgentInfo } from "@/components/admin/AgentInfo";
 import { ClientsList } from "@/components/admin/ClientsList";
+import { ClientManagement } from "@/components/admin/ClientManagement";
 import { ReportsLog } from "@/components/admin/ReportsLog";
-import { Shield, Building2, User, Users, FileText } from "lucide-react";
+import { ProductTaxonomyManagement } from "@/components/admin/ProductTaxonomyManagement";
+import { Shield, Building2, User, Users, FileText, Database, UserPlus } from "lucide-react";
 
 const Admin = () => {
   return (
@@ -24,18 +26,26 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="insurance" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
             <TabsTrigger value="insurance" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               חברות ביטוח
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              מוצרים וחשיפות
             </TabsTrigger>
             <TabsTrigger value="agent" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               פרטי הסוכן
             </TabsTrigger>
+            <TabsTrigger value="manage-clients" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              ניהול לקוחות
+            </TabsTrigger>
             <TabsTrigger value="clients" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              לקוחות
+              רשימת לקוחות
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -57,6 +67,20 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="products">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  ניהול מוצרים ונתוני חשיפה
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductTaxonomyManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="agent">
             <Card>
               <CardHeader>
@@ -67,6 +91,20 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <AgentInfo />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="manage-clients">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  ניהול לקוחות
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ClientManagement />
               </CardContent>
             </Card>
           </TabsContent>

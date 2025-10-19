@@ -71,7 +71,14 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
   const [manufacturerFilter, setManufacturerFilter] = useState<string>('all');
   
   // Load taxonomy for smart matching
-  const { getAllCategories, getAllSubCategories, getAllCompanies, loading: taxonomyLoading } = useProductTaxonomy();
+  const { 
+    getAllCategories, 
+    getAllSubCategories, 
+    getAllCompanies, 
+    getExposureData, 
+    getSubCategoriesForCategoryAndCompany,
+    loading: taxonomyLoading 
+  } = useProductTaxonomy();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -270,24 +277,154 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     };
   };
 
-  // Smart matching function using the new architecture
-  const smartMatchProduct = (productType: string, subCategory: string, company: string) => {
+  // Smart matching function with improved logic
+  const smartMatchProduct = (productType: string, subCategory: string, company: string, productNumber?: string) => {
+    console.log('🔍 Excel Dialog Product Matching Summary:');
+    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
+    
+    // Helper function to extract numbers with priority: parentheses first, then by length
+    const extractNumbers = (text: string): string[] => {
+      // First, try to find numbers in parentheses - these are usually fund numbers
+      const numbersInParentheses = text.match(/\((\d+)\)/g);
+      if (numbersInParentheses && numbersInParentheses.length > 0) {
+        return numbersInParentheses.map(match => match.replace(/[()]/g, ''));
+      }
+      
+      // If no parentheses, extract all numbers and sort by length (longer numbers first)
+      const allNumbers = text.match(/\d+/g);
+      if (allNumbers) {
+        return allNumbers.sort((a, b) => b.length - a.length);
+      }
+      
+      return [];
+    };
+    
+    // PRIORITY 1: Search by product number - try ALL extracted numbers with priority
+    // Collect numbers with priority: parentheses first, then by length
+    const numbersToSearch: string[] = [];
+    
+    // Check each field in order of importance
+    const fields = [
+      subCategory,    // Most likely to contain fund number in parentheses
+      productType,    // Second most likely
+      productNumber,  // Explicit product number field
+      company         // Least likely but still check
+    ];
+    
+    fields.forEach(field => {
+      if (field) {
+        const numbers = extractNumbers(field);
+        numbersToSearch.push(...numbers);
+      }
+    });
+    
+    // Remove duplicates while preserving order
+    const uniqueNumbers = [...new Set(numbersToSearch)];
+    
+    console.log(`🔢 Found ${uniqueNumbers.length} numbers to check (prioritized): ${uniqueNumbers.join(', ')}`);
+    
+    // Try each number in the DB until we find a match
+    for (const numToSearch of uniqueNumbers) {
+      console.log(`   Checking number: ${numToSearch}`);
+      const directMatch = getExposureData('', '', '', numToSearch);
+      if (directMatch) {
+        console.log('✅ FOUND by Product Number:', directMatch);
+        return {
+          category: directMatch.category,
+          subCategory: directMatch.newTrackName,
+          company: directMatch.company,
+          exposureStocks: directMatch.exposureStocks,
+          exposureBonds: directMatch.exposureBonds,
+          exposureForeignCurrency: directMatch.exposureForeignCurrency,
+          exposureForeignInvestments: directMatch.exposureForeignInvestments,
+          exposureIsrael: directMatch.exposureIsrael,
+          exposureIlliquidAssets: directMatch.exposureIlliquidAssets,
+          productNumber: directMatch.productNumber
+        };
+      }
+    }
+    
+    if (uniqueNumbers.length > 0) {
+      console.log(`⚠️ None of the numbers found in taxonomy: ${uniqueNumbers.join(', ')}`);
+    }
+    
+    // PRIORITY 2: Try semantic matching
     const categories = getAllCategories();
-    const subCategories = getAllSubCategories();
     const companies = getAllCompanies();
     
     const matchedCategory = matchCategory(productType, categories);
-    const matchedSubCategory = matchSubCategory(subCategory, subCategories);
     const matchedCompany = matchCompany(company, companies);
     
-    console.log('🔍 Excel Dialog Product Matching Summary:');
-    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}"`);
+    console.log(`📊 Matched Category: "${matchedCategory}", Company: "${matchedCompany}"`);
+    
+    // PRIORITY 3: If we have category and company, get filtered subcategory list
+    if (matchedCategory && matchedCompany) {
+      const relevantSubCategories = getSubCategoriesForCategoryAndCompany(matchedCategory, matchedCompany);
+      console.log(`📋 Found ${relevantSubCategories.length} subcategories for ${matchedCompany} - ${matchedCategory}`);
+      
+      // Try to find any number in any of the relevant subcategories
+      for (const numToSearch of uniqueNumbers) {
+        const subCatWithNumber = relevantSubCategories.find(sc => sc.includes(numToSearch));
+        if (subCatWithNumber) {
+          console.log(`✅ Found subcategory with number: "${subCatWithNumber}"`);
+          const exposureData = getExposureData(matchedCompany, matchedCategory, subCatWithNumber, numToSearch);
+          return {
+            category: matchedCategory,
+            subCategory: subCatWithNumber,
+            company: matchedCompany,
+            exposureStocks: exposureData?.exposureStocks,
+            exposureBonds: exposureData?.exposureBonds,
+            exposureForeignCurrency: exposureData?.exposureForeignCurrency,
+            exposureForeignInvestments: exposureData?.exposureForeignInvestments,
+            exposureIsrael: exposureData?.exposureIsrael,
+            exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
+            assetComposition: exposureData?.assetComposition,
+            productNumber: numToSearch
+          };
+        }
+      }
+      
+      // Match subcategory from the filtered list
+      const matchedSubCategory = matchSubCategory(subCategory, relevantSubCategories);
+      console.log(`🎯 Best subcategory match: "${matchedSubCategory}"`);
+      
+      const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, uniqueNumbers[0]);
+      return {
+        category: matchedCategory,
+        subCategory: matchedSubCategory,
+        company: matchedCompany,
+        exposureStocks: exposureData?.exposureStocks,
+        exposureBonds: exposureData?.exposureBonds,
+        exposureForeignCurrency: exposureData?.exposureForeignCurrency,
+        exposureForeignInvestments: exposureData?.exposureForeignInvestments,
+        exposureIsrael: exposureData?.exposureIsrael,
+        exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
+        assetComposition: exposureData?.assetComposition,
+        productNumber: uniqueNumbers[0] || undefined
+      };
+    }
+    
+    // FALLBACK: General semantic matching if no category/company match
+    const allSubCategories = getAllSubCategories();
+    const matchedSubCategory = matchSubCategory(subCategory, allSubCategories);
+    
+    console.log('⚠️ Fallback to general matching');
     console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
+    
+    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, uniqueNumbers[0]);
     
     return {
       category: matchedCategory,
       subCategory: matchedSubCategory,
-      company: matchedCompany
+      company: matchedCompany,
+      exposureStocks: exposureData?.exposureStocks,
+      exposureBonds: exposureData?.exposureBonds,
+      exposureForeignCurrency: exposureData?.exposureForeignCurrency,
+      exposureForeignInvestments: exposureData?.exposureForeignInvestments,
+      exposureIsrael: exposureData?.exposureIsrael,
+      exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
+      assetComposition: exposureData?.assetComposition,
+      productNumber: uniqueNumbers[0] || undefined
     };
   };
 
@@ -399,7 +536,13 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
           investmentTrack: savingsProduct.investmentTrack || '',
           riskLevelChange: '',
           notes: savingsProduct.policyNumber || '',
-          type: 'current'
+          type: 'current',
+          includeExposureData: !!(matched.exposureStocks || matched.exposureBonds || matched.exposureForeignCurrency || matched.exposureForeignInvestments),
+          exposureStocks: matched.exposureStocks,
+          exposureBonds: matched.exposureBonds,
+          exposureForeignCurrency: matched.exposureForeignCurrency,
+          exposureForeignInvestments: matched.exposureForeignInvestments,
+          productNumber: matched.productNumber
         };
         selectedProducts.push(product);
       }
@@ -428,7 +571,13 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
           investmentTrack: '',
           riskLevelChange: '',
           notes: insuranceProduct.policyNumber || '',
-          type: 'current'
+          type: 'current',
+          includeExposureData: !!(matched.exposureStocks || matched.exposureBonds || matched.exposureForeignCurrency || matched.exposureForeignInvestments),
+          exposureStocks: matched.exposureStocks,
+          exposureBonds: matched.exposureBonds,
+          exposureForeignCurrency: matched.exposureForeignCurrency,
+          exposureForeignInvestments: matched.exposureForeignInvestments,
+          productNumber: matched.productNumber
         };
         selectedProducts.push(product);
       }

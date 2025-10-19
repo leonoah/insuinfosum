@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Copy, Mic } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Copy, Mic, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { SelectedProduct, ProductSelectionStep, PRODUCT_ICONS } from '@/types/products';
 import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import VoiceProductInput from './VoiceProductInput';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 interface NewProductSelectionModalProps {
   isOpen: boolean;
@@ -30,22 +34,33 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   existingProducts = [],
   editingProduct = null
 }) => {
-  const { hierarchy, loading, error, getExposureData } = useProductTaxonomy();
+  const { hierarchy, loading, error, getExposureData, getCompaniesForCategory, getSubCategoriesForCategoryAndCompany } = useProductTaxonomy();
+  const { toast } = useToast();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [initialFormData, setInitialFormData] = useState<Partial<SelectedProduct> | null>(null);
+  const [searchingExposure, setSearchingExposure] = useState(false);
+  const [exposureSearchResults, setExposureSearchResults] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
     }
-    return {
+    const initialData: Partial<SelectedProduct> = {
       type: productType,
       amount: 0,
       managementFeeOnDeposit: 0,
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
-      riskLevelChange: 'no-change',
-      notes: ''
+      riskLevelChange: '',
+      notes: '',
+      includeExposureData: false,
+      includeStocksInSummary: true,
+      includeBondsInSummary: true,
+      includeForeignCurrencyInSummary: true,
+      includeForeignInvestmentsInSummary: true
     };
+    return initialData;
   });
 
   useEffect(() => {
@@ -57,17 +72,25 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         selectedCompany: editingProduct.company
       });
       setFormData(editingProduct);
+      setInitialFormData(editingProduct);
     } else {
       setStep({ current: 1 });
-      setFormData({
+      const initialData: Partial<SelectedProduct> = {
         type: productType,
         amount: 0,
         managementFeeOnDeposit: 0,
         managementFeeOnAccumulation: 0,
         investmentTrack: '',
-        riskLevelChange: 'no-change',
-        notes: ''
-      });
+        riskLevelChange: '',
+        notes: '',
+        includeExposureData: false,
+        includeStocksInSummary: true,
+        includeBondsInSummary: true,
+        includeForeignCurrencyInSummary: true,
+        includeForeignInvestmentsInSummary: true
+      };
+      setFormData(initialData);
+      setInitialFormData(initialData);
     }
   }, [editingProduct, productType]);
 
@@ -75,101 +98,106 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     setStep({ current: 2, selectedCategory: category });
   };
 
-  const handleSubCategorySelect = (subCategory: string) => {
-    setStep({ ...step, current: 3, selectedSubCategory: subCategory });
+  const handleCompanySelect = (company: string) => {
+    setStep({ ...step, current: 3, selectedCompany: company });
   };
 
-  const handleCompanySelect = (company: string) => {
-    // Get exposure data and populate form
-    if (step.selectedCategory && step.selectedSubCategory) {
-      const exposureData = getExposureData(step.selectedCategory, step.selectedSubCategory, company);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
+  const handleSubCategorySelect = (subCategory: string) => {
+    // Get exposure data and populate form - pass productNumber if available
+    if (step.selectedCategory && step.selectedCompany) {
+      const trackName = subCategory || '';
+      const productNumber = formData.productNumber;
+      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName, productNumber);
+      
+      if (exposureData) {
+        setFormData(prev => ({
+          ...prev,
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        }));
+      }
     }
-    setStep({ ...step, selectedCompany: company });
+    setStep({ ...step, selectedSubCategory: subCategory });
   };
 
   // Handle category change in edit mode
   const handleCategoryChange = (category: string) => {
-    const newSubCategories = hierarchy.subCategories.get(category) || [];
-    const firstSubCategory = newSubCategories[0];
-    
-    // Check if current company exists in the new category/subcategory combination
-    const currentCompany = step.selectedCompany;
-    const newCompanies = hierarchy.companies.get(category)?.get(firstSubCategory) || [];
-    const companyStillExists = currentCompany && newCompanies.includes(currentCompany);
-    
+    // Reset company and subcategory when category changes - always require reselection
     const newStep = {
       current: 3,
       selectedCategory: category,
-      selectedSubCategory: firstSubCategory,
-      selectedCompany: companyStillExists ? currentCompany : undefined
+      selectedCompany: undefined,
+      selectedSubCategory: undefined
     };
     
     setStep(newStep as ProductSelectionStep);
     
-    // Update exposure data if company still exists
-    if (companyStillExists && firstSubCategory) {
-      const exposureData = getExposureData(category, firstSubCategory, currentCompany!);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        exposureStocks: undefined,
-        exposureBonds: undefined,
-        exposureForeignCurrency: undefined,
-        exposureForeignInvestments: undefined
-      }));
-    }
-  };
-
-  // Handle sub-category change in edit mode
-  const handleSubCategoryChange = (subCategory: string) => {
-    const currentCompany = step.selectedCompany;
-    const newCompanies = step.selectedCategory 
-      ? hierarchy.companies.get(step.selectedCategory)?.get(subCategory) || []
-      : [];
-    const companyStillExists = currentCompany && newCompanies.includes(currentCompany);
-    
-    setStep({ 
-      ...step,
-      selectedSubCategory: subCategory,
-      selectedCompany: companyStillExists ? currentCompany : undefined
-    });
-    
-    // Update exposure data if company still exists
-    if (companyStillExists && step.selectedCategory) {
-      const exposureData = getExposureData(step.selectedCategory, subCategory, currentCompany!);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        exposureStocks: undefined,
-        exposureBonds: undefined,
-        exposureForeignCurrency: undefined,
-        exposureForeignInvestments: undefined
-      }));
-    }
+    // Clear exposure data
+    setFormData(prev => ({
+      ...prev,
+      exposureStocks: undefined,
+      exposureBonds: undefined,
+      exposureForeignCurrency: undefined,
+      exposureForeignInvestments: undefined,
+      exposureIsrael: undefined,
+      exposureIlliquidAssets: undefined,
+      assetComposition: undefined
+    }));
   };
 
   // Handle company change in edit mode
   const handleCompanyChange = (company: string) => {
-    if (step.selectedCategory && step.selectedSubCategory) {
-      const exposureData = getExposureData(step.selectedCategory, step.selectedSubCategory, company);
-      setFormData(prev => ({
-        ...prev,
-        ...exposureData
-      }));
+    // Reset subcategory when company changes
+    setStep({ 
+      ...step,
+      selectedCompany: company,
+      selectedSubCategory: undefined
+    });
+    
+    // Clear exposure data
+    setFormData(prev => ({
+      ...prev,
+      exposureStocks: undefined,
+      exposureBonds: undefined,
+      exposureForeignCurrency: undefined,
+      exposureForeignInvestments: undefined,
+      exposureIsrael: undefined,
+      exposureIlliquidAssets: undefined,
+      assetComposition: undefined
+    }));
+  };
+
+  // Handle sub-category change in edit mode
+  const handleSubCategoryChange = (subCategory: string) => {
+    setStep({ 
+      ...step,
+      selectedSubCategory: subCategory
+    });
+    
+    // Update exposure data
+    if (step.selectedCompany && step.selectedCategory) {
+      const trackName = subCategory || '';
+      const productNumber = formData.productNumber;
+      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName, productNumber);
+      
+      if (exposureData) {
+        setFormData(prev => ({
+          ...prev,
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        }));
+      }
     }
-    setStep({ ...step, selectedCompany: company });
   };
 
   const handleDuplicate = (existingProduct: SelectedProduct) => {
@@ -209,10 +237,19 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       riskLevelChange: formData.riskLevelChange === 'no-change' ? '' : formData.riskLevelChange || '',
       notes: formData.notes || '',
       type: productType,
+      includeExposureData: formData.exposureStocks !== undefined,
       exposureStocks: formData.exposureStocks,
       exposureBonds: formData.exposureBonds,
       exposureForeignCurrency: formData.exposureForeignCurrency,
-      exposureForeignInvestments: formData.exposureForeignInvestments
+      exposureForeignInvestments: formData.exposureForeignInvestments,
+      exposureIsrael: formData.exposureIsrael,
+      exposureIlliquidAssets: formData.exposureIlliquidAssets,
+      assetComposition: formData.assetComposition,
+      productNumber: formData.productNumber,
+      includeStocksInSummary: formData.includeStocksInSummary ?? true,
+      includeBondsInSummary: formData.includeBondsInSummary ?? true,
+      includeForeignCurrencyInSummary: formData.includeForeignCurrencyInSummary ?? true,
+      includeForeignInvestmentsInSummary: formData.includeForeignInvestmentsInSummary ?? true
     };
 
     console.log('Submitting product:', product);
@@ -255,18 +292,118 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     }
   };
 
+  const handleSearchExposure = async () => {
+    if (!step.selectedCompany || !step.selectedCategory || !step.selectedSubCategory) {
+      toast({
+        title: "שגיאה",
+        description: "נא לבחור קטגוריה, חברה ותת קטגוריה לפני החיפוש",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSearchingExposure(true);
+    setExposureSearchResults(null);
+
+    try {
+      const searchQuery = `${step.selectedCompany} ${step.selectedCategory} ${step.selectedSubCategory} ${formData.investmentTrack || ''} חשיפות מניות אגח מטח השקעות חול ישראל תמהיל נכסים`;
+      
+      toast({
+        title: "מחפש ברשת...",
+        description: `מחפש נתוני חשיפות עבור ${step.selectedCompany} - ${step.selectedSubCategory}`
+      });
+
+      const response = await fetch(`https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/search-exposure`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvb2RrY2Nqd3l5YndnbWt6YXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNDcyMDUsImV4cCI6MjA2MzkyMzIwNX0.Jpz2_RIyrr2Bvpu6yrX37Z_Kl5lUhhyLerfa6G2MHJc`
+        },
+        body: JSON.stringify({
+          company: step.selectedCompany,
+          category: step.selectedCategory,
+          subCategory: step.selectedSubCategory,
+          investmentTrack: formData.investmentTrack || '',
+          searchQuery
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search exposure data');
+      }
+
+      const data = await response.json();
+      
+      if (data.exposureData) {
+        setExposureSearchResults(data.summary);
+        
+        // Automatically populate the form with found data
+        setFormData({
+          ...formData,
+          exposureStocks: data.exposureData.exposureStocks ?? formData.exposureStocks,
+          exposureBonds: data.exposureData.exposureBonds ?? formData.exposureBonds,
+          exposureForeignCurrency: data.exposureData.exposureForeignCurrency ?? formData.exposureForeignCurrency,
+          exposureForeignInvestments: data.exposureData.exposureForeignInvestments ?? formData.exposureForeignInvestments,
+          exposureIsrael: data.exposureData.exposureIsrael ?? formData.exposureIsrael,
+          exposureIlliquidAssets: data.exposureData.exposureIlliquidAssets ?? formData.exposureIlliquidAssets
+        });
+
+        toast({
+          title: "נמצאו נתוני חשיפות!",
+          description: "הנתונים עודכנו בטופס"
+        });
+      } else {
+        toast({
+          title: "לא נמצאו נתונים",
+          description: "לא הצלחנו למצוא נתוני חשיפות למוצר זה",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error searching exposure:', error);
+      toast({
+        title: "שגיאה בחיפוש",
+        description: "אירעה שגיאה בחיפוש נתוני החשיפות",
+        variant: "destructive"
+      });
+    } finally {
+      setSearchingExposure(false);
+    }
+  };
+
+  const hasUnsavedChanges = () => {
+    if (!initialFormData) return false;
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+  };
+
+  const handleCloseRequest = () => {
+    if (hasUnsavedChanges()) {
+      setShowCloseConfirm(true);
+    } else {
+      handleClose();
+    }
+  };
+
   const handleClose = () => {
     setStep({ current: 1 });
     setInputMode('manual');
-    setFormData({
+    setShowCloseConfirm(false);
+    const resetData: Partial<SelectedProduct> = {
       type: productType,
       amount: 0,
       managementFeeOnDeposit: 0,
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
-      riskLevelChange: 'no-change',
-      notes: ''
-    });
+      riskLevelChange: '',
+      notes: '',
+      includeExposureData: false,
+      includeStocksInSummary: true,
+      includeBondsInSummary: true,
+      includeForeignCurrencyInSummary: true,
+      includeForeignInvestmentsInSummary: true
+    };
+    setFormData(resetData);
+    setInitialFormData(null);
     onClose();
   };
 
@@ -278,28 +415,31 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     availableCategories.push(step.selectedCategory);
   }
 
-  const availableSubCategories = step.selectedCategory 
-    ? hierarchy.subCategories.get(step.selectedCategory) || []
+  // Filter companies by category
+  const availableCompanies = step.selectedCategory
+    ? getCompaniesForCategory(step.selectedCategory)
+    : hierarchy.companies;
+  const availableCompaniesWithCurrent = [...availableCompanies];
+  if (editingProduct && step.selectedCompany && !availableCompaniesWithCurrent.includes(step.selectedCompany)) {
+    availableCompaniesWithCurrent.push(step.selectedCompany);
+  }
+
+  // Filter subcategories by category and company
+  const availableSubCategories = step.selectedCategory && step.selectedCompany
+    ? getSubCategoriesForCategoryAndCompany(step.selectedCategory, step.selectedCompany)
     : [];
   const availableSubCategoriesWithCurrent = [...availableSubCategories];
   if (editingProduct && step.selectedSubCategory && !availableSubCategoriesWithCurrent.includes(step.selectedSubCategory)) {
     availableSubCategoriesWithCurrent.push(step.selectedSubCategory);
   }
 
-  const availableCompanies = (step.selectedCategory && step.selectedSubCategory)
-    ? hierarchy.companies.get(step.selectedCategory)?.get(step.selectedSubCategory) || []
-    : [];
-  const availableCompaniesWithCurrent = [...availableCompanies];
-  if (editingProduct && step.selectedCompany && !availableCompaniesWithCurrent.includes(step.selectedCompany)) {
-    availableCompaniesWithCurrent.push(step.selectedCompany);
-  }
-
   if (loading) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
           <DialogHeader>
             <DialogTitle>טוען מוצרים...</DialogTitle>
+            <DialogDescription>אנא המתן בזמן שאנו טוענים את רשימת המוצרים</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Skeleton className="h-12 w-full" />
@@ -313,10 +453,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   if (error) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
           <DialogHeader>
             <DialogTitle>שגיאה</DialogTitle>
+            <DialogDescription>אירעה שגיאה בטעינת המוצרים</DialogDescription>
           </DialogHeader>
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -327,13 +468,16 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>
-              {editingProduct 
-                ? (productType === 'current' ? 'ערוך מוצר קיים' : 'ערוך מוצר מוצע')
+    <>
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass" onEscapeKeyDown={(e) => {
+          e.preventDefault();
+        }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {editingProduct 
+                  ? (productType === 'current' ? 'ערוך מוצר קיים' : 'ערוך מוצר מוצע')
                 : (productType === 'current' ? 'הוסף מוצר קיים' : 'הוסף מוצר מוצע')
               }
             </span>
@@ -343,8 +487,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
           </DialogTitle>
           <DialogDescription>
             {step.current === 1 && 'בחר קטגוריה'}
-            {step.current === 2 && 'בחר תת קטגוריה / מסלול'}
-            {step.current === 3 && 'בחר חברה והזן פרטים'}
+            {step.current === 2 && 'בחר חברה'}
+            {step.current === 3 && 'בחר תת קטגוריה / מסלול והזן פרטים'}
           </DialogDescription>
         </DialogHeader>
 
@@ -438,8 +582,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <span>שלב {step.current} מתוך 3</span>
                   <span>
                     {step.current === 1 && 'בחירת קטגוריה'}
-                    {step.current === 2 && 'בחירת מסלול'}
-                    {step.current === 3 && 'בחירת חברה ופרטים'}
+                    {step.current === 2 && 'בחירת חברה'}
+                    {step.current === 3 && 'בחירת מסלול ופרטים'}
                   </span>
                 </div>
                 <Progress value={progressValue} className="h-2" />
@@ -449,7 +593,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
           {/* Step 1: Category Selection (when already selected or editing) - Content moved to Tabs above */}
 
-          {/* Step 2: Sub-Category Selection */}
+          {/* Step 2: Company Selection */}
           {step.current === 2 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -457,33 +601,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <h3 className="text-lg font-semibold">
-                  בחר מסלול עבור: {step.selectedCategory}
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {availableSubCategories.map((subCategory) => (
-                  <div
-                    key={subCategory}
-                    className="glass-hover p-4 text-center cursor-pointer"
-                    onClick={() => handleSubCategorySelect(subCategory)}
-                  >
-                    <div className="font-medium">{subCategory}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Company Selection & Details */}
-          {step.current === 3 && !step.selectedCompany && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, current: 2, selectedSubCategory: undefined })}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h3 className="text-lg font-semibold">
-                  בחר חברה: {step.selectedCategory} - {step.selectedSubCategory}
+                  בחר חברה עבור: {step.selectedCategory}
                 </h3>
               </div>
 
@@ -501,8 +619,34 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
             </div>
           )}
 
-          {/* Step 3: Details Form (after company selected) */}
-          {step.current === 3 && step.selectedCompany && (
+          {/* Step 3: Sub-Category Selection & Details */}
+          {step.current === 3 && !step.selectedSubCategory && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, current: 2, selectedCompany: undefined })}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <h3 className="text-lg font-semibold">
+                  בחר מסלול: {step.selectedCategory} - {step.selectedCompany}
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {availableSubCategories.map((subCategory) => (
+                  <div
+                    key={subCategory}
+                    className="glass-hover p-4 text-center cursor-pointer"
+                    onClick={() => handleSubCategorySelect(subCategory)}
+                  >
+                    <div className="font-medium">{subCategory}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Details Form (after subcategory selected) */}
+          {step.current === 3 && step.selectedSubCategory && (
             <div className="space-y-4">
               {editingProduct ? (
                 <div className="space-y-4 mb-4">
@@ -525,31 +669,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">תת קטגוריה</label>
-                      <Select 
-                        value={step.selectedSubCategory} 
-                        onValueChange={handleSubCategoryChange}
-                        disabled={!step.selectedCategory}
-                      >
-                        <SelectTrigger className="glass">
-                          <SelectValue placeholder="בחר תת קטגוריה" />
-                        </SelectTrigger>
-                        <SelectContent className="glass z-[100]">
-                          {availableSubCategoriesWithCurrent.map((subCategory) => (
-                            <SelectItem key={subCategory} value={subCategory}>
-                              {subCategory}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
                       <Select 
                         value={step.selectedCompany} 
                         onValueChange={handleCompanyChange}
-                        disabled={!step.selectedSubCategory}
+                        disabled={!step.selectedCategory}
                       >
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר חברה" />
@@ -563,15 +687,35 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">תת קטגוריה</label>
+                      <Select 
+                        value={step.selectedSubCategory} 
+                        onValueChange={handleSubCategoryChange}
+                        disabled={!step.selectedCompany}
+                      >
+                        <SelectTrigger className="glass">
+                          <SelectValue placeholder="בחר תת קטגוריה" />
+                        </SelectTrigger>
+                        <SelectContent className="glass z-[100]">
+                          {availableSubCategoriesWithCurrent.map((subCategory) => (
+                            <SelectItem key={subCategory} value={subCategory}>
+                              {subCategory}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 mb-4">
-                  <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, selectedCompany: undefined })}>
+                  <Button variant="ghost" size="sm" onClick={() => setStep({ ...step, selectedSubCategory: undefined })}>
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <h3 className="text-lg font-semibold">
-                    פרטי המוצר: {step.selectedCategory} - {step.selectedSubCategory} - {step.selectedCompany}
+                    פרטי המוצר: {step.selectedCategory} - {step.selectedCompany} - {step.selectedSubCategory}
                   </h3>
                 </div>
               )}
@@ -623,51 +767,210 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   />
                 </div>
 
-                {/* Exposure Data Display (Read-Only) */}
-                {formData.exposureStocks !== undefined && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה למניות (%)</label>
-                      <Input
-                        type="number"
-                        className="glass bg-muted"
-                        value={formData.exposureStocks || 0}
-                        readOnly
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה לאג"ח (%)</label>
-                      <Input
-                        type="number"
-                        className="glass bg-muted"
-                        value={formData.exposureBonds || 0}
-                        readOnly
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה למט"ח (%)</label>
-                      <Input
-                        type="number"
-                        className="glass bg-muted"
-                        value={formData.exposureForeignCurrency || 0}
-                        readOnly
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה להשקעות בחו"ל (%)</label>
-                      <Input
-                        type="number"
-                        className="glass bg-muted"
-                        value={formData.exposureForeignInvestments || 0}
-                        readOnly
-                      />
-                    </div>
-                  </>
+                {/* Product Number Display */}
+                {formData.productNumber && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">מספר קרן</label>
+                    <Input
+                      type="text"
+                      className="glass bg-muted"
+                      value={formData.productNumber}
+                      readOnly
+                    />
+                  </div>
                 )}
               </div>
+
+              {/* Exposure Data Section */}
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">נתוני חשיפות</h4>
+                  <div className="flex gap-2">
+                    {step.selectedCompany && step.selectedCategory && step.selectedSubCategory && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSearchExposure}
+                        disabled={searchingExposure}
+                      >
+                        <Search className="h-4 w-4 ml-2" />
+                        {searchingExposure ? 'מחפש...' : 'חפש ערכי חשיפות'}
+                      </Button>
+                    )}
+                    {formData.exposureStocks === undefined && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            exposureStocks: 0,
+                            exposureBonds: 0,
+                            exposureForeignCurrency: 0,
+                            exposureForeignInvestments: 0
+                          });
+                        }}
+                      >
+                        הוסף נתוני חשיפה
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {exposureSearchResults && (
+                  <Alert className="bg-primary/10">
+                    <AlertDescription>
+                      <strong>תוצאות חיפוש:</strong> {exposureSearchResults}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {formData.exposureStocks === undefined ? (
+                  <div className="glass p-4 text-center text-muted-foreground">
+                    אין נתוני חשיפה
+                  </div>
+                ) : (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה למניות (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeStocks"
+                            checked={formData.includeStocksInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeStocksInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeStocks" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="glass"
+                        value={formData.exposureStocks ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureStocks: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureStocks: 0 });
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה לאג"ח (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeBonds"
+                            checked={formData.includeBondsInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeBondsInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeBonds" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="glass"
+                        value={formData.exposureBonds ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureBonds: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureBonds: 0 });
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה למט"ח (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeForeignCurrency"
+                            checked={formData.includeForeignCurrencyInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeForeignCurrencyInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeForeignCurrency" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="glass"
+                        value={formData.exposureForeignCurrency ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureForeignCurrency: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureForeignCurrency: 0 });
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה להשקעות בחו"ל (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeForeignInvestments"
+                            checked={formData.includeForeignInvestmentsInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeForeignInvestmentsInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeForeignInvestments" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="glass"
+                        value={formData.exposureForeignInvestments ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureForeignInvestments: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureForeignInvestments: 0 });
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Exposure info removed - will be asked globally for all products */}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">הערות</label>
@@ -680,7 +983,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={handleClose}>
+                <Button variant="outline" onClick={handleCloseRequest}>
                   ביטול
                 </Button>
                 <Button onClick={handleSubmit}>
@@ -690,8 +993,24 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <AlertDialogContent className="glass">
+          <AlertDialogHeader>
+            <AlertDialogTitle>סגירה ללא שמירה?</AlertDialogTitle>
+            <AlertDialogDescription>
+              יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לסגור ללא שמירה?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>המשך עריכה</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClose}>סגור ללא שמירה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

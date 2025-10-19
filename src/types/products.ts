@@ -1,12 +1,19 @@
-// New product taxonomy structure
+// New product taxonomy structure based on DB2.xlsx
 export interface ProductTaxonomy {
-  category: string;
-  subCategory: string;
-  company: string;
-  exposureStocks: number;
-  exposureBonds: number;
-  exposureForeignCurrency: number;
-  exposureForeignInvestments: number;
+  company: string; // מנהל
+  category: string; // סוג המוצר
+  oldTrackName: string; // שם המסלול הקודם
+  newTrackName: string; // שם המסלול החדש
+  productNumber: string; // מספר הקופה המזהה
+  policyChange: string; // שינוי במדיניות המסלול
+  trackMerger: string; // מיזוג המסלול
+  exposureForeignCurrency: number; // חשיפה למטח
+  exposureForeignInvestments: number; // חשיפה לחול
+  exposureIsrael: number; // חשיפה לישראל
+  exposureStocks: number; // חשיפה מנייתית
+  exposureBonds: number; // חשיפה לאגח
+  exposureIlliquidAssets: number; // חשיפה לנכסים לא סחירים
+  assetComposition: string; // הרכב נכסים
 }
 
 export interface SelectedProduct {
@@ -21,11 +28,21 @@ export interface SelectedProduct {
   riskLevelChange?: 'ירידה' | 'העלאה' | 'פיזור מחדש' | 'no-change' | '';
   notes: string;
   type: 'current' | 'recommended';
+  productNumber?: string; // מספר מוצר לזיהוי במאגר
+  includeExposureData?: boolean; // האם לכלול מידע חשיפה בדוח
   // Exposure data (populated from DB)
   exposureStocks?: number;
   exposureBonds?: number;
   exposureForeignCurrency?: number;
   exposureForeignInvestments?: number;
+  exposureIsrael?: number;
+  exposureIlliquidAssets?: number;
+  assetComposition?: string;
+  // Control which exposure fields to include in summary
+  includeStocksInSummary?: boolean;
+  includeBondsInSummary?: boolean;
+  includeForeignCurrencyInSummary?: boolean;
+  includeForeignInvestmentsInSummary?: boolean;
 }
 
 export interface ProductSelectionStep {

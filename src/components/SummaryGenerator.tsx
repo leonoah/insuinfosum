@@ -136,6 +136,7 @@ interface FormData {
   documents: string[];
   timeframes: string;
   approvals: string;
+  includeDecisionsInReport: boolean;
 }
 
 interface SummaryGeneratorProps {
@@ -153,6 +154,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     const defaultSections = { ...REPORT_SECTIONS_DEFAULT };
     if (formData.isAnonymous) {
       defaultSections.personalInfo = false;
+    }
+    // Apply includeDecisionsInReport setting
+    if (!formData.includeDecisionsInReport) {
+      defaultSections.nextSteps = false;
     }
     return defaultSections;
   });
@@ -182,6 +187,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [tempRisks, setTempRisks] = useState("");
   const [tempDecisions, setTempDecisions] = useState("");
   const [isQuickSending, setIsQuickSending] = useState(false);
+  const [includeExposureInReport, setIncludeExposureInReport] = useState(true); // כללי לכל המוצרים
 
   useEffect(() => {
     loadAgentInfo();
@@ -398,9 +404,18 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   };
 
   const generateReactPDF = async (): Promise<Blob> => {
+    // עדכון includeExposureData עבור כל המוצרים בהתאם להחלטה הכללית
+    const updatedFormData = {
+      ...formData,
+      products: formData.products.map(product => ({
+        ...product,
+        includeExposureData: includeExposureInReport
+      }))
+    };
+
     const blob = await pdf(
       <ReportDocument 
-        formData={formData}
+        formData={updatedFormData}
         agentData={agentData}
         productStats={productStats}
         selectedSections={selectedSections}
@@ -1481,6 +1496,25 @@ ${agentData.name}`;
                 className="resize-none"
                 rows={3}
               />
+            </div>
+
+            <Separator />
+
+            {/* Global Exposure Data Option */}
+            <div className="flex items-start space-x-3 space-x-reverse p-4 bg-muted/20 rounded-xl">
+              <Checkbox
+                id="includeExposure"
+                checked={includeExposureInReport}
+                onCheckedChange={(checked) => setIncludeExposureInReport(checked as boolean)}
+              />
+              <div className="flex-1">
+                <Label htmlFor="includeExposure" className="font-medium cursor-pointer">
+                  להוסיף נתוני חשיפה של המוצרים לדוח?
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  יוצגו נתוני חשיפה (מניות, אג"ח, מט"ח וכו') עבור כל המוצרים שיש להם מידע זה
+                </p>
+              </div>
             </div>
 
             <DialogFooter>

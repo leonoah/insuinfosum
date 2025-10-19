@@ -85,7 +85,16 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
 
     const productsToImport = pensionData.summary.products
       .filter(product => selectedProducts.has(product.id))
-      .map(product => PensionParser.convertPensionProductToInsuranceProduct(product));
+      .map(product => {
+        const basicProduct = PensionParser.convertPensionProductToInsuranceProduct(product);
+        
+        // כעת נבצע התאמה חכמה עם מספר קופה
+        // (הלוגיקה כבר נמצאת ב-ExcelImport, אבל כאן נדאג שה-productNumber מועבר)
+        return {
+          ...basicProduct,
+          productNumber: product.policyNumber // משתמשים במספר פוליסה כמספר קופה
+        };
+      });
 
     onProductsSelected(productsToImport);
     

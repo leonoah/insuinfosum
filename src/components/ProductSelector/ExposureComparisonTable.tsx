@@ -19,19 +19,21 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   currentProducts,
   recommendedProducts
 }) => {
-  // Only show products that have exposure data
+  // Only show products that are marked to be included in exposure summary
   const currentWithExposure = currentProducts.filter(p => 
-    p.exposureStocks !== undefined || 
+    p.includeExposureData === true &&
+    (p.exposureStocks !== undefined || 
     p.exposureBonds !== undefined ||
     p.exposureForeignCurrency !== undefined ||
-    p.exposureForeignInvestments !== undefined
+    p.exposureForeignInvestments !== undefined)
   );
 
   const recommendedWithExposure = recommendedProducts.filter(p => 
-    p.exposureStocks !== undefined || 
+    p.includeExposureData === true &&
+    (p.exposureStocks !== undefined || 
     p.exposureBonds !== undefined ||
     p.exposureForeignCurrency !== undefined ||
-    p.exposureForeignInvestments !== undefined
+    p.exposureForeignInvestments !== undefined)
   );
 
   if (currentWithExposure.length === 0 && recommendedWithExposure.length === 0) {
@@ -39,15 +41,18 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   }
 
   const formatExposure = (value: number | undefined): string => {
-    return value !== undefined ? `${value}%` : '-';
+    if (value === undefined) return '-';
+    // Ensure value is treated as percentage (0-100 range)
+    const numValue = Number(value);
+    return `${numValue.toFixed(2)}%`;
   };
 
   const calculateDifference = (current: number | undefined, recommended: number | undefined): string => {
     if (current === undefined || recommended === undefined) return '-';
     const diff = recommended - current;
-    if (diff === 0) return '0%';
+    if (Math.abs(diff) < 0.01) return '0%';
     const sign = diff > 0 ? '+' : '';
-    return `${sign}${diff}%`;
+    return `${sign}${diff.toFixed(2)}%`;
   };
 
   const getDifferenceColor = (current: number | undefined, recommended: number | undefined): string => {
@@ -217,4 +222,5 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   );
 };
 
+export { ExposureComparisonTable };
 export default ExposureComparisonTable;

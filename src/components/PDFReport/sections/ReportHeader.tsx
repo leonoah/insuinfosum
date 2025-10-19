@@ -21,10 +21,12 @@ export const ReportHeader = ({ title, date, agentName, logoUrl }: ReportHeaderPr
   return (
     <View style={styles.header}>
       <View style={{ alignItems: 'center', width: '100%' }}>
-        <Text style={styles.headerTitle}>{title}</Text>
+        <Text style={styles.headerTitle}>{title || 'דוח סיכום שיחה'}</Text>
         <Text style={styles.headerDate}>תאריך: {formatDate(date)}</Text>
-        <Text style={styles.headerDate}>סוכן: {agentName}</Text>
-        {logoUrl && (
+        {agentName && agentName.trim() && (
+          <Text style={styles.headerDate}>סוכן: {agentName}</Text>
+        )}
+        {logoUrl && logoUrl.trim() && (
           <Image 
             src={logoUrl} 
             style={{ ...styles.logo, marginTop: 15 }}

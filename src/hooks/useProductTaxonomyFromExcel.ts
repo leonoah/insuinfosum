@@ -1,8 +1,5 @@
-/**
- * Main hook for product taxonomy - loads from Supabase database
- */
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 import { ProductTaxonomy } from '@/types/products';
 
 interface ProductHierarchy {
@@ -14,7 +11,7 @@ interface ProductHierarchy {
   productsByCompanyAndTrack: Map<string, ProductTaxonomy[]>;
 }
 
-export const useProductTaxonomy = () => {
+export const useProductTaxonomyFromExcel = () => {
   const [hierarchy, setHierarchy] = useState<ProductHierarchy>({
     categories: [],
     companies: [],
@@ -29,21 +26,17 @@ export const useProductTaxonomy = () => {
   const loadProductTaxonomy = async () => {
     try {
       setLoading(true);
-      
-      // Load data from Supabase database
-      const { data, error: fetchError } = await supabase
-        .from('products_taxonomy')
-        .select('*')
-        .order('company', { ascending: true });
+      const response = await fetch('/src/data/products_taxonomy.xlsx');
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
 
-      if (fetchError) {
-        throw fetchError;
+      if (data.length < 2) {
+        throw new Error('הקובץ ריק או לא תקין');
       }
 
-      if (!data || data.length === 0) {
-        throw new Error('לא נמצאו נתונים בטבלת המוצרים');
-      }
-
+      const headers = data[0];
       const products: ProductTaxonomy[] = [];
       const categoriesSet = new Set<string>();
       const companiesSet = new Set<string>();
@@ -51,32 +44,35 @@ export const useProductTaxonomy = () => {
       const productsByNumber = new Map<string, ProductTaxonomy>();
       const productsByCompanyAndTrack = new Map<string, ProductTaxonomy[]>();
 
-      // Parse database rows
-      data.forEach((row) => {
+      // Parse data rows
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || row.length === 0) continue;
+
         const product: ProductTaxonomy = {
-          company: row.company || '',
-          category: row.category || '',
-          oldTrackName: row.sub_category || '',
-          newTrackName: row.sub_category || '',
-          productNumber: row.product_number || '', // מספר קופה מה-DB
-          policyChange: '',
-          trackMerger: '',
-          exposureForeignCurrency: Number(row.exposure_foreign_currency) || 0,
-          exposureForeignInvestments: Number(row.exposure_foreign_investments) || 0,
-          exposureIsrael: 0,
-          exposureStocks: Number(row.exposure_stocks) || 0,
-          exposureBonds: Number(row.exposure_bonds) || 0,
-          exposureIlliquidAssets: 0,
-          assetComposition: '',
+          company: String(row[0] || '').trim(),
+          category: String(row[1] || '').trim(),
+          oldTrackName: String(row[2] || '').trim(),
+          newTrackName: String(row[3] || '').trim(),
+          productNumber: String(row[4] || '').trim(),
+          policyChange: String(row[5] || '').trim(),
+          trackMerger: String(row[6] || '').trim(),
+          exposureForeignCurrency: parseFloat(String(row[7] || '0').replace('%', '')) || 0,
+          exposureForeignInvestments: parseFloat(String(row[8] || '0').replace('%', '')) || 0,
+          exposureIsrael: parseFloat(String(row[9] || '0').replace('%', '')) || 0,
+          exposureStocks: parseFloat(String(row[10] || '0').replace('%', '')) || 0,
+          exposureBonds: parseFloat(String(row[11] || '0').replace('%', '')) || 0,
+          exposureIlliquidAssets: parseFloat(String(row[12] || '0').replace('%', '')) || 0,
+          assetComposition: String(row[13] || '').trim(),
         };
 
-        if (!product.company || !product.category) return;
+        if (!product.company || !product.category) continue;
 
         products.push(product);
         categoriesSet.add(product.category);
         companiesSet.add(product.company);
 
-        // Track subcategories
+        // Track subcategories (new track names)
         if (product.newTrackName) {
           if (!subCategoriesMap.has(product.category)) {
             subCategoriesMap.set(product.category, new Set());
@@ -84,27 +80,18 @@ export const useProductTaxonomy = () => {
           subCategoriesMap.get(product.category)!.add(product.newTrackName);
         }
 
-        // Index by product number (מספר קופה/קרן)
+        // Index by product number
         if (product.productNumber) {
           productsByNumber.set(product.productNumber, product);
         }
 
-        // Index by company and track name (both new and old)
-        if (product.newTrackName) {
-          const trackKey = `${product.company}:${product.newTrackName}`;
-          if (!productsByCompanyAndTrack.has(trackKey)) {
-            productsByCompanyAndTrack.set(trackKey, []);
-          }
-          productsByCompanyAndTrack.get(trackKey)!.push(product);
+        // Index by company and track name
+        const trackKey = `${product.company}:${product.newTrackName || product.oldTrackName}`;
+        if (!productsByCompanyAndTrack.has(trackKey)) {
+          productsByCompanyAndTrack.set(trackKey, []);
         }
-        if (product.oldTrackName && product.oldTrackName !== product.newTrackName) {
-          const trackKey = `${product.company}:${product.oldTrackName}`;
-          if (!productsByCompanyAndTrack.has(trackKey)) {
-            productsByCompanyAndTrack.set(trackKey, []);
-          }
-          productsByCompanyAndTrack.get(trackKey)!.push(product);
-        }
-      });
+        productsByCompanyAndTrack.get(trackKey)!.push(product);
+      }
 
       setHierarchy({
         categories: Array.from(categoriesSet).sort(),
@@ -115,7 +102,7 @@ export const useProductTaxonomy = () => {
         productsByCompanyAndTrack,
       });
 
-      console.log('✅ טעינת טקסונומיית מוצרים מ-database הושלמה:', {
+      console.log('✅ טעינת טקסונומיית מוצרים מאקסל הושלמה:', {
         categories: categoriesSet.size,
         companies: companiesSet.size,
         products: products.length,
@@ -184,38 +171,6 @@ export const useProductTaxonomy = () => {
     return Array.from(allSubs).sort();
   };
 
-  /**
-   * Get filtered companies for a specific category
-   */
-  const getCompaniesForCategory = (category: string): string[] => {
-    const companies = new Set<string>();
-    
-    hierarchy.products.forEach(product => {
-      if (product.category === category) {
-        companies.add(product.company);
-      }
-    });
-    
-    return Array.from(companies).sort((a, b) => a.localeCompare(b, 'he'));
-  };
-
-  /**
-   * Get filtered subcategories for a specific category and company
-   */
-  const getSubCategoriesForCategoryAndCompany = (category: string, company: string): string[] => {
-    const subCats = new Set<string>();
-    
-    hierarchy.products.forEach(product => {
-      if (product.category === category && product.company === company) {
-        if (product.newTrackName) {
-          subCats.add(product.newTrackName);
-        }
-      }
-    });
-    
-    return Array.from(subCats).sort((a, b) => a.localeCompare(b, 'he'));
-  };
-
   return {
     hierarchy,
     loading,
@@ -224,8 +179,6 @@ export const useProductTaxonomy = () => {
     getAllCategories,
     getAllCompanies,
     getAllSubCategories,
-    getCompaniesForCategory,
-    getSubCategoriesForCategoryAndCompany,
-    reload: loadProductTaxonomy,
+    reloadTaxonomy: loadProductTaxonomy,
   };
 };

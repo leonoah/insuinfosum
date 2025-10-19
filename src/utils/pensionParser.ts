@@ -285,6 +285,8 @@ export class PensionParser {
         summary: {
           clientId: zipData.clientId,
           clientName: zipData.clientName,
+          clientPhone: zipData.clientPhone,
+          clientEmail: zipData.clientEmail,
           reportDate: zipData.reportDate,
           products: zipData.products,
           totalByType: {
@@ -310,6 +312,8 @@ export class PensionParser {
         summary: {
           clientId: xmlData.clientId,
           clientName: xmlData.clientName,
+          clientPhone: xmlData.clientPhone,
+          clientEmail: xmlData.clientEmail,
           reportDate: xmlData.reportDate,
           products: xmlData.products,
           totalByType: {

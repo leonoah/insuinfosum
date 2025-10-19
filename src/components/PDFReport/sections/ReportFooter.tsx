@@ -13,10 +13,16 @@ export const ReportFooter = ({ agentName, agentPhone, agentEmail, logoUrl }: Rep
   return (
     <View style={styles.footer}>
       <View style={{ alignItems: 'center', width: '100%' }}>
-        <Text style={styles.footerText}>סוכן: {agentName}</Text>
-        {agentPhone && <Text style={styles.footerText}>טלפון: {agentPhone}</Text>}
-        {agentEmail && <Text style={styles.footerText}>דוא"ל: {agentEmail}</Text>}
-        {logoUrl && (
+        {agentName && agentName.trim() && (
+          <Text style={styles.footerText}>סוכן: {agentName}</Text>
+        )}
+        {agentPhone && agentPhone.trim() && (
+          <Text style={styles.footerText}>טלפון: {agentPhone}</Text>
+        )}
+        {agentEmail && agentEmail.trim() && (
+          <Text style={styles.footerText}>דוא"ל: {agentEmail}</Text>
+        )}
+        {logoUrl && logoUrl.trim() && (
           <Image 
             src={logoUrl} 
             style={{ ...styles.footerLogo, marginTop: 10, marginBottom: 10 }}

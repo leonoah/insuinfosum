@@ -8,12 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import RecordingModal from "./CallRecording/RecordingModal";
 import VoiceTextInput from "./VoiceTextInput";
+import { ClientFileImport } from "./ClientFileImport";
 import { SelectedProduct } from "@/types/products";
 // Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
@@ -24,11 +30,6 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 interface Client {
   id: string;
@@ -63,6 +64,7 @@ interface FormData {
   documents: string[];
   timeframes: string;
   approvals: string;
+  includeDecisionsInReport: boolean;
 }
 
 const insuranceTopics = [
@@ -97,7 +99,8 @@ const AppForm = () => {
     decisions: "",
     documents: [],
     timeframes: "",
-    approvals: ""
+    approvals: "",
+    includeDecisionsInReport: true
   });
 
   // Required fields: current situation, and client details only if not anonymous
@@ -539,15 +542,30 @@ const AppForm = () => {
                   <>
                      {/* Client Name Section */}
                      <div className="bg-muted/30 rounded-xl p-6 border border-muted">
-                       <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
-                       <p className="text-sm text-muted-foreground mb-4">הכנס את שם הלקוח</p>
+                       <div className="flex items-center justify-between mb-2">
+                         <div>
+                           <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
+                           <p className="text-sm text-muted-foreground mt-1">הכנס את שם הלקוח או טען מקובץ מסלקה</p>
+                         </div>
+                          <ClientFileImport 
+                            onClientDataLoaded={(clientName, clientId, clientPhone, clientEmail) => {
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                clientName, 
+                                clientId,
+                                clientPhone: clientPhone !== undefined ? clientPhone : prev.clientPhone,
+                                clientEmail: clientEmail !== undefined ? clientEmail : prev.clientEmail
+                              }));
+                            }}
+                          />
+                       </div>
                        <Input
                          id="clientName"
                          type="text"
                          value={formData.clientName}
                          onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
                          placeholder="שם הלקוח"
-                         className="bg-background border-border rounded-xl h-12 text-lg"
+                         className="bg-background border-border rounded-xl h-12 text-lg mt-2"
                        />
                      </div>
 
@@ -590,13 +608,41 @@ const AppForm = () => {
                   
                   <div className="md:col-span-2">
                     <Label htmlFor="meetingDate" className="text-base font-medium">תאריך הפגישה</Label>
-                    <Input
-                      id="meetingDate"
-                      type="date"
-                      value={formData.meetingDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-right font-normal mt-2 bg-input rounded-xl h-11",
+                            !formData.meetingDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {formData.meetingDate ? (
+                            format(new Date(formData.meetingDate), "PPP", { locale: he })
+                          ) : (
+                            <span>בחר תאריך</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.meetingDate ? new Date(formData.meetingDate) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                meetingDate: date.toISOString().split('T')[0]
+                              }));
+                            }
+                          }}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                          locale={he}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="md:col-span-2">
@@ -836,6 +882,27 @@ const AppForm = () => {
                     className="mt-2 bg-input rounded-xl"
                     placeholder="חתימת בן/בת זוג, אישור רופא..."
                   />
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <Checkbox
+                      id="includeDecisionsInReport"
+                      checked={formData.includeDecisionsInReport}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, includeDecisionsInReport: checked === true }))
+                      }
+                    />
+                    <Label 
+                      htmlFor="includeDecisionsInReport" 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      כלול החלטות זו בדוח המסכם
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 mr-6">
+                    בחר אם להציג את פרטי ההחלטות, המסמכים וטווחי הזמן בדוח ה-PDF הסופי
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-report-email]
 verify_jwt = false
+
+[functions.search-exposure]
+verify_jwt = false
