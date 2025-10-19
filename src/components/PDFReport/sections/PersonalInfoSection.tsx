@@ -39,21 +39,21 @@ export const PersonalInfoSection = ({
       <View style={styles.infoGrid}>
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>שם הלקוח:</Text>
-          <Text style={styles.infoValue}>{clientName}</Text>
+          <Text style={styles.infoValue}>{clientName || 'לא צוין'}</Text>
         </View>
-        {clientId && (
+        {clientId && clientId.trim() && (
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>תעודת זהות:</Text>
             <Text style={styles.infoValue}>{clientId}</Text>
           </View>
         )}
-        {clientPhone && (
+        {clientPhone && clientPhone.trim() && (
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>טלפון:</Text>
             <Text style={styles.infoValue}>{clientPhone}</Text>
           </View>
         )}
-        {clientEmail && (
+        {clientEmail && clientEmail.trim() && (
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>דוא"ל:</Text>
             <Text style={styles.infoValue}>{clientEmail}</Text>
@@ -63,7 +63,7 @@ export const PersonalInfoSection = ({
           <Text style={styles.infoLabel}>תאריך פגישה:</Text>
           <Text style={styles.infoValue}>{formatDate(meetingDate)}</Text>
         </View>
-        {location && (
+        {location && location.trim() && (
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>מיקום:</Text>
             <Text style={styles.infoValue}>{location}</Text>
