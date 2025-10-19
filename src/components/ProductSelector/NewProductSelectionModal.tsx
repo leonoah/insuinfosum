@@ -123,16 +123,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   // Handle category change in edit mode
   const handleCategoryChange = (category: string) => {
-    // Check if current company exists in the new category
-    const currentCompany = step.selectedCompany;
-    const companiesInCategory = getCompaniesForCategory(category);
-    const companyStillExists = currentCompany && companiesInCategory.includes(currentCompany);
-    
-    // Reset subcategory when category changes
+    // Reset company and subcategory when category changes - always require reselection
     const newStep = {
       current: 3,
       selectedCategory: category,
-      selectedCompany: companyStillExists ? currentCompany : undefined,
+      selectedCompany: undefined,
       selectedSubCategory: undefined
     };
     
