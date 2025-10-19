@@ -35,7 +35,10 @@ export const ExposureTableSection = ({
   }
 
   const formatExposure = (value: number | undefined): string => {
-    return value !== undefined ? `${value}%` : '-';
+    if (value === undefined) return '-';
+    // Convert decimal to percentage (0.05 -> 5%)
+    const percentage = value * 100;
+    return `${percentage.toFixed(2)}%`;
   };
 
   // Calculate aggregate averages
@@ -45,7 +48,9 @@ export const ExposureTableSection = ({
       .filter((v): v is number => v !== undefined && !isNaN(v));
     
     if (values.length === 0) return 0;
-    return Math.round((values.reduce((sum, v) => sum + v, 0) / values.length) * 10) / 10;
+    // Convert decimal to percentage and round to 1 decimal place
+    const average = (values.reduce((sum, v) => sum + v, 0) / values.length) * 100;
+    return Math.round(average * 10) / 10;
   };
 
   const currentAvgStocks = calculateAverage(currentWithExposure, 'exposureStocks');
