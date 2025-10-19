@@ -2,6 +2,59 @@ import { PensionProduct } from "@/types/pension";
 import JSZip from "jszip";
 
 export class XMLPensionParser {
+  static async parseXMLText(xmlText: string, filename?: string): Promise<{
+    clientName: string;
+    clientId: string;
+    reportDate: string;
+    products: PensionProduct[];
+  }> {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+    const parserError = xmlDoc.querySelector("parsererror");
+    if (parserError) {
+      throw new Error("שגיאה בפרסור קובץ XML" + (filename ? ` (${filename})` : ""));
+    }
+
+    const clientElement = this.getFirstByLocalName(xmlDoc, "YeshutLakoach");
+    const clientName = this.getElementText(clientElement, "SHEM-PRATI") + " " + 
+                       this.getElementText(clientElement, "SHEM-MISHPACHA");
+    const clientId = this.getElementText(clientElement, "MISPAR-ZIHUY-LAKOACH");
+
+    const reportDate = this.formatDate(this.getElementText(xmlDoc, "TAARICH-BITZUA"));
+
+    const mutzarimElements = Array.from(this.getAllByLocalName(xmlDoc, "Mutzar"));
+    const products: PensionProduct[] = [];
+    let runningIndex = 0;
+
+    for (const mutzar of mutzarimElements) {
+      const heshbonElements = this.getAllByLocalName(mutzar, "HeshbonOPolisa");
+      if (heshbonElements.length > 0) {
+        for (const heshbon of heshbonElements) {
+          try {
+            const product = this.parseHeshbon(mutzar, heshbon, runningIndex++);
+            if (product) products.push(product);
+          } catch (error) {
+            console.warn("שגיאה בפרסור חשבון/פוליסה:", error);
+          }
+        }
+      } else {
+        try {
+          const product = this.parseMutzar(mutzar, runningIndex++);
+          if (product) products.push(product);
+        } catch (error) {
+          console.warn("שגיאה בפרסור מוצר:", error);
+        }
+      }
+    }
+
+    return {
+      clientName,
+      clientId,
+      reportDate,
+      products
+    };
+  }
   static async parseZIPFile(file: File): Promise<{
     clientName: string;
     clientId: string;
@@ -33,10 +86,7 @@ export class XMLPensionParser {
     for (const xmlFilename of xmlFiles) {
       try {
         const xmlContent = await zipContent.files[xmlFilename].async("text");
-        const blob = new Blob([xmlContent], { type: "text/xml" });
-        const xmlFile = new File([blob], xmlFilename, { type: "text/xml" });
-        
-        const result = await this.parseXMLFile(xmlFile);
+        const result = await this.parseXMLText(xmlContent, xmlFilename);
         
         // שומרים את פרטי הלקוח מהקובץ האחרון (מעדכנים בכל איטרציה)
         clientName = result.clientName;
@@ -75,6 +125,15 @@ export class XMLPensionParser {
     products: PensionProduct[];
   }> {
     const text = await file.text();
+<<<<<<< HEAD
+    return this.parseXMLText(text, file.name);
+  }
+
+  private static parseMutzar(mutzar: Element, index: number): PensionProduct | null {
+    const heshbon = this.getElementByLocalPath(mutzar, ["HeshbonotOPolisot", "HeshbonOPolisa"]) ||
+                    this.getFirstByLocalName(mutzar, "HeshbonOPolisa");
+    if (!heshbon) return null;
+=======
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(text, "text/xml");
 
@@ -139,6 +198,7 @@ export class XMLPensionParser {
 
   private static parseMutzar(mutzar: Element, index: number): PensionProduct | null {
     const heshbon = (mutzar.querySelector("HeshbonOPolisa, Heshbon-O-Polisa, Heshbon, Polisa") as Element) || mutzar;
+>>>>>>> 38b59357463e8b70c809ebe803110c5615c00767
 
     // סוג מוצר
     const sugMutzar = this.getFirstTextByTags(mutzar, ["SUG-MUTZAR","SUG-MUTZAR-TEXT","SHEM-SUG-MUTZAR","SUG-MUTZAR-MILULI"]) || "";
@@ -177,15 +237,30 @@ export class XMLPensionParser {
     const status = statusCode === "1" || statusCode === "2" ? "פעיל" : "לא פעיל";
 
     // יתרה נוכחית - מחפשים באלמנט Tzvira
+<<<<<<< HEAD
+    const tzviraElements = this.getAllByLocalName(heshbon, "PerutMasluleiHashkaa");
+=======
     const tzviraElements = heshbon.querySelectorAll("PerutMasluleiHashkaa, PerutMaslul, PerutMaslulHashkaa");
+>>>>>>> 38b59357463e8b70c809ebe803110c5615c00767
     let currentBalance = 0;
     tzviraElements.forEach(elem => {
       const amount = parseFloat(this.getElementText(elem, "SCHUM-TZVIRA-BAMASLUL") || "0");
       currentBalance += amount;
     });
+<<<<<<< HEAD
+    // Fallback to total net accumulation under Tzvirot if available
+    if (currentBalance === 0) {
+      const totalTzviraNeto = parseFloat(
+        this.getElementText(heshbon, "TOTAL-TZVIRA-NETO", "Tzvirot") || "0"
+      );
+      if (!isNaN(totalTzviraNeto) && totalTzviraNeto > 0) {
+        currentBalance = totalTzviraNeto;
+      }
+=======
     if (currentBalance === 0) {
       const yitra = parseFloat(this.getFirstTextByTags(heshbon, ["YITRA-NOCHECHIT","YITRA-NOCHACHIT","YITRA"]) || "0");
       if (!isNaN(yitra) && yitra > 0) currentBalance = yitra;
+>>>>>>> 38b59357463e8b70c809ebe803110c5615c00767
     }
 
     // דמי ניהול
@@ -202,12 +277,22 @@ export class XMLPensionParser {
     );
 
     // הפקדות אחרונות
-    const employeeDeposit = parseFloat(
+    let employeeDeposit = parseFloat(
       this.getElementText(heshbon, "TOTAL-HAFKADOT-OVED-TAGMULIM-SHANA-NOCHECHIT", "HafkadotShnatiyot") || "0"
     );
-    const employerDeposit = parseFloat(
+    let employerDeposit = parseFloat(
       this.getElementText(heshbon, "TOTAL-HAFKADOT-MAAVID-TAGMULIM-SHANA-NOCHECHIT", "HafkadotShnatiyot") || "0"
     );
+    if ((!employeeDeposit && !employerDeposit) || (isNaN(employeeDeposit) && isNaN(employerDeposit))) {
+      const totalLastDeposit = parseFloat(
+        this.getElementText(heshbon, "TOTAL-HAFKADA", "PirteiHafkadaAchrona") ||
+        this.getElementText(heshbon, "TOTAL-HAFKADA", "PerutPirteiHafkadaAchrona") || "0"
+      );
+      if (!isNaN(totalLastDeposit) && totalLastDeposit > 0) {
+        employeeDeposit = totalLastDeposit;
+        employerDeposit = 0;
+      }
+    }
 
     // יתרה צפויה בפרישה
     const projectedBalance = parseFloat(
@@ -221,9 +306,17 @@ export class XMLPensionParser {
     );
 
     // כיסוי ביטוחי
-    const deathBenefit = parseFloat(
+    let deathBenefit = parseFloat(
       this.getElementText(heshbon, "SCHUM-BITUACH", "PerutMitryot") || "0"
     );
+    if (!deathBenefit || isNaN(deathBenefit)) {
+      const altDeath = parseFloat(
+        this.getElementText(heshbon, "SCHUM-BITUAH-ZAKAI", "PerutAchreiutKlalit") || "0"
+      );
+      if (!isNaN(altDeath) && altDeath > 0) {
+        deathBenefit = altDeath;
+      }
+    }
 
     // תאריך פתיחת תוכנית
     const planOpenDate = this.formatDate(
@@ -271,6 +364,135 @@ export class XMLPensionParser {
     // זכאות למשיכה
     if (eligibleForWithdrawal) {
       product.eligibleForWithdrawal = eligibleForWithdrawal;
+    }
+
+    return product;
+  }
+
+  private static parseHeshbon(mutzar: Element, heshbon: Element, index: number): PensionProduct | null {
+    // סוג מוצר
+    const sugMutzar = this.getElementText(mutzar, "SUG-MUTZAR");
+    const productType = this.mapProductType(sugMutzar);
+    if (!productType) return null;
+
+    // חברה
+    const company = this.getElementText(heshbon, "SHEM-TOCHNIT") ||
+                    this.getElementText(mutzar, "SHEM-YATZRAN", "YeshutYatzran") ||
+                    "לא ידוע";
+
+    // מספר פוליסה
+    const policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
+
+    // סטטוס
+    const statusCode = this.getElementText(heshbon, "STATUS-POLISA-O-CHESHBON");
+    const status = statusCode === "1" || statusCode === "2" ? "פעיל" : "לא פעיל";
+
+    // יתרה נוכחית
+    const tzviraElements = this.getAllByLocalName(heshbon, "PerutMasluleiHashkaa");
+    let currentBalance = 0;
+    tzviraElements.forEach(elem => {
+      const amount = parseFloat(this.getElementText(elem, "SCHUM-TZVIRA-BAMASLUL") || "0");
+      currentBalance += amount;
+    });
+    if (currentBalance === 0) {
+      const totalTzviraNeto = parseFloat(
+        this.getElementText(heshbon, "TOTAL-TZVIRA-NETO", "Tzvirot") || "0"
+      );
+      if (!isNaN(totalTzviraNeto) && totalTzviraNeto > 0) {
+        currentBalance = totalTzviraNeto;
+      }
+    }
+
+    // דמי ניהול
+    const managementFeeFromBalance = parseFloat(
+      this.getElementText(heshbon, "SHEUR-DMEI-NIHUL-HISACHON", "PerutMasluleiHashkaa") || "0"
+    );
+    const managementFeeFromDeposit = parseFloat(
+      this.getElementText(heshbon, "SHEUR-DMEI-NIHUL-HAFKADA", "PerutMasluleiHashkaa") || "0"
+    );
+
+    // תשואה שנתית
+    const annualReturn = parseFloat(
+      this.getElementText(heshbon, "SHEUR-TSUA-NETO", "Tsua") || "0"
+    );
+
+    // הפקדות אחרונות
+    let employeeDeposit = parseFloat(
+      this.getElementText(heshbon, "TOTAL-HAFKADOT-OVED-TAGMULIM-SHANA-NOCHECHIT", "HafkadotShnatiyot") || "0"
+    );
+    let employerDeposit = parseFloat(
+      this.getElementText(heshbon, "TOTAL-HAFKADOT-MAAVID-TAGMULIM-SHANA-NOCHECHIT", "HafkadotShnatiyot") || "0"
+    );
+    if ((!employeeDeposit && !employerDeposit) || (isNaN(employeeDeposit) && isNaN(employerDeposit))) {
+      const totalLastDeposit = parseFloat(
+        this.getElementText(heshbon, "TOTAL-HAFKADA", "PirteiHafkadaAchrona") ||
+        this.getElementText(heshbon, "TOTAL-HAFKADA", "PerutPirteiHafkadaAchrona") || "0"
+      );
+      if (!isNaN(totalLastDeposit) && totalLastDeposit > 0) {
+        employeeDeposit = totalLastDeposit;
+        employerDeposit = 0;
+      }
+    }
+
+    // יתרה צפויה בפרישה
+    const projectedBalance = parseFloat(
+      this.getElementText(heshbon, "TOTAL-CHISACHON-MITZTABER-TZAFUY", "YitraLefiGilPrisha") || 
+      currentBalance.toString()
+    );
+
+    // קצבה חודשית צפויה
+    const projectedMonthlyPension = parseFloat(
+      this.getElementText(heshbon, "KITZVAT-HODSHIT-TZFUYA", "Kupot Kupa") || "0"
+    );
+
+    // כיסוי ביטוחי
+    let deathBenefit = parseFloat(
+      this.getElementText(heshbon, "SCHUM-BITUACH", "PerutMitryot") || "0"
+    );
+    if (!deathBenefit || isNaN(deathBenefit)) {
+      const altDeath = parseFloat(
+        this.getElementText(heshbon, "SCHUM-BITUAH-ZAKAI", "PerutAchreiutKlalit") || "0"
+      );
+      if (!isNaN(altDeath) && altDeath > 0) {
+        deathBenefit = altDeath;
+      }
+    }
+
+    // תאריך פתיחת תוכנית
+    const planOpenDate = this.formatDate(
+      this.getElementText(heshbon, "TAARICH-HITZTARFUT-MUTZAR")
+    );
+
+    const product: PensionProduct = {
+      id: `xml-${policyNumber}-${index}`,
+      company: this.cleanCompanyName(company),
+      productType,
+      policyNumber,
+      status,
+      currentBalance,
+      managementFeeFromDeposit,
+      managementFeeFromBalance,
+      annualReturn,
+      projectedBalanceAtRetirement: projectedBalance,
+      planOpenDate
+    };
+
+    if (employeeDeposit > 0 || employerDeposit > 0) {
+      product.lastDeposit = {
+        employee: employeeDeposit,
+        employer: employerDeposit
+      };
+    }
+
+    if (projectedMonthlyPension > 0) {
+      product.projectedMonthlyPension = projectedMonthlyPension;
+    }
+
+    if (deathBenefit > 0) {
+      product.insuranceCoverage = {
+        deathBenefit,
+        disabilityBenefit: 0
+      };
     }
 
     return product;
@@ -348,17 +570,12 @@ export class XMLPensionParser {
     subParent?: string
   ): string {
     if (!parent) return "";
-    
-    let searchElement: Element | Document | null = parent;
-    
+    let searchRoot: Element | Document | null = parent;
     if (subParent) {
-      const subElement = parent.querySelector(subParent);
-      if (subElement) {
-        searchElement = subElement;
-      }
+      const sub = this.getFirstByLocalName(parent, subParent);
+      if (sub) searchRoot = sub;
     }
-    
-    const element = searchElement?.querySelector(tagName);
+    const element = this.getFirstByLocalName(searchRoot, tagName);
     return element?.textContent?.trim() || "";
   }
 
@@ -433,5 +650,34 @@ export class XMLPensionParser {
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
     return Math.floor(diffYears);
+  }
+
+  // Finds the first descendant element by localName (ignores namespaces)
+  private static getFirstByLocalName(parent: Element | Document | null, localName: string): Element | null {
+    if (!parent) return null;
+    const direct = (parent as Document | Element).querySelector?.(localName) as Element | null;
+    if (direct) return direct;
+    const list = (parent as Document | Element).getElementsByTagNameNS?.("*", localName) as HTMLCollectionOf<Element> | undefined;
+    return list && list.length > 0 ? list[0] : null;
+  }
+
+  // Returns all descendant elements with matching localName
+  private static getAllByLocalName(parent: Element | Document | null, localName: string): Element[] {
+    if (!parent) return [];
+    const nodeList = (parent as Document | Element).getElementsByTagNameNS?.("*", localName) as HTMLCollectionOf<Element> | undefined;
+    if (nodeList && nodeList.length > 0) return Array.from(nodeList);
+    const fallback = (parent as Document | Element).querySelectorAll?.(localName) as NodeListOf<Element> | undefined;
+    return fallback ? Array.from(fallback) : [];
+  }
+
+  // Traverse a local-name path, e.g., ["HeshbonotOPolisot", "HeshbonOPolisa"]
+  private static getElementByLocalPath(root: Element | Document | null, path: string[]): Element | null {
+    if (!root) return null;
+    let current: Element | Document | null = root;
+    for (const segment of path) {
+      current = this.getFirstByLocalName(current, segment);
+      if (!current) return null;
+    }
+    return current as Element;
   }
 }
