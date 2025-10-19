@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { SelectedProduct, ProductSelectionStep, PRODUCT_ICONS } from '@/types/products';
 import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,7 +46,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
       riskLevelChange: 'no-change',
-      notes: ''
+      notes: '',
+      includeExposureData: false
     };
   });
 
@@ -66,7 +69,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         managementFeeOnAccumulation: 0,
         investmentTrack: '',
         riskLevelChange: 'no-change',
-        notes: ''
+        notes: '',
+        includeExposureData: false
       });
     }
   }, [editingProduct, productType]);
@@ -219,6 +223,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       riskLevelChange: formData.riskLevelChange === 'no-change' ? '' : formData.riskLevelChange || '',
       notes: formData.notes || '',
       type: productType,
+      includeExposureData: formData.includeExposureData || false,
       exposureStocks: formData.exposureStocks,
       exposureBonds: formData.exposureBonds,
       exposureForeignCurrency: formData.exposureForeignCurrency,
@@ -278,7 +283,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
       riskLevelChange: 'no-change',
-      notes: ''
+      notes: '',
+      includeExposureData: false
     });
     onClose();
   };
@@ -682,9 +688,25 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         readOnly
                       />
                     </div>
-                  </>
+                   </>
                 )}
               </div>
+
+              {/* Include Exposure Data Checkbox */}
+              {formData.exposureStocks !== undefined && (
+                <div className="flex items-center gap-2 pt-4">
+                  <Checkbox
+                    id="includeExposureData"
+                    checked={formData.includeExposureData || false}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, includeExposureData: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="includeExposureData" className="cursor-pointer">
+                    להוסיף מידע על חשיפה לדוח?
+                  </Label>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">הערות</label>

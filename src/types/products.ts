@@ -29,6 +29,7 @@ export interface SelectedProduct {
   notes: string;
   type: 'current' | 'recommended';
   productNumber?: string; // מספר מוצר לזיהוי במאגר
+  includeExposureData?: boolean; // האם לכלול מידע חשיפה בדוח
   // Exposure data (populated from DB)
   exposureStocks?: number;
   exposureBonds?: number;
