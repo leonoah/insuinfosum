@@ -26,6 +26,12 @@ interface NewProductSelectionModalProps {
   editingProduct?: SelectedProduct | null;
 }
 
+interface ExposureSearchLink {
+  label: string;
+  url: string;
+  description?: string;
+}
+
 const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   isOpen,
   onClose,
@@ -42,6 +48,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const [initialFormData, setInitialFormData] = useState<Partial<SelectedProduct> | null>(null);
   const [searchingExposure, setSearchingExposure] = useState(false);
   const [exposureSearchResults, setExposureSearchResults] = useState<string | null>(null);
+  const [exposureSearchLinks, setExposureSearchLinks] = useState<ExposureSearchLink[] | null>(null);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
@@ -63,10 +70,16 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     return initialData;
   });
 
+  const clearExposureSearchState = () => {
+    setExposureSearchResults(null);
+    setExposureSearchLinks(null);
+  };
+
   useEffect(() => {
+    clearExposureSearchState();
     if (editingProduct) {
-      setStep({ 
-        current: 3, 
+      setStep({
+        current: 3,
         selectedCategory: editingProduct.category,
         selectedSubCategory: editingProduct.subCategory,
         selectedCompany: editingProduct.company
@@ -95,14 +108,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   }, [editingProduct, productType]);
 
   const handleCategorySelect = (category: string) => {
+    clearExposureSearchState();
     setStep({ current: 2, selectedCategory: category });
   };
 
   const handleCompanySelect = (company: string) => {
+    clearExposureSearchState();
     setStep({ ...step, current: 3, selectedCompany: company });
   };
 
   const handleSubCategorySelect = (subCategory: string) => {
+    clearExposureSearchState();
     // Get exposure data and populate form - pass productNumber if available
     if (step.selectedCategory && step.selectedCompany) {
       const trackName = subCategory || '';
@@ -304,6 +320,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
     setSearchingExposure(true);
     setExposureSearchResults(null);
+    setExposureSearchLinks(null);
 
     try {
       const searchQuery = `${step.selectedCompany} ${step.selectedCategory} ${step.selectedSubCategory} ${formData.investmentTrack || ''} חשיפות מניות אגח מטח השקעות חול ישראל תמהיל נכסים`;
@@ -336,7 +353,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       
       if (data.exposureData) {
         setExposureSearchResults(data.summary);
-        
+        setExposureSearchLinks(data.searchLinks || null);
+
         // Automatically populate the form with found data
         setFormData({
           ...formData,
@@ -353,10 +371,12 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
           description: "הנתונים עודכנו בטופס"
         });
       } else {
+        setExposureSearchResults(data.summary || null);
+        setExposureSearchLinks(data.searchLinks || null);
         toast({
           title: "לא נמצאו נתונים",
-          description: "לא הצלחנו למצוא נתוני חשיפות למוצר זה",
-          variant: "destructive"
+          description: data.summary ? "לא נמצאו נתונים אוטומטיים, מצורפים קישורים להמשך החיפוש" : "לא הצלחנו למצוא נתוני חשיפות למוצר זה",
+          variant: data.summary ? "default" : "destructive"
         });
       }
     } catch (error) {
@@ -388,6 +408,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     setStep({ current: 1 });
     setInputMode('manual');
     setShowCloseConfirm(false);
+    clearExposureSearchState();
     const resetData: Partial<SelectedProduct> = {
       type: productType,
       amount: 0,
@@ -823,6 +844,29 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <strong>תוצאות חיפוש:</strong> {exposureSearchResults}
                     </AlertDescription>
                   </Alert>
+                )}
+
+                {exposureSearchLinks && exposureSearchLinks.length > 0 && (
+                  <div className="glass p-4 space-y-3">
+                    <p className="text-sm font-semibold">קישורים מומלצים להמשך החיפוש</p>
+                    <ul className="space-y-3 text-sm">
+                      {exposureSearchLinks.map((link) => (
+                        <li key={link.url} className="space-y-1">
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary font-medium underline"
+                          >
+                            {link.label}
+                          </a>
+                          {link.description && (
+                            <p className="text-muted-foreground leading-snug">{link.description}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
 
                 {formData.exposureStocks === undefined ? (

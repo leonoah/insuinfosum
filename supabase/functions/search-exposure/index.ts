@@ -22,6 +22,64 @@ interface ExposureData {
   exposureIlliquidAssets?: number;
 }
 
+interface SearchLink {
+  label: string;
+  url: string;
+  description?: string;
+}
+
+const KNOWN_SOURCES: { label: string; domain: string; description?: string }[] = [
+  {
+    label: 'MyGemel',
+    domain: 'mygemel.net',
+    description: 'נתוני קרנות גמל ופנסיה מאתר MyGemel'
+  },
+  {
+    label: 'Funder',
+    domain: 'funder.co.il',
+    description: 'דוחות וסקירות מאתר Funder'
+  },
+  {
+    label: 'SuperMarker',
+    domain: 'supermarker.themarker.com',
+    description: 'מידע משווה באתר SuperMarker'
+  },
+  {
+    label: 'Lirot',
+    domain: 'lirot.co.il',
+    description: 'דו"חות חשיפות באתר Lirot'
+  },
+  {
+    label: 'iGemel',
+    domain: 'igemel-net.co.il',
+    description: 'מידע על קופות גמל באתר iGemel'
+  }
+];
+
+const buildGoogleSearchUrl = (query: string) => `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+
+const guessOfficialDomains = (company: string): string[] => {
+  const normalized = company
+    .trim()
+    .replace(/["'`׳״]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+
+  if (!normalized) {
+    return [];
+  }
+
+  const baseDomains = [
+    `https://${normalized}.co.il`,
+    `https://www.${normalized}.co.il`,
+    `https://${normalized}.com`,
+    `https://www.${normalized}.com`
+  ];
+
+  // Remove duplicates while preserving order
+  return Array.from(new Set(baseDomains));
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -35,56 +93,50 @@ serve(async (req) => {
 
     // Use Tavily AI search API (or any other search API)
     // For now, we'll use a simple web search approach
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
-    
-    // In a real implementation, you would:
-    // 1. Use a proper search API (like Tavily, SerpAPI, or Google Custom Search)
-    // 2. Parse the results to extract exposure data
-    // 3. Use AI to interpret the results and extract structured data
-    
-    // For now, return a placeholder response
-    // You can integrate with web search APIs or scraping services here
-    
-    // Example: Using Tavily Search API (requires API key)
-    // const TAVILY_API_KEY = Deno.env.get('TAVILY_API_KEY');
-    // if (!TAVILY_API_KEY) {
-    //   throw new Error('TAVILY_API_KEY not configured');
-    // }
-    
-    // const tavilyResponse = await fetch('https://api.tavily.com/search', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     api_key: TAVILY_API_KEY,
-    //     query: searchQuery,
-    //     search_depth: 'advanced',
-    //     max_results: 5
-    //   })
-    // });
+    const baseSearchTerms = [company, category, subCategory, investmentTrack].filter(Boolean).join(' ');
+    const extendedTerms = `${baseSearchTerms} חשיפות נתוני חשיפה תמהיל נכסים`;
 
-    // Placeholder response - in production, this should extract real data
-    const exposureData: ExposureData = {
-      // These values should be extracted from search results
-      exposureStocks: undefined,
-      exposureBonds: undefined,
-      exposureForeignCurrency: undefined,
-      exposureForeignInvestments: undefined,
-      exposureIsrael: undefined,
-      exposureIlliquidAssets: undefined
+    const officialDomainGuesses = guessOfficialDomains(company);
+    const officialSiteLinks: SearchLink[] = officialDomainGuesses.map((url, index) => ({
+      label: index === 0 ? 'אתר הקרן (ניסיון ישיר)' : `אתר הקרן (חלופה ${index})`,
+      url,
+      description: 'ניסיון לטעון את אתר הקרן ישירות על בסיס שם החברה'
+    }));
+
+    const officialSiteSearch: SearchLink = {
+      label: 'חיפוש באתר הקרן',
+      url: buildGoogleSearchUrl(`${extendedTerms} "${company}" "${subCategory}" "${investmentTrack ?? ''}" אתר רשמי`),
+      description: 'חיפוש בגוגל המתמקד באתר הרשמי של הקרן'
     };
 
-    // Try to extract numbers from search results
-    // This is a simplified example - in production, use proper AI/NLP
+    const prioritizedSourceLinks: SearchLink[] = KNOWN_SOURCES.map((source) => ({
+      label: `חיפוש ב-${source.label}`,
+      url: buildGoogleSearchUrl(`${extendedTerms} "${company}" "${subCategory}" site:${source.domain}`),
+      description: source.description
+    }));
+
+    const additionalOpenSearch: SearchLink = {
+      label: 'חיפוש כללי נוסף',
+      url: buildGoogleSearchUrl(searchQuery || extendedTerms),
+      description: 'חיפוש רחב לקבלת מקורות נוספים באינטרנט'
+    };
+
+    const suggestedLinks: SearchLink[] = [
+      ...officialSiteLinks,
+      officialSiteSearch,
+      ...prioritizedSourceLinks,
+      additionalOpenSearch
+    ];
+
     const summary = `חיפוש עבור: ${company} - ${category} - ${subCategory}${investmentTrack ? ` - ${investmentTrack}` : ''}`;
 
     return new Response(
       JSON.stringify({
         success: true,
-        exposureData: null, // Set to null for now - implement actual search
-        summary: summary + '\n\nשירות החיפוש טרם הופעל. נא להוסיף API key לשירות חיפוש (למשל Tavily או SerpAPI).',
-        searchQuery
+        exposureData: null,
+        summary: summary + '\n\nטרם נשלפו נתוני חשיפה אוטומטיים, אך ריכזנו עבורך קישורים ממוקדים להמשך החיפוש.',
+        searchQuery,
+        searchLinks: suggestedLinks
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
