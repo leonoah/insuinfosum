@@ -96,11 +96,22 @@ export class XMLPensionParser {
     
     if (clientElement) {
       // ניסיון לקרוא טלפון מכמה שדות אפשריים
-      clientPhone = this.getElementText(clientElement, "TELEFON") ||
+      clientPhone = this.getElementText(clientElement, "MISPAR-CELLULARI") ||
+                    this.getElementText(clientElement, "MISPAR-SELULARI") ||
+                    this.getElementText(clientElement, "TELEFON") ||
                     this.getElementText(clientElement, "MISPAR-TELEFON") ||
                     this.getElementText(clientElement, "TELEPHONE") ||
                     this.getElementText(clientElement, "PHONE") ||
                     "";
+      if (!clientPhone) {
+        clientPhone = this.getElementText(xmlDoc, "MISPAR-CELLULARI") ||
+                      this.getElementText(xmlDoc, "MISPAR-SELULARI") ||
+                      this.getElementText(xmlDoc, "TELEFON") ||
+                      this.getElementText(xmlDoc, "MISPAR-TELEFON") ||
+                      this.getElementText(xmlDoc, "TELEPHONE") ||
+                      this.getElementText(xmlDoc, "PHONE") ||
+                      "";
+      }
       
       // ניסיון לקרוא אימייל מכמה שדות אפשריים
       clientEmail = this.getElementText(clientElement, "DO-EL") ||
@@ -108,6 +119,13 @@ export class XMLPensionParser {
                     this.getElementText(clientElement, "DUAR-ELECTRONI") ||
                     this.getElementText(clientElement, "E-MAIL") ||
                     "";
+      if (!clientEmail) {
+        clientEmail = this.getElementText(xmlDoc, "DO-EL") ||
+                      this.getElementText(xmlDoc, "EMAIL") ||
+                      this.getElementText(xmlDoc, "DUAR-ELECTRONI") ||
+                      this.getElementText(xmlDoc, "E-MAIL") ||
+                      "";
+      }
     }
 
     // תאריך דוח
