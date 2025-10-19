@@ -20,7 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, FileSpreadsheet } from "lucide-react";
+import { Pencil, Coins, Plus, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
 
 interface ProductTaxonomyItem {
@@ -39,6 +39,7 @@ export const ProductTaxonomyManagement = () => {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<ProductTaxonomyItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     company: "",
     category: "",
@@ -47,6 +48,17 @@ export const ProductTaxonomyManagement = () => {
     exposure_bonds: 0,
     exposure_foreign_currency: 0,
     exposure_foreign_investments: 0,
+  });
+
+  // Filter products based on search query
+  const filteredProducts = products.filter(product => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      product.company.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query) ||
+      product.sub_category.toLowerCase().includes(query)
+    );
   });
 
   // Get unique values for dropdowns
@@ -252,6 +264,16 @@ export const ProductTaxonomyManagement = () => {
 
   return (
     <div className="space-y-4">
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="חיפוש לפי חברה, קטגוריה או מספר קופה..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
+      
       <div className="flex gap-2 justify-start">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -396,7 +418,7 @@ export const ProductTaxonomyManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>{product.company}</TableCell>
                 <TableCell>{product.category}</TableCell>
@@ -419,7 +441,7 @@ export const ProductTaxonomyManagement = () => {
                       size="sm"
                       onClick={() => handleDelete(product.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Coins className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>

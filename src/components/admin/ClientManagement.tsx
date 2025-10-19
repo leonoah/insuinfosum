@@ -20,7 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, FileSpreadsheet } from "lucide-react";
+import { Pencil, Coins, Plus, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
 
 interface Client {
@@ -317,7 +317,7 @@ export const ClientManagement = () => {
                       size="sm"
                       onClick={() => handleDelete(client.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Coins className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
