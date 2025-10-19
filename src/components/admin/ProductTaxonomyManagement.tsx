@@ -20,7 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, Upload } from "lucide-react";
+import { Pencil, Trash2, Plus, Upload, Download } from "lucide-react";
 import * as XLSX from 'xlsx';
 
 interface ProductTaxonomyItem {
@@ -48,6 +48,11 @@ export const ProductTaxonomyManagement = () => {
     exposure_foreign_currency: 0,
     exposure_foreign_investments: 0,
   });
+
+  // Get unique values for dropdowns
+  const uniqueCompanies = Array.from(new Set(products.map(p => p.company))).sort();
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category))).sort();
+  const uniqueSubCategories = Array.from(new Set(products.map(p => p.sub_category))).sort();
 
   const loadProducts = async () => {
     try {
@@ -181,6 +186,26 @@ export const ProductTaxonomyManagement = () => {
     e.target.value = '';
   };
 
+  const handleExportTemplate = () => {
+    const template = [
+      {
+        'חברה': 'דוגמא לחברה',
+        'קטגוריה': 'דוגמא לקטגוריה',
+        'תת קטגוריה': 'דוגמא לתת קטגוריה',
+        'חשיפה מניות': 50,
+        'חשיפה אגח': 30,
+        'חשיפה מטח': 10,
+        'חשיפה השקעות חול': 10
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    XLSX.writeFile(wb, 'products_taxonomy_template.xlsx');
+    toast.success('קובץ הדוגמא הורד בהצלחה');
+  };
+
   if (loading) {
     return <div className="text-center py-8">טוען נתונים...</div>;
   }
@@ -206,26 +231,47 @@ export const ProductTaxonomyManagement = () => {
                 <div>
                   <Label>חברה</Label>
                   <Input
+                    list="companies-list"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     required
+                    placeholder="בחר מהרשימה או הקלד חדש"
                   />
+                  <datalist id="companies-list">
+                    {uniqueCompanies.map((company) => (
+                      <option key={company} value={company} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <Label>קטגוריה</Label>
                   <Input
+                    list="categories-list"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     required
+                    placeholder="בחר מהרשימה או הקלד חדש"
                   />
+                  <datalist id="categories-list">
+                    {uniqueCategories.map((category) => (
+                      <option key={category} value={category} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <Label>תת קטגוריה</Label>
                   <Input
+                    list="sub-categories-list"
                     value={formData.sub_category}
                     onChange={(e) => setFormData({ ...formData, sub_category: e.target.value })}
                     required
+                    placeholder="בחר מהרשימה או הקלד חדש"
                   />
+                  <datalist id="sub-categories-list">
+                    {uniqueSubCategories.map((subCategory) => (
+                      <option key={subCategory} value={subCategory} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <Label>חשיפה מניות (%)</Label>
@@ -288,6 +334,11 @@ export const ProductTaxonomyManagement = () => {
             </Button>
           </Label>
         </div>
+
+        <Button type="button" variant="outline" onClick={handleExportTemplate}>
+          <Download className="h-4 w-4 ml-2" />
+          הורד דוגמת אקסל
+        </Button>
       </div>
 
       <div className="border rounded-lg overflow-auto max-h-[600px]">
