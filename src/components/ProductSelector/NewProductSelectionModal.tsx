@@ -313,11 +313,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         description: `מחפש נתוני חשיפות עבור ${step.selectedCompany} - ${step.selectedSubCategory}`
       });
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-exposure`, {
+      const response = await fetch(`https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/search-exposure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvb2RrY2Nqd3l5YndnbWt6YXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNDcyMDUsImV4cCI6MjA2MzkyMzIwNX0.Jpz2_RIyrr2Bvpu6yrX37Z_Kl5lUhhyLerfa6G2MHJc`
         },
         body: JSON.stringify({
           company: step.selectedCompany,
