@@ -36,9 +36,7 @@ export const ExposureTableSection = ({
 
   const formatExposure = (value: number | undefined): string => {
     if (value === undefined) return '-';
-    // Convert decimal to percentage (0.05 -> 5%)
-    const percentage = value * 100;
-    return `${percentage.toFixed(2)}%`;
+    return `${value.toFixed(2)}%`;
   };
 
   // Calculate aggregate averages
@@ -48,8 +46,7 @@ export const ExposureTableSection = ({
       .filter((v): v is number => v !== undefined && !isNaN(v));
     
     if (values.length === 0) return 0;
-    // Convert decimal to percentage and round to 1 decimal place
-    const average = (values.reduce((sum, v) => sum + v, 0) / values.length) * 100;
+    const average = values.reduce((sum, v) => sum + v, 0) / values.length;
     return Math.round(average * 10) / 10;
   };
 

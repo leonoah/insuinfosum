@@ -40,15 +40,12 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
 
   const formatExposure = (value: number | undefined): string => {
     if (value === undefined) return '-';
-    // Convert decimal to percentage (0.05 -> 5%)
-    const percentage = value * 100;
-    return `${percentage.toFixed(2)}%`;
+    return `${value.toFixed(2)}%`;
   };
 
   const calculateDifference = (current: number | undefined, recommended: number | undefined): string => {
     if (current === undefined || recommended === undefined) return '-';
-    // Convert decimal to percentage (0.05 -> 5%)
-    const diff = (recommended - current) * 100;
+    const diff = recommended - current;
     if (Math.abs(diff) < 0.01) return '0%';
     const sign = diff > 0 ? '+' : '';
     return `${sign}${diff.toFixed(2)}%`;

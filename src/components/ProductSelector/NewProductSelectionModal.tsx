@@ -706,8 +706,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         type="number"
                         step="0.01"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureStocks !== undefined ? (formData.exposureStocks * 100).toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureStocks: parseFloat(e.target.value) / 100 || 0 })}
+                        value={formData.exposureStocks !== undefined ? formData.exposureStocks.toFixed(2) : 0}
+                        onChange={(e) => setFormData({ ...formData, exposureStocks: parseFloat(e.target.value) || 0 })}
                         readOnly={!isEditingExposure}
                       />
                     </div>
@@ -718,8 +718,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         type="number"
                         step="0.01"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureBonds !== undefined ? (formData.exposureBonds * 100).toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureBonds: parseFloat(e.target.value) / 100 || 0 })}
+                        value={formData.exposureBonds !== undefined ? formData.exposureBonds.toFixed(2) : 0}
+                        onChange={(e) => setFormData({ ...formData, exposureBonds: parseFloat(e.target.value) || 0 })}
                         readOnly={!isEditingExposure}
                       />
                     </div>
@@ -730,8 +730,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         type="number"
                         step="0.01"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureForeignCurrency !== undefined ? (formData.exposureForeignCurrency * 100).toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureForeignCurrency: parseFloat(e.target.value) / 100 || 0 })}
+                        value={formData.exposureForeignCurrency !== undefined ? formData.exposureForeignCurrency.toFixed(2) : 0}
+                        onChange={(e) => setFormData({ ...formData, exposureForeignCurrency: parseFloat(e.target.value) || 0 })}
                         readOnly={!isEditingExposure}
                       />
                     </div>
@@ -742,8 +742,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         type="number"
                         step="0.01"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureForeignInvestments !== undefined ? (formData.exposureForeignInvestments * 100).toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureForeignInvestments: parseFloat(e.target.value) / 100 || 0 })}
+                        value={formData.exposureForeignInvestments !== undefined ? formData.exposureForeignInvestments.toFixed(2) : 0}
+                        onChange={(e) => setFormData({ ...formData, exposureForeignInvestments: parseFloat(e.target.value) || 0 })}
                         readOnly={!isEditingExposure}
                       />
                     </div>
