@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, ArrowRight, Copy, Mic } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,20 +37,23 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
   const [isEditingExposure, setIsEditingExposure] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [initialFormData, setInitialFormData] = useState<Partial<SelectedProduct> | null>(null);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
     }
-    return {
+    const initialData: Partial<SelectedProduct> = {
       type: productType,
       amount: 0,
       managementFeeOnDeposit: 0,
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
-      riskLevelChange: 'no-change',
+      riskLevelChange: '',
       notes: '',
       includeExposureData: false
     };
+    return initialData;
   });
 
   useEffect(() => {
@@ -61,19 +65,22 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         selectedCompany: editingProduct.company
       });
       setFormData(editingProduct);
+      setInitialFormData(editingProduct);
       setIsEditingExposure(false);
     } else {
       setStep({ current: 1 });
-      setFormData({
+      const initialData: Partial<SelectedProduct> = {
         type: productType,
         amount: 0,
         managementFeeOnDeposit: 0,
         managementFeeOnAccumulation: 0,
         investmentTrack: '',
-        riskLevelChange: 'no-change',
+        riskLevelChange: '',
         notes: '',
         includeExposureData: false
-      });
+      };
+      setFormData(initialData);
+      setInitialFormData(initialData);
       setIsEditingExposure(false);
     }
   }, [editingProduct, productType]);
@@ -277,20 +284,36 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     }
   };
 
+  const hasUnsavedChanges = () => {
+    if (!initialFormData) return false;
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+  };
+
+  const handleCloseRequest = () => {
+    if (hasUnsavedChanges()) {
+      setShowCloseConfirm(true);
+    } else {
+      handleClose();
+    }
+  };
+
   const handleClose = () => {
     setStep({ current: 1 });
     setInputMode('manual');
     setIsEditingExposure(false);
-    setFormData({
+    setShowCloseConfirm(false);
+    const resetData: Partial<SelectedProduct> = {
       type: productType,
       amount: 0,
       managementFeeOnDeposit: 0,
       managementFeeOnAccumulation: 0,
       investmentTrack: '',
-      riskLevelChange: 'no-change',
+      riskLevelChange: '',
       notes: '',
       includeExposureData: false
-    });
+    };
+    setFormData(resetData);
+    setInitialFormData(null);
     onClose();
   };
 
@@ -322,7 +345,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   if (loading) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
           <DialogHeader>
             <DialogTitle>טוען מוצרים...</DialogTitle>
@@ -340,7 +363,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   if (error) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
           <DialogHeader>
             <DialogTitle>שגיאה</DialogTitle>
@@ -355,13 +378,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>
-              {editingProduct 
-                ? (productType === 'current' ? 'ערוך מוצר קיים' : 'ערוך מוצר מוצע')
+    <>
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass" onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseRequest();
+        }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {editingProduct 
+                  ? (productType === 'current' ? 'ערוך מוצר קיים' : 'ערוך מוצר מוצע')
                 : (productType === 'current' ? 'הוסף מוצר קיים' : 'הוסף מוצר מוצע')
               }
             </span>
@@ -764,7 +791,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={handleClose}>
+                <Button variant="outline" onClick={handleCloseRequest}>
                   ביטול
                 </Button>
                 <Button onClick={handleSubmit}>
@@ -774,8 +801,24 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <AlertDialogContent className="glass">
+          <AlertDialogHeader>
+            <AlertDialogTitle>סגירה ללא שמירה?</AlertDialogTitle>
+            <AlertDialogDescription>
+              יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לסגור ללא שמירה?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>המשך עריכה</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClose}>סגור ללא שמירה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
