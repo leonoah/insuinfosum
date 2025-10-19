@@ -35,6 +35,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const { hierarchy, loading, error, getExposureData, getCompaniesForCategory, getSubCategoriesForCategoryAndCompany } = useProductTaxonomy();
   const [step, setStep] = useState<ProductSelectionStep>({ current: editingProduct ? 3 : 1 });
   const [inputMode, setInputMode] = useState<'manual' | 'voice'>('manual');
+  const [isEditingExposure, setIsEditingExposure] = useState(false);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
@@ -60,6 +61,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         selectedCompany: editingProduct.company
       });
       setFormData(editingProduct);
+      setIsEditingExposure(false);
     } else {
       setStep({ current: 1 });
       setFormData({
@@ -72,6 +74,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         notes: '',
         includeExposureData: false
       });
+      setIsEditingExposure(false);
     }
   }, [editingProduct, productType]);
 
@@ -223,14 +226,15 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       riskLevelChange: formData.riskLevelChange === 'no-change' ? '' : formData.riskLevelChange || '',
       notes: formData.notes || '',
       type: productType,
-      includeExposureData: formData.includeExposureData || false,
+      includeExposureData: formData.exposureStocks !== undefined,
       exposureStocks: formData.exposureStocks,
       exposureBonds: formData.exposureBonds,
       exposureForeignCurrency: formData.exposureForeignCurrency,
       exposureForeignInvestments: formData.exposureForeignInvestments,
       exposureIsrael: formData.exposureIsrael,
       exposureIlliquidAssets: formData.exposureIlliquidAssets,
-      assetComposition: formData.assetComposition
+      assetComposition: formData.assetComposition,
+      productNumber: formData.productNumber
     };
 
     console.log('Submitting product:', product);
@@ -276,6 +280,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const handleClose = () => {
     setStep({ current: 1 });
     setInputMode('manual');
+    setIsEditingExposure(false);
     setFormData({
       type: productType,
       amount: 0,
@@ -646,16 +651,64 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   />
                 </div>
 
-                {/* Exposure Data Display (Read-Only) */}
-                {formData.exposureStocks !== undefined && (
-                  <>
+                {/* Product Number Display */}
+                {formData.productNumber && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">מספר קרן</label>
+                    <Input
+                      type="text"
+                      className="glass bg-muted"
+                      value={formData.productNumber}
+                      readOnly
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Exposure Data Section */}
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">נתוני חשיפות</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const hasExposure = formData.exposureStocks !== undefined;
+                      if (hasExposure) {
+                        // Toggle edit mode
+                        setIsEditingExposure(!isEditingExposure);
+                      } else {
+                        // Initialize exposure data for manual entry
+                        setFormData({
+                          ...formData,
+                          exposureStocks: 0,
+                          exposureBonds: 0,
+                          exposureForeignCurrency: 0,
+                          exposureForeignInvestments: 0
+                        });
+                        setIsEditingExposure(true);
+                      }
+                    }}
+                  >
+                    {isEditingExposure ? 'בטל עריכה' : 'ערוך ידנית'}
+                  </Button>
+                </div>
+
+                {formData.exposureStocks === undefined && !isEditingExposure ? (
+                  <div className="glass p-4 text-center text-muted-foreground">
+                    אין נתוני חשיפה
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">חשיפה למניות (%)</label>
                       <Input
                         type="number"
-                        className="glass bg-muted"
+                        step="0.01"
+                        className={isEditingExposure ? "glass" : "glass bg-muted"}
                         value={formData.exposureStocks || 0}
-                        readOnly
+                        onChange={(e) => setFormData({ ...formData, exposureStocks: parseFloat(e.target.value) || 0 })}
+                        readOnly={!isEditingExposure}
                       />
                     </div>
 
@@ -663,9 +716,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <label className="text-sm font-medium">חשיפה לאג"ח (%)</label>
                       <Input
                         type="number"
-                        className="glass bg-muted"
+                        step="0.01"
+                        className={isEditingExposure ? "glass" : "glass bg-muted"}
                         value={formData.exposureBonds || 0}
-                        readOnly
+                        onChange={(e) => setFormData({ ...formData, exposureBonds: parseFloat(e.target.value) || 0 })}
+                        readOnly={!isEditingExposure}
                       />
                     </div>
 
@@ -673,9 +728,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <label className="text-sm font-medium">חשיפה למט"ח (%)</label>
                       <Input
                         type="number"
-                        className="glass bg-muted"
+                        step="0.01"
+                        className={isEditingExposure ? "glass" : "glass bg-muted"}
                         value={formData.exposureForeignCurrency || 0}
-                        readOnly
+                        onChange={(e) => setFormData({ ...formData, exposureForeignCurrency: parseFloat(e.target.value) || 0 })}
+                        readOnly={!isEditingExposure}
                       />
                     </div>
 
@@ -683,12 +740,14 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <label className="text-sm font-medium">חשיפה להשקעות בחו"ל (%)</label>
                       <Input
                         type="number"
-                        className="glass bg-muted"
+                        step="0.01"
+                        className={isEditingExposure ? "glass" : "glass bg-muted"}
                         value={formData.exposureForeignInvestments || 0}
-                        readOnly
+                        onChange={(e) => setFormData({ ...formData, exposureForeignInvestments: parseFloat(e.target.value) || 0 })}
+                        readOnly={!isEditingExposure}
                       />
                     </div>
-                   </>
+                  </div>
                 )}
               </div>
 
