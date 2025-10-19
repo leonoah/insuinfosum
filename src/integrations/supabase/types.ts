@@ -1244,6 +1244,7 @@ export type Database = {
           exposure_foreign_investments: number | null
           exposure_stocks: number | null
           id: string
+          product_number: string | null
           sub_category: string
           updated_at: string | null
         }
@@ -1256,6 +1257,7 @@ export type Database = {
           exposure_foreign_investments?: number | null
           exposure_stocks?: number | null
           id?: string
+          product_number?: string | null
           sub_category: string
           updated_at?: string | null
         }
@@ -1268,6 +1270,7 @@ export type Database = {
           exposure_foreign_investments?: number | null
           exposure_stocks?: number | null
           id?: string
+          product_number?: string | null
           sub_category?: string
           updated_at?: string | null
         }

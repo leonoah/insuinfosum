@@ -28,6 +28,7 @@ interface ProductTaxonomyItem {
   company: string;
   category: string;
   sub_category: string;
+  product_number: string | null;
   exposure_stocks: number;
   exposure_bonds: number;
   exposure_foreign_currency: number;
@@ -44,6 +45,7 @@ export const ProductTaxonomyManagement = () => {
     company: "",
     category: "",
     sub_category: "",
+    product_number: "",
     exposure_stocks: 0,
     exposure_bonds: 0,
     exposure_foreign_currency: 0,
@@ -57,7 +59,8 @@ export const ProductTaxonomyManagement = () => {
     return (
       product.company.toLowerCase().includes(query) ||
       product.category.toLowerCase().includes(query) ||
-      product.sub_category.toLowerCase().includes(query)
+      product.sub_category.toLowerCase().includes(query) ||
+      (product.product_number && product.product_number.toLowerCase().includes(query))
     );
   });
 
@@ -141,6 +144,7 @@ export const ProductTaxonomyManagement = () => {
       company: product.company,
       category: product.category,
       sub_category: product.sub_category,
+      product_number: product.product_number || "",
       exposure_stocks: product.exposure_stocks,
       exposure_bonds: product.exposure_bonds,
       exposure_foreign_currency: product.exposure_foreign_currency,
@@ -155,6 +159,7 @@ export const ProductTaxonomyManagement = () => {
       company: "",
       category: "",
       sub_category: "",
+      product_number: "",
       exposure_stocks: 0,
       exposure_bonds: 0,
       exposure_foreign_currency: 0,
@@ -178,6 +183,7 @@ export const ProductTaxonomyManagement = () => {
         
         // חילוץ מספר הקרן הראשון מהטקסט
         const extractFirstNumber = (text: string): string => {
+          if (!text) return '';
           // חיפוש כל המספרים בסוגריים
           const numbersInParentheses = text.match(/\((\d+)\)/g);
           if (numbersInParentheses && numbersInParentheses.length > 0) {
@@ -186,24 +192,17 @@ export const ProductTaxonomyManagement = () => {
           }
           // אם אין סוגריים, חיפוש מספר כללי
           const numbers = text.match(/\d+/);
-          return numbers ? numbers[0] : text;
+          return numbers ? numbers[0] : '';
         };
         
-        // קביעת תת הקטגוריה הסופית
-        let finalSubCategory = subCategory;
-        
-        // אם יש מספר קופה/קרן, נשתמש בו
-        if (productNumber) {
-          finalSubCategory = extractFirstNumber(productNumber);
-        } else if (subCategory) {
-          // אחרת, ננסה לחלץ מספר מתת הקטגוריה
-          finalSubCategory = extractFirstNumber(subCategory);
-        }
+        // חילוץ מספר קרן
+        const finalProductNumber = productNumber ? extractFirstNumber(productNumber) : '';
         
         return {
           company: row['חברה'] || row['company'] || '',
           category: row['קטגוריה'] || row['category'] || '',
-          sub_category: finalSubCategory,
+          sub_category: subCategory,
+          product_number: finalProductNumber,
           exposure_stocks: parseFloat(row['חשיפה מניות'] || row['exposure_stocks'] || 0),
           exposure_bonds: parseFloat(row['חשיפה אגח'] || row['exposure_bonds'] || 0),
           exposure_foreign_currency: parseFloat(row['חשיפה מטח'] || row['exposure_foreign_currency'] || 0),
@@ -321,19 +320,27 @@ export const ProductTaxonomyManagement = () => {
                   </datalist>
                 </div>
                 <div>
-                  <Label>תת קטגוריה / מספר קופה</Label>
+                  <Label>תת קטגוריה</Label>
                   <Input
                     list="sub-categories-list"
                     value={formData.sub_category}
                     onChange={(e) => setFormData({ ...formData, sub_category: e.target.value })}
                     required
-                    placeholder="למשל: 9551, מסלול כללי, וכו'"
+                    placeholder="למשל: מסלול כללי, מסלול מניות"
                   />
                   <datalist id="sub-categories-list">
                     {uniqueSubCategories.map((subCategory) => (
                       <option key={subCategory} value={subCategory} />
                     ))}
                   </datalist>
+                </div>
+                <div>
+                  <Label>מספר קופה/קרן</Label>
+                  <Input
+                    value={formData.product_number}
+                    onChange={(e) => setFormData({ ...formData, product_number: e.target.value })}
+                    placeholder="למשל: 9551, 1234"
+                  />
                 </div>
                 <div>
                   <Label>חשיפה מניות (%)</Label>
@@ -409,7 +416,8 @@ export const ProductTaxonomyManagement = () => {
             <TableRow>
               <TableHead className="text-right">חברה</TableHead>
               <TableHead className="text-right">קטגוריה</TableHead>
-              <TableHead className="text-right">תת קטגוריה / מספר קופה</TableHead>
+              <TableHead className="text-right">תת קטגוריה</TableHead>
+              <TableHead className="text-right">מספר קופה/קרן</TableHead>
               <TableHead className="text-right">מניות (%)</TableHead>
               <TableHead className="text-right">אג"ח (%)</TableHead>
               <TableHead className="text-right">מט"ח (%)</TableHead>
@@ -423,6 +431,7 @@ export const ProductTaxonomyManagement = () => {
                 <TableCell>{product.company}</TableCell>
                 <TableCell>{product.category}</TableCell>
                 <TableCell>{product.sub_category}</TableCell>
+                <TableCell>{product.product_number || '-'}</TableCell>
                 <TableCell>{product.exposure_stocks}</TableCell>
                 <TableCell>{product.exposure_bonds}</TableCell>
                 <TableCell>{product.exposure_foreign_currency}</TableCell>
