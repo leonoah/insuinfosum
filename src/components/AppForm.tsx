@@ -14,6 +14,7 @@ import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
 import RecordingModal from "./CallRecording/RecordingModal";
 import VoiceTextInput from "./VoiceTextInput";
+import { ClientFileImport } from "./ClientFileImport";
 import { SelectedProduct } from "@/types/products";
 // Update AppForm to log reports when generated
 import { supabase } from "@/integrations/supabase/client";
@@ -541,15 +542,28 @@ const AppForm = () => {
                   <>
                      {/* Client Name Section */}
                      <div className="bg-muted/30 rounded-xl p-6 border border-muted">
-                       <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
-                       <p className="text-sm text-muted-foreground mb-4">הכנס את שם הלקוח</p>
+                       <div className="flex items-center justify-between mb-2">
+                         <div>
+                           <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
+                           <p className="text-sm text-muted-foreground mt-1">הכנס את שם הלקוח או טען מקובץ מסלקה</p>
+                         </div>
+                         <ClientFileImport 
+                           onClientDataLoaded={(clientName, clientId) => {
+                             setFormData(prev => ({ 
+                               ...prev, 
+                               clientName, 
+                               clientId 
+                             }));
+                           }}
+                         />
+                       </div>
                        <Input
                          id="clientName"
                          type="text"
                          value={formData.clientName}
                          onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
                          placeholder="שם הלקוח"
-                         className="bg-background border-border rounded-xl h-12 text-lg"
+                         className="bg-background border-border rounded-xl h-12 text-lg mt-2"
                        />
                      </div>
 
