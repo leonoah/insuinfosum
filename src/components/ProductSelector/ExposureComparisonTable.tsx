@@ -40,7 +40,9 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
 
   const formatExposure = (value: number | undefined): string => {
     if (value === undefined) return '-';
-    return `${value.toFixed(2)}%`;
+    // Ensure value is treated as percentage (0-100 range)
+    const numValue = Number(value);
+    return `${numValue.toFixed(2)}%`;
   };
 
   const calculateDifference = (current: number | undefined, recommended: number | undefined): string => {

@@ -61,11 +61,11 @@ export const useProductTaxonomy = () => {
           productNumber: row.product_number || '', // מספר קופה מה-DB
           policyChange: '',
           trackMerger: '',
-          exposureForeignCurrency: row.exposure_foreign_currency || 0,
-          exposureForeignInvestments: row.exposure_foreign_investments || 0,
+          exposureForeignCurrency: Number(row.exposure_foreign_currency) || 0,
+          exposureForeignInvestments: Number(row.exposure_foreign_investments) || 0,
           exposureIsrael: 0,
-          exposureStocks: row.exposure_stocks || 0,
-          exposureBonds: row.exposure_bonds || 0,
+          exposureStocks: Number(row.exposure_stocks) || 0,
+          exposureBonds: Number(row.exposure_bonds) || 0,
           exposureIlliquidAssets: 0,
           assetComposition: '',
         };
