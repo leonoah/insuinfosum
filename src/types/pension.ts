@@ -27,6 +27,8 @@ export interface PensionProduct {
 export interface PensionSummary {
   clientId: string;
   clientName: string;
+  clientPhone?: string;
+  clientEmail?: string;
   reportDate: string;
   products: PensionProduct[];
   totalByType: {

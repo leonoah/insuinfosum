@@ -547,15 +547,17 @@ const AppForm = () => {
                            <Label htmlFor="clientName" className="text-lg font-medium">שם הלקוח *</Label>
                            <p className="text-sm text-muted-foreground mt-1">הכנס את שם הלקוח או טען מקובץ מסלקה</p>
                          </div>
-                         <ClientFileImport 
-                           onClientDataLoaded={(clientName, clientId) => {
-                             setFormData(prev => ({ 
-                               ...prev, 
-                               clientName, 
-                               clientId 
-                             }));
-                           }}
-                         />
+                          <ClientFileImport 
+                            onClientDataLoaded={(clientName, clientId, clientPhone, clientEmail) => {
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                clientName, 
+                                clientId,
+                                clientPhone: clientPhone || prev.clientPhone,
+                                clientEmail: clientEmail || prev.clientEmail
+                              }));
+                            }}
+                          />
                        </div>
                        <Input
                          id="clientName"

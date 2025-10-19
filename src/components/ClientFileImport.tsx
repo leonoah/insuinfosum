@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { PensionParser } from "@/utils/pensionParser";
 
 interface ClientFileImportProps {
-  onClientDataLoaded: (clientName: string, clientId: string) => void;
+  onClientDataLoaded: (clientName: string, clientId: string, clientPhone?: string, clientEmail?: string) => void;
 }
 
 export function ClientFileImport({ onClientDataLoaded }: ClientFileImportProps) {
@@ -21,7 +21,12 @@ export function ClientFileImport({ onClientDataLoaded }: ClientFileImportProps) 
       }
 
       if (pensionData.summary?.clientName && pensionData.summary?.clientId) {
-        onClientDataLoaded(pensionData.summary.clientName, pensionData.summary.clientId);
+        onClientDataLoaded(
+          pensionData.summary.clientName, 
+          pensionData.summary.clientId,
+          pensionData.summary.clientPhone,
+          pensionData.summary.clientEmail
+        );
         toast.success("פרטי הלקוח נטענו בהצלחה");
       } else {
         toast.error("לא נמצאו פרטי לקוח בקובץ");

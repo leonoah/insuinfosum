@@ -5,6 +5,8 @@ export class XMLPensionParser {
   static async parseZIPFile(file: File): Promise<{
     clientName: string;
     clientId: string;
+    clientPhone?: string;
+    clientEmail?: string;
     reportDate: string;
     products: PensionProduct[];
   }> {
@@ -24,6 +26,8 @@ export class XMLPensionParser {
     const allProducts: PensionProduct[] = [];
     let clientName = "";
     let clientId = "";
+    let clientPhone = "";
+    let clientEmail = "";
     let reportDate = "";
 
     for (const xmlFilename of xmlFiles) {
@@ -34,12 +38,12 @@ export class XMLPensionParser {
         
         const result = await this.parseXMLFile(xmlFile);
         
-        // שומרים את פרטי הלקוח מהקובץ הראשון
-        if (!clientName) {
-          clientName = result.clientName;
-          clientId = result.clientId;
-          reportDate = result.reportDate;
-        }
+        // שומרים את פרטי הלקוח מהקובץ האחרון (מעדכנים בכל איטרציה)
+        clientName = result.clientName;
+        clientId = result.clientId;
+        if (result.clientPhone) clientPhone = result.clientPhone;
+        if (result.clientEmail) clientEmail = result.clientEmail;
+        reportDate = result.reportDate;
         
         // מוסיפים את המוצרים מהקובץ הנוכחי
         allProducts.push(...result.products);
@@ -55,6 +59,8 @@ export class XMLPensionParser {
     return {
       clientName,
       clientId,
+      clientPhone: clientPhone || undefined,
+      clientEmail: clientEmail || undefined,
       reportDate,
       products: allProducts
     };
@@ -63,6 +69,8 @@ export class XMLPensionParser {
   static async parseXMLFile(file: File): Promise<{
     clientName: string;
     clientId: string;
+    clientPhone?: string;
+    clientEmail?: string;
     reportDate: string;
     products: PensionProduct[];
   }> {
@@ -81,6 +89,26 @@ export class XMLPensionParser {
     const clientName = this.getElementText(clientElement, "SHEM-PRATI") + " " + 
                        this.getElementText(clientElement, "SHEM-MISHPACHA");
     const clientId = this.getElementText(clientElement, "MISPAR-ZIHUY-LAKOACH");
+    
+    // חילוץ פרטי התקשרות - מחפש מספר אפשרויות שונות
+    let clientPhone = "";
+    let clientEmail = "";
+    
+    if (clientElement) {
+      // ניסיון לקרוא טלפון מכמה שדות אפשריים
+      clientPhone = this.getElementText(clientElement, "TELEFON") ||
+                    this.getElementText(clientElement, "MISPAR-TELEFON") ||
+                    this.getElementText(clientElement, "TELEPHONE") ||
+                    this.getElementText(clientElement, "PHONE") ||
+                    "";
+      
+      // ניסיון לקרוא אימייל מכמה שדות אפשריים
+      clientEmail = this.getElementText(clientElement, "DO-EL") ||
+                    this.getElementText(clientElement, "EMAIL") ||
+                    this.getElementText(clientElement, "DUAR-ELECTRONI") ||
+                    this.getElementText(clientElement, "E-MAIL") ||
+                    "";
+    }
 
     // תאריך דוח
     const reportDate = this.formatDate(this.getElementText(xmlDoc, "TAARICH-BITZUA"));
@@ -103,6 +131,8 @@ export class XMLPensionParser {
     return {
       clientName,
       clientId,
+      clientPhone: clientPhone || undefined,
+      clientEmail: clientEmail || undefined,
       reportDate,
       products
     };
