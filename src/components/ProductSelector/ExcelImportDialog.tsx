@@ -504,7 +504,13 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
           investmentTrack: savingsProduct.investmentTrack || '',
           riskLevelChange: '',
           notes: savingsProduct.policyNumber || '',
-          type: 'current'
+          type: 'current',
+          includeExposureData: !!(matched.exposureStocks || matched.exposureBonds || matched.exposureForeignCurrency || matched.exposureForeignInvestments),
+          exposureStocks: matched.exposureStocks,
+          exposureBonds: matched.exposureBonds,
+          exposureForeignCurrency: matched.exposureForeignCurrency,
+          exposureForeignInvestments: matched.exposureForeignInvestments,
+          productNumber: matched.productNumber
         };
         selectedProducts.push(product);
       }
@@ -533,7 +539,13 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
           investmentTrack: '',
           riskLevelChange: '',
           notes: insuranceProduct.policyNumber || '',
-          type: 'current'
+          type: 'current',
+          includeExposureData: !!(matched.exposureStocks || matched.exposureBonds || matched.exposureForeignCurrency || matched.exposureForeignInvestments),
+          exposureStocks: matched.exposureStocks,
+          exposureBonds: matched.exposureBonds,
+          exposureForeignCurrency: matched.exposureForeignCurrency,
+          exposureForeignInvestments: matched.exposureForeignInvestments,
+          productNumber: matched.productNumber
         };
         selectedProducts.push(product);
       }

@@ -377,7 +377,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           investmentTrack: savingsProduct.investmentTrack || '',
           riskLevelChange: '',
           notes: notesParts.join(' | '),
-          type: 'current'
+          type: 'current',
+          includeExposureData: !!(matched.exposureStocks || matched.exposureBonds || matched.exposureForeignCurrency || matched.exposureForeignInvestments),
+          exposureStocks: matched.exposureStocks,
+          exposureBonds: matched.exposureBonds,
+          exposureForeignCurrency: matched.exposureForeignCurrency,
+          exposureForeignInvestments: matched.exposureForeignInvestments,
+          productNumber: matched.productNumber
         };
         selectedProducts.push(product);
       }
@@ -407,7 +413,13 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           investmentTrack: '',
           riskLevelChange: '',
           notes: insuranceProduct.policyNumber ? `פוליסה: ${insuranceProduct.policyNumber}` : '',
-          type: 'current'
+          type: 'current',
+          includeExposureData: !!(matched.exposureStocks || matched.exposureBonds || matched.exposureForeignCurrency || matched.exposureForeignInvestments),
+          exposureStocks: matched.exposureStocks,
+          exposureBonds: matched.exposureBonds,
+          exposureForeignCurrency: matched.exposureForeignCurrency,
+          exposureForeignInvestments: matched.exposureForeignInvestments,
+          productNumber: matched.productNumber
         };
         selectedProducts.push(product);
       }
