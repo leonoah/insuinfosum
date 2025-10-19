@@ -282,29 +282,49 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     console.log('🔍 Excel Dialog Product Matching Summary:');
     console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
     
-    // Helper function to extract ALL numbers from text
-    const extractAllNumbers = (text: string): string[] => {
-      const numbers = text.match(/\d+/g);
-      return numbers || [];
+    // Helper function to extract numbers with priority: parentheses first, then by length
+    const extractNumbers = (text: string): string[] => {
+      // First, try to find numbers in parentheses - these are usually fund numbers
+      const numbersInParentheses = text.match(/\((\d+)\)/g);
+      if (numbersInParentheses && numbersInParentheses.length > 0) {
+        return numbersInParentheses.map(match => match.replace(/[()]/g, ''));
+      }
+      
+      // If no parentheses, extract all numbers and sort by length (longer numbers first)
+      const allNumbers = text.match(/\d+/g);
+      if (allNumbers) {
+        return allNumbers.sort((a, b) => b.length - a.length);
+      }
+      
+      return [];
     };
     
-    // PRIORITY 1: Search by product number - try ALL extracted numbers
-    // Collect all numbers from all fields
-    let numbersToSearch: string[] = [];
-    if (productNumber) {
-      numbersToSearch.push(productNumber);
-    }
-    numbersToSearch.push(...extractAllNumbers(subCategory));
-    numbersToSearch.push(...extractAllNumbers(productType));
-    numbersToSearch.push(...extractAllNumbers(company));
+    // PRIORITY 1: Search by product number - try ALL extracted numbers with priority
+    // Collect numbers with priority: parentheses first, then by length
+    const numbersToSearch: string[] = [];
     
-    // Remove duplicates
-    numbersToSearch = [...new Set(numbersToSearch)];
+    // Check each field in order of importance
+    const fields = [
+      subCategory,    // Most likely to contain fund number in parentheses
+      productType,    // Second most likely
+      productNumber,  // Explicit product number field
+      company         // Least likely but still check
+    ];
     
-    console.log(`🔢 Found ${numbersToSearch.length} numbers to check: ${numbersToSearch.join(', ')}`);
+    fields.forEach(field => {
+      if (field) {
+        const numbers = extractNumbers(field);
+        numbersToSearch.push(...numbers);
+      }
+    });
+    
+    // Remove duplicates while preserving order
+    const uniqueNumbers = [...new Set(numbersToSearch)];
+    
+    console.log(`🔢 Found ${uniqueNumbers.length} numbers to check (prioritized): ${uniqueNumbers.join(', ')}`);
     
     // Try each number in the DB until we find a match
-    for (const numToSearch of numbersToSearch) {
+    for (const numToSearch of uniqueNumbers) {
       console.log(`   Checking number: ${numToSearch}`);
       const directMatch = getExposureData('', '', '', numToSearch);
       if (directMatch) {
@@ -324,8 +344,8 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       }
     }
     
-    if (numbersToSearch.length > 0) {
-      console.log(`⚠️ None of the numbers found in taxonomy: ${numbersToSearch.join(', ')}`);
+    if (uniqueNumbers.length > 0) {
+      console.log(`⚠️ None of the numbers found in taxonomy: ${uniqueNumbers.join(', ')}`);
     }
     
     // PRIORITY 2: Try semantic matching
@@ -343,7 +363,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       console.log(`📋 Found ${relevantSubCategories.length} subcategories for ${matchedCompany} - ${matchedCategory}`);
       
       // Try to find any number in any of the relevant subcategories
-      for (const numToSearch of numbersToSearch) {
+      for (const numToSearch of uniqueNumbers) {
         const subCatWithNumber = relevantSubCategories.find(sc => sc.includes(numToSearch));
         if (subCatWithNumber) {
           console.log(`✅ Found subcategory with number: "${subCatWithNumber}"`);
@@ -368,7 +388,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       const matchedSubCategory = matchSubCategory(subCategory, relevantSubCategories);
       console.log(`🎯 Best subcategory match: "${matchedSubCategory}"`);
       
-      const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numbersToSearch[0]);
+      const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, uniqueNumbers[0]);
       return {
         category: matchedCategory,
         subCategory: matchedSubCategory,
@@ -380,7 +400,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         exposureIsrael: exposureData?.exposureIsrael,
         exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
         assetComposition: exposureData?.assetComposition,
-        productNumber: numbersToSearch[0] || undefined
+        productNumber: uniqueNumbers[0] || undefined
       };
     }
     
@@ -391,7 +411,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
     console.log('⚠️ Fallback to general matching');
     console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
     
-    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numbersToSearch[0]);
+    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, uniqueNumbers[0]);
     
     return {
       category: matchedCategory,
@@ -404,7 +424,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
       exposureIsrael: exposureData?.exposureIsrael,
       exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
       assetComposition: exposureData?.assetComposition,
-      productNumber: numbersToSearch[0] || undefined
+      productNumber: uniqueNumbers[0] || undefined
     };
   };
 
