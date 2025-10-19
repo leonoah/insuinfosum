@@ -38,6 +38,11 @@ export interface SelectedProduct {
   exposureIsrael?: number;
   exposureIlliquidAssets?: number;
   assetComposition?: string;
+  // Control which exposure fields to include in summary
+  includeStocksInSummary?: boolean;
+  includeBondsInSummary?: boolean;
+  includeForeignCurrencyInSummary?: boolean;
+  includeForeignInvestmentsInSummary?: boolean;
 }
 
 export interface ProductSelectionStep {

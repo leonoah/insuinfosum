@@ -50,7 +50,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       investmentTrack: '',
       riskLevelChange: '',
       notes: '',
-      includeExposureData: false
+      includeExposureData: false,
+      includeStocksInSummary: true,
+      includeBondsInSummary: true,
+      includeForeignCurrencyInSummary: true,
+      includeForeignInvestmentsInSummary: true
     };
     return initialData;
   });
@@ -75,7 +79,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         investmentTrack: '',
         riskLevelChange: '',
         notes: '',
-        includeExposureData: false
+        includeExposureData: false,
+        includeStocksInSummary: true,
+        includeBondsInSummary: true,
+        includeForeignCurrencyInSummary: true,
+        includeForeignInvestmentsInSummary: true
       };
       setFormData(initialData);
       setInitialFormData(initialData);
@@ -238,7 +246,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       exposureIsrael: formData.exposureIsrael,
       exposureIlliquidAssets: formData.exposureIlliquidAssets,
       assetComposition: formData.assetComposition,
-      productNumber: formData.productNumber
+      productNumber: formData.productNumber,
+      includeStocksInSummary: formData.includeStocksInSummary ?? true,
+      includeBondsInSummary: formData.includeBondsInSummary ?? true,
+      includeForeignCurrencyInSummary: formData.includeForeignCurrencyInSummary ?? true,
+      includeForeignInvestmentsInSummary: formData.includeForeignInvestmentsInSummary ?? true
     };
 
     console.log('Submitting product:', product);
@@ -306,7 +318,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       investmentTrack: '',
       riskLevelChange: '',
       notes: '',
-      includeExposureData: false
+      includeExposureData: false,
+      includeStocksInSummary: true,
+      includeBondsInSummary: true,
+      includeForeignCurrencyInSummary: true,
+      includeForeignInvestmentsInSummary: true
     };
     setFormData(resetData);
     setInitialFormData(null);
@@ -716,9 +732,23 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     אין נתוני חשיפה
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה למניות (%)</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה למניות (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeStocks"
+                            checked={formData.includeStocksInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeStocksInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeStocks" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
                       <Input
                         type="number"
                         step="0.01"
@@ -738,7 +768,21 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה לאג"ח (%)</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה לאג"ח (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeBonds"
+                            checked={formData.includeBondsInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeBondsInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeBonds" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
                       <Input
                         type="number"
                         step="0.01"
@@ -758,7 +802,21 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה למט"ח (%)</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה למט"ח (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeForeignCurrency"
+                            checked={formData.includeForeignCurrencyInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeForeignCurrencyInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeForeignCurrency" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
                       <Input
                         type="number"
                         step="0.01"
@@ -778,7 +836,21 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">חשיפה להשקעות בחו"ל (%)</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">חשיפה להשקעות בחו"ל (%)</label>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="includeForeignInvestments"
+                            checked={formData.includeForeignInvestmentsInSummary ?? true}
+                            onCheckedChange={(checked) => 
+                              setFormData({ ...formData, includeForeignInvestmentsInSummary: checked as boolean })
+                            }
+                          />
+                          <Label htmlFor="includeForeignInvestments" className="text-xs cursor-pointer">
+                            כלול בסיכום
+                          </Label>
+                        </div>
+                      </div>
                       <Input
                         type="number"
                         step="0.01"
