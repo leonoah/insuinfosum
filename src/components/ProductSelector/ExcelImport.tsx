@@ -62,7 +62,14 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
   const [showProductSelection, setShowProductSelection] = useState(false);
   
   // Load taxonomy for smart matching
-  const { getAllCategories, getAllSubCategories, getAllCompanies, getExposureData, loading: taxonomyLoading } = useProductTaxonomy();
+  const { 
+    getAllCategories, 
+    getAllSubCategories, 
+    getAllCompanies, 
+    getExposureData, 
+    getSubCategoriesForCategoryAndCompany,
+    loading: taxonomyLoading 
+  } = useProductTaxonomy();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -443,14 +450,27 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     return `${(percentage || 0).toFixed(2)}%`;
   };
 
-  // Smart matching function using the new architecture
+  // Smart matching function with improved logic
   const smartMatchProduct = (productType: string, subCategory: string, company: string, productNumber?: string) => {
-    console.log('🔍 Excel Product Matching - Stage 1: Input');
-    console.log(`   Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
+    console.log('🔍 Excel Product Matching Summary:');
+    console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
     
-    // PRIORITY 1: Search by product number first (if available)
-    if (productNumber) {
-      const directMatch = getExposureData('', '', '', productNumber);
+    // Helper function to extract first number from text
+    const extractFirstNumber = (text: string): string | null => {
+      const numbers = text.match(/\d+/g);
+      return numbers ? numbers[0] : null;
+    };
+    
+    // PRIORITY 1: Search by product number first
+    // Try explicit productNumber first, then extract from subCategory
+    let numberToSearch = productNumber;
+    if (!numberToSearch) {
+      numberToSearch = extractFirstNumber(subCategory) || extractFirstNumber(productType) || null;
+    }
+    
+    if (numberToSearch) {
+      console.log(`🔢 Searching by number: ${numberToSearch}`);
+      const directMatch = getExposureData('', '', '', numberToSearch);
       if (directMatch) {
         console.log('✅ FOUND by Product Number:', directMatch);
         return {
@@ -466,23 +486,73 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           productNumber: directMatch.productNumber
         };
       }
-      console.log('⚠️ Product number not found in taxonomy, falling back to semantic matching');
+      console.log(`⚠️ Number ${numberToSearch} not found in taxonomy`);
     }
     
-    // PRIORITY 2: Semantic matching
+    // PRIORITY 2: Try semantic matching
     const categories = getAllCategories();
-    const subCategories = getAllSubCategories();
     const companies = getAllCompanies();
     
     const matchedCategory = matchCategory(productType, categories);
-    const matchedSubCategory = matchSubCategory(subCategory, subCategories);
     const matchedCompany = matchCompany(company, companies);
     
-    console.log('🔍 Excel Product Matching - Stage 2: Semantic Match');
+    console.log(`📊 Matched Category: "${matchedCategory}", Company: "${matchedCompany}"`);
+    
+    // PRIORITY 3: If we have category and company, get filtered subcategory list
+    if (matchedCategory && matchedCompany) {
+      const relevantSubCategories = getSubCategoriesForCategoryAndCompany(matchedCategory, matchedCompany);
+      console.log(`📋 Found ${relevantSubCategories.length} subcategories for ${matchedCompany} - ${matchedCategory}`);
+      
+      // Try to find number in any of the relevant subcategories
+      if (numberToSearch) {
+        const subCatWithNumber = relevantSubCategories.find(sc => sc.includes(numberToSearch!));
+        if (subCatWithNumber) {
+          console.log(`✅ Found subcategory with number: "${subCatWithNumber}"`);
+          const exposureData = getExposureData(matchedCompany, matchedCategory, subCatWithNumber, numberToSearch);
+          return {
+            category: matchedCategory,
+            subCategory: subCatWithNumber,
+            company: matchedCompany,
+            exposureStocks: exposureData?.exposureStocks,
+            exposureBonds: exposureData?.exposureBonds,
+            exposureForeignCurrency: exposureData?.exposureForeignCurrency,
+            exposureForeignInvestments: exposureData?.exposureForeignInvestments,
+            exposureIsrael: exposureData?.exposureIsrael,
+            exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
+            assetComposition: exposureData?.assetComposition,
+            productNumber: numberToSearch
+          };
+        }
+      }
+      
+      // Match subcategory from the filtered list
+      const matchedSubCategory = matchSubCategory(subCategory, relevantSubCategories);
+      console.log(`🎯 Best subcategory match: "${matchedSubCategory}"`);
+      
+      const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numberToSearch || undefined);
+      return {
+        category: matchedCategory,
+        subCategory: matchedSubCategory,
+        company: matchedCompany,
+        exposureStocks: exposureData?.exposureStocks,
+        exposureBonds: exposureData?.exposureBonds,
+        exposureForeignCurrency: exposureData?.exposureForeignCurrency,
+        exposureForeignInvestments: exposureData?.exposureForeignInvestments,
+        exposureIsrael: exposureData?.exposureIsrael,
+        exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
+        assetComposition: exposureData?.assetComposition,
+        productNumber: numberToSearch || undefined
+      };
+    }
+    
+    // FALLBACK: General semantic matching if no category/company match
+    const allSubCategories = getAllSubCategories();
+    const matchedSubCategory = matchSubCategory(subCategory, allSubCategories);
+    
+    console.log('⚠️ Fallback to general matching');
     console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
     
-    // Get exposure data
-    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, productNumber);
+    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numberToSearch || undefined);
     
     return {
       category: matchedCategory,
@@ -494,7 +564,8 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       exposureForeignInvestments: exposureData?.exposureForeignInvestments,
       exposureIsrael: exposureData?.exposureIsrael,
       exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
-      assetComposition: exposureData?.assetComposition
+      assetComposition: exposureData?.assetComposition,
+      productNumber: numberToSearch || undefined
     };
   };
   return (
