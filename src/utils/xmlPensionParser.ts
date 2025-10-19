@@ -85,54 +85,27 @@ export class XMLPensionParser {
     }
 
     // חילוץ פרטי לקוח
-    const clientElement = xmlDoc.querySelector("YeshutLakoach");
-    const clientName = this.getElementText(clientElement, "SHEM-PRATI") + " " + 
-                       this.getElementText(clientElement, "SHEM-MISHPACHA");
-    const clientId = this.getElementText(clientElement, "MISPAR-ZIHUY-LAKOACH");
+    const clientElement = xmlDoc.querySelector("YeshutLakoach, Lakoach, PrateiLakoach, Pratei-Lakoach");
+    const firstName = this.getFirstTextByTags(clientElement || xmlDoc, ["SHEM-PRATI","SHEM-PRATI-LAKOACH"]);
+    const lastName = this.getFirstTextByTags(clientElement || xmlDoc, ["SHEM-MISHPACHA","SHEM-MISHPACHA-LAKOACH"]);
+    const clientName = (firstName + " " + lastName).trim() || this.getFirstTextByTags(clientElement || xmlDoc, ["SHEM-MALE","SHEM-MALE-LAKOACH"]) || "";
+    const clientId = this.getFirstTextByTags(clientElement || xmlDoc, ["MISPAR-ZIHUY-LAKOACH","MISPAR-ZEHUT","MISPAR-TEUDAT-ZEHUT","TEUDAT-ZEHUT","MISPAR-ZIHUY"]);
     
     // חילוץ פרטי התקשרות - מחפש מספר אפשרויות שונות
-    let clientPhone = "";
-    let clientEmail = "";
-    
-    if (clientElement) {
-      // ניסיון לקרוא טלפון מכמה שדות אפשריים
-      clientPhone = this.getElementText(clientElement, "MISPAR-CELLULARI") ||
-                    this.getElementText(clientElement, "MISPAR-SELULARI") ||
-                    this.getElementText(clientElement, "TELEFON") ||
-                    this.getElementText(clientElement, "MISPAR-TELEFON") ||
-                    this.getElementText(clientElement, "TELEPHONE") ||
-                    this.getElementText(clientElement, "PHONE") ||
-                    "";
-      if (!clientPhone) {
-        clientPhone = this.getElementText(xmlDoc, "MISPAR-CELLULARI") ||
-                      this.getElementText(xmlDoc, "MISPAR-SELULARI") ||
-                      this.getElementText(xmlDoc, "TELEFON") ||
-                      this.getElementText(xmlDoc, "MISPAR-TELEFON") ||
-                      this.getElementText(xmlDoc, "TELEPHONE") ||
-                      this.getElementText(xmlDoc, "PHONE") ||
-                      "";
-      }
-      
-      // ניסיון לקרוא אימייל מכמה שדות אפשריים
-      clientEmail = this.getElementText(clientElement, "DO-EL") ||
-                    this.getElementText(clientElement, "EMAIL") ||
-                    this.getElementText(clientElement, "DUAR-ELECTRONI") ||
-                    this.getElementText(clientElement, "E-MAIL") ||
-                    "";
-      if (!clientEmail) {
-        clientEmail = this.getElementText(xmlDoc, "DO-EL") ||
-                      this.getElementText(xmlDoc, "EMAIL") ||
-                      this.getElementText(xmlDoc, "DUAR-ELECTRONI") ||
-                      this.getElementText(xmlDoc, "E-MAIL") ||
-                      "";
-      }
-    }
+    const clientPhone = this.getFirstTextByTags(clientElement || xmlDoc, [
+      "MISPAR-CELLULARI","MISPAR-SELULARI","CELLULAR","MOBILE",
+      "TELEFON","MISPAR-TELEFON","TELEPHONE","PHONE","MISPAR-PHONE"
+    ]);
+    const clientEmail = this.getFirstTextByTags(clientElement || xmlDoc, [
+      "DO-EL","DOAR-ELECTRONI","DUAR-ELECTRONI","EMAIL","E-MAIL"
+    ]);
 
     // תאריך דוח
-    const reportDate = this.formatDate(this.getElementText(xmlDoc, "TAARICH-BITZUA"));
+    const reportDateRaw = this.getFirstTextByTags(xmlDoc, ["TAARICH-BITZUA","TAARICH-DUACH","TAARICH-DUCH"]);
+    const reportDate = this.formatDate(reportDateRaw);
 
     // חילוץ מוצרים
-    const mutzarimElements = xmlDoc.querySelectorAll("Mutzar");
+    const mutzarimElements = xmlDoc.querySelectorAll("Mutzar, Mutzarim > Mutzar");
     const products: PensionProduct[] = [];
 
     mutzarimElements.forEach((mutzar, index) => {
@@ -157,8 +130,7 @@ export class XMLPensionParser {
   }
 
   private static parseMutzar(mutzar: Element, index: number): PensionProduct | null {
-    const heshbon = mutzar.querySelector("HeshbonOPolisa");
-    if (!heshbon) return null;
+    const heshbon = (mutzar.querySelector("HeshbonOPolisa, Heshbon-O-Polisa, Heshbon, Polisa") as Element) || mutzar;
 
     // סוג מוצר
     const sugMutzar = this.getElementText(mutzar, "SUG-MUTZAR");
@@ -166,24 +138,28 @@ export class XMLPensionParser {
     if (!productType) return null;
 
     // חברה
-    const company = this.getElementText(heshbon, "SHEM-TOCHNIT") || 
-                   this.getElementText(mutzar, "SHEM-YATZRAN", "YeshutYatzran") ||
+    const company = this.getFirstTextByTags(heshbon, ["SHEM-TOCHNIT","SHEM-GUF-MENAHAL"]) || 
+                   this.getFirstTextByTags(mutzar, ["SHEM-YATZRAN","SHEM-YATZARAN","SHEM-YATSRAN"], "YeshutYatzran") ||
                    "לא ידוע";
 
     // מספר פוליסה
-    const policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
+    const policyNumber = this.getFirstTextByTags(heshbon, ["MISPAR-POLISA-O-HESHBON","MISPAR-POLISA","MISPAR-HESHBON"]);
 
     // סטטוס
-    const statusCode = this.getElementText(heshbon, "STATUS-POLISA-O-CHESHBON");
+    const statusCode = this.getFirstTextByTags(heshbon, ["STATUS-POLISA-O-CHESHBON","STATUS-POLISA-O-HESHBON","STATUS-HESHBON"]);
     const status = statusCode === "1" || statusCode === "2" ? "פעיל" : "לא פעיל";
 
     // יתרה נוכחית - מחפשים באלמנט Tzvira
-    const tzviraElements = heshbon.querySelectorAll("PerutMasluleiHashkaa");
+    const tzviraElements = heshbon.querySelectorAll("PerutMasluleiHashkaa, PerutMaslul, PerutMaslulHashkaa");
     let currentBalance = 0;
     tzviraElements.forEach(elem => {
       const amount = parseFloat(this.getElementText(elem, "SCHUM-TZVIRA-BAMASLUL") || "0");
       currentBalance += amount;
     });
+    if (currentBalance === 0) {
+      const yitra = parseFloat(this.getFirstTextByTags(heshbon, ["YITRA-NOCHECHIT","YITRA-NOCHACHIT","YITRA"]) || "0");
+      if (!isNaN(yitra) && yitra > 0) currentBalance = yitra;
+    }
 
     // דמי ניהול
     const managementFeeFromBalance = parseFloat(
@@ -344,6 +320,18 @@ export class XMLPensionParser {
     
     const element = searchElement?.querySelector(tagName);
     return element?.textContent?.trim() || "";
+  }
+
+  private static getFirstTextByTags(
+    parent: Element | Document | null,
+    tags: string[],
+    subParent?: string
+  ): string {
+    for (const t of tags) {
+      const val = this.getElementText(parent, t, subParent);
+      if (val) return val;
+    }
+    return "";
   }
 
   private static formatDate(dateStr: string): string {
