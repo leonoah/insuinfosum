@@ -160,15 +160,26 @@ export const ProductTaxonomyManagement = () => {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const productsToInsert = jsonData.map((row: any) => ({
-        company: row['חברה'] || row['company'] || '',
-        category: row['קטגוריה'] || row['category'] || '',
-        sub_category: row['תת קטגוריה'] || row['sub_category'] || '',
-        exposure_stocks: parseFloat(row['חשיפה מניות'] || row['exposure_stocks'] || 0),
-        exposure_bonds: parseFloat(row['חשיפה אגח'] || row['exposure_bonds'] || 0),
-        exposure_foreign_currency: parseFloat(row['חשיפה מטח'] || row['exposure_foreign_currency'] || 0),
-        exposure_foreign_investments: parseFloat(row['חשיפה השקעות חול'] || row['exposure_foreign_investments'] || 0),
-      }));
+      const productsToInsert = jsonData.map((row: any) => {
+        const subCategory = row['תת קטגוריה'] || row['sub_category'] || '';
+        const productNumber = row['מספר קופה/קרן'] || row['product_number'] || '';
+        
+        // שילוב תת קטגוריה עם מספר מוצר אם קיים
+        let finalSubCategory = subCategory;
+        if (productNumber && !subCategory.includes(productNumber)) {
+          finalSubCategory = productNumber; // רק המספר
+        }
+        
+        return {
+          company: row['חברה'] || row['company'] || '',
+          category: row['קטגוריה'] || row['category'] || '',
+          sub_category: finalSubCategory,
+          exposure_stocks: parseFloat(row['חשיפה מניות'] || row['exposure_stocks'] || 0),
+          exposure_bonds: parseFloat(row['חשיפה אגח'] || row['exposure_bonds'] || 0),
+          exposure_foreign_currency: parseFloat(row['חשיפה מטח'] || row['exposure_foreign_currency'] || 0),
+          exposure_foreign_investments: parseFloat(row['חשיפה השקעות חול'] || row['exposure_foreign_investments'] || 0),
+        };
+      });
 
       const { error } = await supabase
         .from('products_taxonomy')
@@ -189,13 +200,24 @@ export const ProductTaxonomyManagement = () => {
   const handleExportTemplate = () => {
     const template = [
       {
-        'חברה': 'דוגמא לחברה',
-        'קטגוריה': 'דוגמא לקטגוריה',
-        'תת קטגוריה': 'דוגמא לתת קטגוריה',
+        'חברה': 'מגדל',
+        'קטגוריה': 'קופת גמל',
+        'תת קטגוריה': 'מסלול כללי',
+        'מספר קופה/קרן': '9551',
         'חשיפה מניות': 50,
         'חשיפה אגח': 30,
         'חשיפה מטח': 10,
         'חשיפה השקעות חול': 10
+      },
+      {
+        'חברה': 'הראל',
+        'קטגוריה': 'קרן פנסיה',
+        'תת קטגוריה': 'מסלול מניות',
+        'מספר קופה/קרן': '1234',
+        'חשיפה מניות': 70,
+        'חשיפה אגח': 20,
+        'חשיפה מטח': 5,
+        'חשיפה השקעות חול': 5
       }
     ];
 
@@ -259,13 +281,13 @@ export const ProductTaxonomyManagement = () => {
                   </datalist>
                 </div>
                 <div>
-                  <Label>תת קטגוריה</Label>
+                  <Label>תת קטגוריה / מספר קופה</Label>
                   <Input
                     list="sub-categories-list"
                     value={formData.sub_category}
                     onChange={(e) => setFormData({ ...formData, sub_category: e.target.value })}
                     required
-                    placeholder="בחר מהרשימה או הקלד חדש"
+                    placeholder="למשל: 9551, מסלול כללי, וכו'"
                   />
                   <datalist id="sub-categories-list">
                     {uniqueSubCategories.map((subCategory) => (
@@ -347,7 +369,7 @@ export const ProductTaxonomyManagement = () => {
             <TableRow>
               <TableHead className="text-right">חברה</TableHead>
               <TableHead className="text-right">קטגוריה</TableHead>
-              <TableHead className="text-right">תת קטגוריה</TableHead>
+              <TableHead className="text-right">תת קטגוריה / מספר קופה</TableHead>
               <TableHead className="text-right">מניות (%)</TableHead>
               <TableHead className="text-right">אג"ח (%)</TableHead>
               <TableHead className="text-right">מט"ח (%)</TableHead>
