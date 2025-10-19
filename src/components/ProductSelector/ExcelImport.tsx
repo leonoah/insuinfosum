@@ -467,22 +467,31 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     console.log('🔍 Excel Product Matching Summary:');
     console.log(`   Input: Category="${productType}", SubCategory="${subCategory}", Company="${company}", ProductNumber="${productNumber || 'N/A'}"`);
     
-    // Helper function to extract first number from text
-    const extractFirstNumber = (text: string): string | null => {
+    // Helper function to extract ALL numbers from text
+    const extractAllNumbers = (text: string): string[] => {
       const numbers = text.match(/\d+/g);
-      return numbers ? numbers[0] : null;
+      return numbers || [];
     };
     
-    // PRIORITY 1: Search by product number first
-    // Try explicit productNumber first, then extract from subCategory
-    let numberToSearch = productNumber;
-    if (!numberToSearch) {
-      numberToSearch = extractFirstNumber(subCategory) || extractFirstNumber(productType) || null;
+    // PRIORITY 1: Search by product number - try ALL extracted numbers
+    // Collect all numbers from all fields
+    let numbersToSearch: string[] = [];
+    if (productNumber) {
+      numbersToSearch.push(productNumber);
     }
+    numbersToSearch.push(...extractAllNumbers(subCategory));
+    numbersToSearch.push(...extractAllNumbers(productType));
+    numbersToSearch.push(...extractAllNumbers(company));
     
-    if (numberToSearch) {
-      console.log(`🔢 Searching by number: ${numberToSearch}`);
-      const directMatch = getExposureData('', '', '', numberToSearch);
+    // Remove duplicates
+    numbersToSearch = [...new Set(numbersToSearch)];
+    
+    console.log(`🔢 Found ${numbersToSearch.length} numbers to check: ${numbersToSearch.join(', ')}`);
+    
+    // Try each number in the DB until we find a match
+    for (const numToSearch of numbersToSearch) {
+      console.log(`   Checking number: ${numToSearch}`);
+      const directMatch = getExposureData('', '', '', numToSearch);
       if (directMatch) {
         console.log('✅ FOUND by Product Number:', directMatch);
         return {
@@ -498,7 +507,10 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
           productNumber: directMatch.productNumber
         };
       }
-      console.log(`⚠️ Number ${numberToSearch} not found in taxonomy`);
+    }
+    
+    if (numbersToSearch.length > 0) {
+      console.log(`⚠️ None of the numbers found in taxonomy: ${numbersToSearch.join(', ')}`);
     }
     
     // PRIORITY 2: Try semantic matching
@@ -515,12 +527,12 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       const relevantSubCategories = getSubCategoriesForCategoryAndCompany(matchedCategory, matchedCompany);
       console.log(`📋 Found ${relevantSubCategories.length} subcategories for ${matchedCompany} - ${matchedCategory}`);
       
-      // Try to find number in any of the relevant subcategories
-      if (numberToSearch) {
-        const subCatWithNumber = relevantSubCategories.find(sc => sc.includes(numberToSearch!));
+      // Try to find any number in any of the relevant subcategories
+      for (const numToSearch of numbersToSearch) {
+        const subCatWithNumber = relevantSubCategories.find(sc => sc.includes(numToSearch));
         if (subCatWithNumber) {
           console.log(`✅ Found subcategory with number: "${subCatWithNumber}"`);
-          const exposureData = getExposureData(matchedCompany, matchedCategory, subCatWithNumber, numberToSearch);
+          const exposureData = getExposureData(matchedCompany, matchedCategory, subCatWithNumber, numToSearch);
           return {
             category: matchedCategory,
             subCategory: subCatWithNumber,
@@ -532,7 +544,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
             exposureIsrael: exposureData?.exposureIsrael,
             exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
             assetComposition: exposureData?.assetComposition,
-            productNumber: numberToSearch
+            productNumber: numToSearch
           };
         }
       }
@@ -541,7 +553,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       const matchedSubCategory = matchSubCategory(subCategory, relevantSubCategories);
       console.log(`🎯 Best subcategory match: "${matchedSubCategory}"`);
       
-      const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numberToSearch || undefined);
+      const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numbersToSearch[0]);
       return {
         category: matchedCategory,
         subCategory: matchedSubCategory,
@@ -553,7 +565,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
         exposureIsrael: exposureData?.exposureIsrael,
         exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
         assetComposition: exposureData?.assetComposition,
-        productNumber: numberToSearch || undefined
+        productNumber: numbersToSearch[0] || undefined
       };
     }
     
@@ -564,7 +576,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
     console.log('⚠️ Fallback to general matching');
     console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
     
-    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numberToSearch || undefined);
+    const exposureData = getExposureData(matchedCompany, matchedCategory, matchedSubCategory, numbersToSearch[0]);
     
     return {
       category: matchedCategory,
@@ -577,7 +589,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
       exposureIsrael: exposureData?.exposureIsrael,
       exposureIlliquidAssets: exposureData?.exposureIlliquidAssets,
       assetComposition: exposureData?.assetComposition,
-      productNumber: numberToSearch || undefined
+      productNumber: numbersToSearch[0] || undefined
     };
   };
   return (
