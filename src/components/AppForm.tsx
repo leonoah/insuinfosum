@@ -553,8 +553,8 @@ const AppForm = () => {
                                 ...prev, 
                                 clientName, 
                                 clientId,
-                                clientPhone: clientPhone || prev.clientPhone,
-                                clientEmail: clientEmail || prev.clientEmail
+                                clientPhone: clientPhone !== undefined ? clientPhone : prev.clientPhone,
+                                clientEmail: clientEmail !== undefined ? clientEmail : prev.clientEmail
                               }));
                             }}
                           />
