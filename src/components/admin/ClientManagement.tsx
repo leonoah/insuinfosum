@@ -20,7 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, Upload, Download } from "lucide-react";
+import { Pencil, Trash2, Plus, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
 
 interface Client {
@@ -272,7 +272,7 @@ export const ClientManagement = () => {
           <Label htmlFor="excel-import-clients" className="cursor-pointer">
             <Button type="button" variant="outline" asChild>
               <span>
-                <Upload className="h-4 w-4 ml-2" />
+                <FileSpreadsheet className="h-4 w-4 ml-2" />
                 ייבא מאקסל
               </span>
             </Button>
@@ -280,7 +280,7 @@ export const ClientManagement = () => {
         </div>
 
         <Button type="button" variant="outline" onClick={handleExportTemplate}>
-          <Download className="h-4 w-4 ml-2" />
+          <FileSpreadsheet className="h-4 w-4 ml-2" />
           הורד דוגמת אקסל
         </Button>
       </div>
