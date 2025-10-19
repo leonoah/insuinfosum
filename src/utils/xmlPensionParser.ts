@@ -105,10 +105,12 @@ export class XMLPensionParser {
     const reportDate = this.formatDate(reportDateRaw);
 
     // חילוץ מוצרים
-    const mutzarimElements = xmlDoc.querySelectorAll("Mutzar, Mutzarim > Mutzar");
     const products: PensionProduct[] = [];
 
-    mutzarimElements.forEach((mutzar, index) => {
+    // אוספים כל מיכלי המוצרים האפשריים
+    const productContainers = this.getProductContainers(xmlDoc);
+
+    productContainers.forEach((mutzar, index) => {
       try {
         const product = this.parseMutzar(mutzar, index);
         if (product) {
@@ -133,7 +135,7 @@ export class XMLPensionParser {
     const heshbon = (mutzar.querySelector("HeshbonOPolisa, Heshbon-O-Polisa, Heshbon, Polisa") as Element) || mutzar;
 
     // סוג מוצר
-    const sugMutzar = this.getElementText(mutzar, "SUG-MUTZAR");
+    const sugMutzar = this.getFirstTextByTags(mutzar, ["SUG-MUTZAR","SUG-MUTZAR-TEXT","SHEM-SUG-MUTZAR","SUG-MUTZAR-MILULI"]) || "";
     const productType = this.mapProductType(sugMutzar);
     if (!productType) return null;
 
@@ -250,17 +252,30 @@ export class XMLPensionParser {
   }
 
   private static mapProductType(sugMutzar: string): PensionProduct['productType'] | null {
-    // מיפוי קודי סוג מוצר לפי התקן הישראלי
-    const typeMap: Record<string, PensionProduct['productType']> = {
+    // Normalize value (remove leading zeros and trim)
+    const s = (sugMutzar || "").trim();
+    if (!s) return null;
+
+    const num = s.replace(/^0+/, "");
+    const numMap: Record<string, PensionProduct['productType']> = {
       "1": "קרן פנסיה חדשה",
       "2": "קופת גמל",
       "3": "קופת גמל", // קופת גמל להשקעה
       "4": "קרן השתלמות",
       "5": "חברת ביטוח",
-      "6": "ביטוח משכנתא"
+      "6": "ביטוח משכנתא",
     };
+    if (numMap[num]) return numMap[num];
 
-    return typeMap[sugMutzar] || null;
+    // Textual mapping (Hebrew names vary between providers)
+    const lower = s.toLowerCase();
+    if (lower.includes("פנסי")) return "קרן פנסיה חדשה";
+    if (lower.includes("גמל")) return "קופת גמל";
+    if (lower.includes("השתלמ")) return "קרן השתלמות";
+    if (lower.includes("משכנת")) return "ביטוח משכנתא";
+    if (lower.includes("ביטוח") || lower.includes("פוליס")) return "חברת ביטוח";
+
+    return null;
   }
 
   private static determineWithdrawalEligibility(
@@ -332,6 +347,20 @@ export class XMLPensionParser {
       if (val) return val;
     }
     return "";
+  }
+
+  // איסוף כל מכולות המוצרים האפשריות ממבני XML שונים
+  private static getProductContainers(xmlDoc: Document): Element[] {
+    const set = new Set<Element>();
+    // מבנים נפוצים של "Mutzar"
+    xmlDoc.querySelectorAll("Mutzar, Mutzarim > Mutzar, PerutMutzarim > Mutzar").forEach((e) => set.add(e));
+    // מכולות שיש בהן חשבון/פוליסה – נעלה לרמה של ההורה
+    xmlDoc
+      .querySelectorAll("HeshbonOPolisa, Heshbon-O-Polisa, Heshbon, Polisa")
+      .forEach((h) => {
+        if (h.parentElement) set.add(h.parentElement);
+      });
+    return Array.from(set);
   }
 
   private static formatDate(dateStr: string): string {
