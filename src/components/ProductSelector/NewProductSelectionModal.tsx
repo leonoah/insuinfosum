@@ -732,9 +732,18 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <Input
                         type="number"
                         step="0.01"
+                        min="0"
+                        max="100"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureStocks !== undefined ? formData.exposureStocks.toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureStocks: parseFloat(e.target.value) || 0 })}
+                        value={formData.exposureStocks ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureStocks: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureStocks: 0 });
+                          }
+                        }}
                         readOnly={!isEditingExposure}
                       />
                     </div>
@@ -744,9 +753,18 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <Input
                         type="number"
                         step="0.01"
+                        min="0"
+                        max="100"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureBonds !== undefined ? formData.exposureBonds.toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureBonds: parseFloat(e.target.value) || 0 })}
+                        value={formData.exposureBonds ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureBonds: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureBonds: 0 });
+                          }
+                        }}
                         readOnly={!isEditingExposure}
                       />
                     </div>
@@ -756,9 +774,18 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <Input
                         type="number"
                         step="0.01"
+                        min="0"
+                        max="100"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureForeignCurrency !== undefined ? formData.exposureForeignCurrency.toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureForeignCurrency: parseFloat(e.target.value) || 0 })}
+                        value={formData.exposureForeignCurrency ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureForeignCurrency: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureForeignCurrency: 0 });
+                          }
+                        }}
                         readOnly={!isEditingExposure}
                       />
                     </div>
@@ -768,9 +795,18 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                       <Input
                         type="number"
                         step="0.01"
+                        min="0"
+                        max="100"
                         className={isEditingExposure ? "glass" : "glass bg-muted"}
-                        value={formData.exposureForeignInvestments !== undefined ? formData.exposureForeignInvestments.toFixed(2) : 0}
-                        onChange={(e) => setFormData({ ...formData, exposureForeignInvestments: parseFloat(e.target.value) || 0 })}
+                        value={formData.exposureForeignInvestments ?? 0}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0 && val <= 100) {
+                            setFormData({ ...formData, exposureForeignInvestments: val });
+                          } else if (e.target.value === '') {
+                            setFormData({ ...formData, exposureForeignInvestments: 0 });
+                          }
+                        }}
                         readOnly={!isEditingExposure}
                       />
                     </div>
