@@ -106,6 +106,7 @@ export class XMLPensionParser {
 
     // חילוץ מוצרים
     const products: PensionProduct[] = [];
+    const seenPolicyNumbers = new Set<string>();
 
     // אוספים כל מיכלי המוצרים האפשריים
     const productContainers = this.getProductContainers(xmlDoc);
@@ -114,7 +115,12 @@ export class XMLPensionParser {
       try {
         const product = this.parseMutzar(mutzar, index);
         if (product) {
-          products.push(product);
+          // בדיקת כפילויות לפי מספר פוליסה
+          const policyKey = `${product.company}-${product.policyNumber}`;
+          if (!seenPolicyNumbers.has(policyKey)) {
+            seenPolicyNumbers.add(policyKey);
+            products.push(product);
+          }
         }
       } catch (error) {
         console.warn("שגיאה בפרסור מוצר:", error);
