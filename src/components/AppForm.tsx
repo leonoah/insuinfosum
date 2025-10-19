@@ -8,7 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import SummaryGenerator from "./SummaryGenerator";
 import ProductManager from "./ProductSelector/ProductManager";
@@ -25,11 +30,6 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 interface Client {
   id: string;
@@ -608,13 +608,41 @@ const AppForm = () => {
                   
                   <div className="md:col-span-2">
                     <Label htmlFor="meetingDate" className="text-base font-medium">תאריך הפגישה</Label>
-                    <Input
-                      id="meetingDate"
-                      type="date"
-                      value={formData.meetingDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
-                      className="mt-2 bg-input rounded-xl"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-right font-normal mt-2 bg-input rounded-xl h-11",
+                            !formData.meetingDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {formData.meetingDate ? (
+                            format(new Date(formData.meetingDate), "PPP", { locale: he })
+                          ) : (
+                            <span>בחר תאריך</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.meetingDate ? new Date(formData.meetingDate) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                meetingDate: date.toISOString().split('T')[0]
+                              }));
+                            }
+                          }}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                          locale={he}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="md:col-span-2">
