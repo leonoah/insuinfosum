@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { PensionParser } from "@/utils/pensionParser";
 
@@ -55,7 +55,7 @@ export function ClientFileImport({ onClientDataLoaded }: ClientFileImportProps) 
         size="sm"
         onClick={() => document.getElementById("client-file-upload")?.click()}
       >
-        <Upload className="h-4 w-4 ml-2" />
+        <DollarSign className="h-4 w-4 ml-2" />
         טען מקובץ מסלקה
       </Button>
     </div>

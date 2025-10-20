@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { FileUp, FileText, Eye, Plus, Loader2, CheckCircle } from "lucide-react";
+import { DollarSign, FileText, Eye, Plus, Loader2, CheckCircle } from "lucide-react";
 import { PensionParser } from "@/utils/pensionParser";
 import { PensionFileData, PensionProduct } from "@/types/pension";
 import { SelectedProduct } from "@/types/products";
@@ -148,7 +148,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                 {isLoading ? (
                   <Loader2 className="w-12 h-12 text-muted-foreground animate-spin" />
                 ) : (
-                  <FileUp className="w-12 h-12 text-muted-foreground" />
+                  <DollarSign className="w-12 h-12 text-muted-foreground" />
                 )}
                 <div className="text-center">
                   <div className="font-medium">

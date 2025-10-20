@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BarChart3, Upload, GitCompare, Phone, FileUp } from 'lucide-react';
+import { Plus, BarChart3, FileSpreadsheet, GitCompare, Phone, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -216,10 +216,10 @@ const ProductManager: React.FC<ProductManagerProps> = ({
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
         <Button onClick={() => setShowExcelImport(true)} variant="default" size="sm" className="glass-hover shrink-0" title="יבוא מצב קיים מאקסל" aria-label="יבוא מצב קיים מאקסל">
-          <Upload className="h-4 w-4" />
+          <FileSpreadsheet className="h-4 w-4" />
         </Button>
         <Button onClick={() => setShowPensionImport(true)} variant="outline" size="sm" className="glass-hover shrink-0" title="יבוא ממסלקה פנסיונית" aria-label="יבוא ממסלקה פנסיונית">
-          <FileUp className="h-4 w-4" />
+          <DollarSign className="h-4 w-4" />
         </Button>
         <Button 
           variant="outline" 
