@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -624,7 +624,7 @@ const ExcelImport: React.FC<ExcelImportProps> = ({ onDataImported, onProductsSel
         </CardHeader>
         <CardContent>
           <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <div className="space-y-2">
               <p className="text-lg font-medium">העלה קובץ אקסל</p>
               <p className="text-sm text-muted-foreground">
