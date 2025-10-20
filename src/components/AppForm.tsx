@@ -10,6 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -102,6 +108,13 @@ const AppForm = () => {
     approvals: "",
     includeDecisionsInReport: true
   });
+
+  const [autoFillDetailLevel, setAutoFillDetailLevel] = useState<"summary" | "detailed">("summary");
+
+  const detailLevelLabels: Record<"summary" | "detailed", string> = {
+    summary: "פירוט קצר",
+    detailed: "פירוט מורחב",
+  };
 
   // Required fields: current situation, and client details only if not anonymous
   const isSummaryEligible = Boolean(
@@ -321,7 +334,8 @@ const AppForm = () => {
             meetingDate: formData.meetingDate,
             topics: formData.topics
           },
-          autoFillMode: true
+          autoFillMode: true,
+          detailLevel: autoFillDetailLevel
         }
       });
 
@@ -758,27 +772,51 @@ const AppForm = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Auto Fill Button */}
-                <div className="mb-6">
-                  <Button
-                    type="button"
-                    onClick={handleAutoFill}
-                    disabled={isAutoFilling || (!formData.products?.length && !hasSkippedProducts)}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl py-3 font-medium"
-                  >
-                    {isAutoFilling ? (
-                      <>
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                        מבצע מילוי אוטומטי...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 ml-2" />
-                        מילוי אוטומטי
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-1 text-center">
-                    ימלא אוטומטי את 3 השדות על בסיס המוצרים שנבחרו
+                <div className="mb-6 space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="rounded-xl justify-between sm:justify-center w-full sm:w-auto"
+                        >
+                          רמת פירוט: {detailLevelLabels[autoFillDetailLevel]}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem
+                          onSelect={() => setAutoFillDetailLevel("summary")}
+                        >
+                          פירוט קצר
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => setAutoFillDetailLevel("detailed")}
+                        >
+                          פירוט מורחב
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      type="button"
+                      onClick={handleAutoFill}
+                      disabled={isAutoFilling || (!formData.products?.length && !hasSkippedProducts)}
+                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl py-3 font-medium"
+                    >
+                      {isAutoFilling ? (
+                        <>
+                          <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                          מבצע מילוי אוטומטי...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 ml-2" />
+                          מילוי אוטומטי
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    ימלא אוטומטי את 3 השדות על בסיס המוצרים שנבחרו ובהתאם לרמת הפירוט שנבחרה
                   </p>
                 </div>
                 <div>
