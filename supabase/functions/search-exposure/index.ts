@@ -131,55 +131,98 @@ serve(async (req) => {
 });
 
 /**
- * Find product link from embedded Excel data
+ * Find product link from Excel file
+ * The Excel should be uploaded to Supabase Storage at: product_exposure_links.xlsx
  */
 async function findProductLink(category: string, productName: string): Promise<string | null> {
   try {
-    // In edge functions, we need to embed the Excel data or fetch it from a URL
-    // For now, we'll use a hardcoded mapping approach
-    // In production, you should upload the Excel to Supabase Storage and fetch it
-    
     console.log(`Looking for product: ${productName} in category: ${category}`);
+    
+    // Map category names to sheet names in Excel
+    const sheetMap: Record<string, string> = {
+      'קרן השתלמות': 'קרן השתלמות',
+      'קופת גמל': 'קופת גמל',
+      'גמל להשקעה': 'גמל להשקעה',
+      'חסכון פנסיוני': 'חסכון פנסיוני'
+    };
+    
+    const sheetName = sheetMap[category];
+    if (!sheetName) {
+      console.error(`Unknown category: ${category}`);
+      return null;
+    }
+    
+    // Fetch the Excel file from Supabase Storage
+    const excelUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/assets/product_exposure_links.xlsx`;
+    console.log(`Fetching Excel from: ${excelUrl}`);
+    
+    let excelResponse;
+    try {
+      excelResponse = await fetch(excelUrl);
+      if (!excelResponse.ok) {
+        throw new Error(`Failed to fetch Excel: ${excelResponse.status}`);
+      }
+    } catch (fetchError) {
+      console.error('Error fetching Excel file:', fetchError);
+      // Fallback: try to construct URL manually
+      return constructFallbackUrl(productName);
+    }
+    
+    const arrayBuffer = await excelResponse.arrayBuffer();
+    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+    
+    // Check if the sheet exists
+    if (!workbook.Sheets[sheetName]) {
+      console.error(`Sheet "${sheetName}" not found in Excel. Available sheets:`, workbook.SheetNames);
+      return constructFallbackUrl(productName);
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    
+    console.log(`Searching in sheet "${sheetName}" with ${data.length} rows`);
     
     // Normalize product name for matching
     const normalizedSearch = normalizeProductName(productName);
     console.log(`Normalized search term: ${normalizedSearch}`);
     
-    // For now, construct the likely URL based on product name
-    // The pattern is: https://www.igemel-net.co.il/kopot_gamel/[product-name-with-hyphens]
-    const urlFriendlyName = productName
-      .replace(/\s+/g, '-')
-      .replace(/"/g, '')
-      .replace(/'/g, '');
-    
-    const possibleUrls = [
-      `https://www.igemel-net.co.il/kopot_gamel/${urlFriendlyName}`,
-      `https://www.igemel-net.co.il/קופות-גמל/${urlFriendlyName}`,
-    ];
-    
-    // Try to validate the URL exists
-    for (const url of possibleUrls) {
-      try {
-        console.log(`Trying URL: ${url}`);
-        const response = await fetch(url, { method: 'HEAD' });
-        if (response.ok) {
-          console.log(`Found valid URL: ${url}`);
-          return url;
+    // Search for product name in column B (index 1) and get link from column C (index 2)
+    for (let i = 1; i < data.length; i++) { // Start from 1 to skip header
+      const row = data[i];
+      if (row && row[1]) { // Column B (index 1) contains product name
+        const cellValue = String(row[1]).trim();
+        const normalizedCell = normalizeProductName(cellValue);
+        
+        // Check for match
+        if (normalizedCell.includes(normalizedSearch) || normalizedSearch.includes(normalizedCell)) {
+          const link = row[2]; // Column C (index 2) contains link
+          if (link && String(link).trim()) {
+            console.log(`Found match in row ${i + 1}: "${cellValue}" -> ${link}`);
+            return String(link).trim();
+          }
         }
-      } catch (e) {
-        // URL doesn't exist, try next
-        continue;
       }
     }
     
-    // If not found, return the first constructed URL anyway
-    // The page fetching will handle the error
-    return possibleUrls[0];
+    console.log(`No match found for "${productName}" in sheet "${sheetName}"`);
+    return constructFallbackUrl(productName);
     
   } catch (error) {
     console.error('Error finding product link:', error);
-    return null;
+    return constructFallbackUrl(productName);
   }
+}
+
+/**
+ * Construct a fallback URL when Excel lookup fails
+ */
+function constructFallbackUrl(productName: string): string {
+  const urlFriendlyName = productName
+    .replace(/\s+/g, '-')
+    .replace(/"/g, '')
+    .replace(/'/g, '');
+  
+  return `https://www.igemel-net.co.il/kopot_gamel/${urlFriendlyName}`;
 }
 
 /**
