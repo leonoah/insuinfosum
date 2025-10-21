@@ -108,8 +108,9 @@ export const ReturnsChartSection = ({
                   x={leftMargin - 5}
                   y={y + barHeight / 2}
                   textAnchor="end"
-                  fontSize="10"
-                  fill="#cbd5e1"
+                  fontSize="11"
+                  fill="#e2e8f0"
+                  fontWeight="500"
                   dominantBaseline="middle"
                 >
                   {item.label}
@@ -126,8 +127,9 @@ export const ReturnsChartSection = ({
                 <text
                   x={leftMargin + currentBarWidth + 5}
                   y={y - barHeight / 4}
-                  fontSize="9"
-                  fill="#f1f5f9"
+                  fontSize="10"
+                  fill="#ffffff"
+                  fontWeight="500"
                   dominantBaseline="middle"
                 >
                   {item.current.toFixed(2)}%
@@ -144,8 +146,9 @@ export const ReturnsChartSection = ({
                 <text
                   x={leftMargin + recommendedBarWidth + 5}
                   y={y + barHeight / 4 + 2}
-                  fontSize="9"
-                  fill="#f1f5f9"
+                  fontSize="10"
+                  fill="#ffffff"
+                  fontWeight="500"
                   dominantBaseline="middle"
                 >
                   {item.recommended.toFixed(2)}%
@@ -157,10 +160,10 @@ export const ReturnsChartSection = ({
           {/* Legend */}
           <G>
             <Rect x={leftMargin} y={data.length * spacing + 10} width={15} height={8} fill="#64748b" />
-            <text x={leftMargin + 20} y={data.length * spacing + 18} fontSize="10" fill="#cbd5e1">מצב קיים</text>
+            <text x={leftMargin + 20} y={data.length * spacing + 18} fontSize="11" fill="#e2e8f0" fontWeight="500">מצב קיים</text>
             
             <Rect x={leftMargin + 100} y={data.length * spacing + 10} width={15} height={8} fill="#06b6d4" />
-            <text x={leftMargin + 120} y={data.length * spacing + 18} fontSize="10" fill="#cbd5e1">מצב מוצע</text>
+            <text x={leftMargin + 120} y={data.length * spacing + 18} fontSize="11" fill="#e2e8f0" fontWeight="500">מצב מוצע</text>
           </G>
         </Svg>
       </View>
