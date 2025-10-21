@@ -1,8 +1,7 @@
-import { View, Text, Svg, Rect, Line as SvgLine, G } from '@react-pdf/renderer';
+import { View, Text } from '@react-pdf/renderer';
 import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
 
-const SvgText = (Svg as any).Text as any;
 interface ReturnsChartSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
@@ -84,104 +83,65 @@ export const ReturnsChartSection = ({
     ? recommendedWithReturns.reduce((sum, p) => sum + (p.returns || 0), 0) / recommendedWithReturns.length
     : 0;
 
-  const BarChart = ({ data, title }: { data: Array<{ label: string; current: number; recommended: number }>; title: string }) => {
+  const SimpleBarChart = ({ data, title }: { data: Array<{ label: string; current: number; recommended: number }>; title: string }) => {
     const maxValue = Math.max(...data.map(d => Math.max(d.current, d.recommended)), 10);
-    const chartWidth = 500;
-    const chartHeight = 200;
-    const barHeight = 20;
-    const spacing = 50;
-    const leftMargin = 140;
-
-    const TICK_FONT = 9;
-    const LABEL_FONT = 10;
-    const VALUE_FONT = 11;
-    const LEGEND_FONT = 10;
-
-    const truncate = (s: string, max = 22) => (s.length > max ? s.slice(0, max) + '…' : s);
 
     return (
       <View style={{ marginBottom: 20 }}>
         <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>{title}</Text>
-        <Svg width={chartWidth} height={Math.max(data.length * spacing + 40, 100)} viewBox={`0 0 ${chartWidth} ${data.length * spacing + 40}`}>
-          {/* X-axis grid and ticks */}
-          {Array.from({ length: 5 }).map((_, i) => {
-            const x = leftMargin + (i * (chartWidth - leftMargin - 80) / 4);
-            const value = (maxValue * (i / 4));
-            return (
-              <G key={`grid-${i}`}>
-                <SvgLine x1={x} y1={12} x2={x} y2={data.length * spacing + 6} stroke="#475569" strokeWidth={0.5} />
-                <SvgText x={x} y={10} fill="#94a3b8" textAnchor="middle" fontFamily="Alef" fontSize={TICK_FONT}>{value.toFixed(0)}%</SvgText>
-              </G>
-            );
-          })}
-          {/* Y-axis labels and bars */}
-          {data.map((item, index) => {
-            const y = index * spacing + 20;
-            const currentBarWidth = (item.current / maxValue) * (chartWidth - leftMargin - 80);
-            const recommendedBarWidth = (item.recommended / maxValue) * (chartWidth - leftMargin - 80);
-
-            return (
-              <G key={index}>
-                {/* Label */}
-                <SvgText
-                  x={leftMargin - 5}
-                  y={y + barHeight / 2}
-                  textAnchor="end"
-                  fill="#e2e8f0"
-                  fontFamily="Alef"
-                  fontSize={LABEL_FONT}
-                >
-                  {truncate(item.label)}
-                </SvgText>
-
-                {/* Current bar */}
-                <Rect
-                  x={leftMargin}
-                  y={y - barHeight / 2}
-                  width={currentBarWidth}
-                  height={barHeight / 2 - 2}
-                  fill="#64748b"
-                />
-                <SvgText
-                  x={leftMargin + currentBarWidth + 5}
-                  y={y - barHeight / 4}
-                  fill="#ffffff"
-                  fontFamily="Alef"
-                  fontSize={VALUE_FONT}
-                >
-                  {item.current.toFixed(1)}%
-                </SvgText>
-
-                {/* Recommended bar */}
-                <Rect
-                  x={leftMargin}
-                  y={y + 2}
-                  width={recommendedBarWidth}
-                  height={barHeight / 2 - 2}
-                  fill="#06b6d4"
-                />
-                <SvgText
-                  x={leftMargin + recommendedBarWidth + 5}
-                  y={y + barHeight / 4 + 2}
-                  fill="#ffffff"
-                  fontFamily="Alef"
-                  fontSize={VALUE_FONT}
-                >
-                  {item.recommended.toFixed(1)}%
-                </SvgText>
-              </G>
-            );
-          })}
-
-          {/* Legend */}
-          <G>
-            <Rect x={leftMargin} y={data.length * spacing + 10} width={15} height={8} fill="#64748b" />
-            <SvgText x={leftMargin + 20} y={data.length * spacing + 18} fill="#e2e8f0" fontFamily="Alef" fontSize={LEGEND_FONT}>מצב קיים</SvgText>
+        
+        {data.map((item, index) => (
+          <View key={index} style={{ marginBottom: 15 }}>
+            {/* Label */}
+            <Text style={{ fontSize: 10, color: '#e2e8f0', marginBottom: 4, textAlign: 'right' }}>
+              {item.label}
+            </Text>
             
-            <Rect x={leftMargin + 100} y={data.length * spacing + 10} width={15} height={8} fill="#06b6d4" />
-            <SvgText x={leftMargin + 120} y={data.length * spacing + 18} fill="#e2e8f0" fontFamily="Alef" fontSize={LEGEND_FONT}>מצב מוצע</SvgText>
-          </G>
-        </Svg>
+            {/* Current bar */}
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 3 }}>
+              <View style={{ width: 60, marginLeft: 5 }}>
+                <Text style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>מצב קיים:</Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: '#334155', height: 12, borderRadius: 2, position: 'relative' }}>
+                <View 
+                  style={{ 
+                    width: `${(item.current / maxValue) * 100}%`,
+                    height: 12,
+                    backgroundColor: '#64748b',
+                    borderRadius: 2
+                  }}
+                />
+              </View>
+              <View style={{ width: 50, marginRight: 5 }}>
+                <Text style={{ fontSize: 10, color: '#ffffff', textAlign: 'left' }}>
+                  {item.current.toFixed(1)}%
+                </Text>
+              </View>
+            </View>
+            
+            {/* Recommended bar */}
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+              <View style={{ width: 60, marginLeft: 5 }}>
+                <Text style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>מצב מוצע:</Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: '#334155', height: 12, borderRadius: 2, position: 'relative' }}>
+                <View 
+                  style={{ 
+                    width: `${(item.recommended / maxValue) * 100}%`,
+                    height: 12,
+                    backgroundColor: '#06b6d4',
+                    borderRadius: 2
+                  }}
+                />
+              </View>
+              <View style={{ width: 50, marginRight: 5 }}>
+                <Text style={{ fontSize: 10, color: '#ffffff', textAlign: 'left' }}>
+                  {item.recommended.toFixed(1)}%
+                </Text>
+              </View>
+            </View>
+          </View>
+        ))}
       </View>
     );
   };
@@ -226,12 +186,12 @@ export const ReturnsChartSection = ({
 
       {/* Category comparison */}
       {categoryData.length > 0 && (
-        <BarChart data={categoryData} title="תשואות לפי סוג מוצר" />
+        <SimpleBarChart data={categoryData} title="תשואות לפי סוג מוצר" />
       )}
 
       {/* Company comparison */}
       {companyData.length > 0 && (
-        <BarChart data={companyData} title="תשואות לפי חברה" />
+        <SimpleBarChart data={companyData} title="תשואות לפי חברה" />
       )}
     </View>
   );
