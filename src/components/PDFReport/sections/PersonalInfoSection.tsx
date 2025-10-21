@@ -38,35 +38,29 @@ export const PersonalInfoSection = ({
       <Text style={styles.sectionTitle}>מידע אישי</Text>
       <View style={styles.infoGrid}>
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>שם הלקוח:</Text>
-          <Text style={styles.infoValue}>{clientName || 'לא צוין'}</Text>
+          <Text style={styles.infoValue}>שם הלקוח: {clientName || 'לא צוין'}</Text>
         </View>
         {clientId && clientId.trim() && (
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>תעודת זהות:</Text>
-            <Text style={styles.infoValue}>{clientId}</Text>
+            <Text style={styles.infoValue}>תעודת זהות: {clientId}</Text>
           </View>
         )}
         {clientPhone && clientPhone.trim() && (
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>טלפון:</Text>
-            <Text style={styles.infoValue}>{clientPhone}</Text>
+            <Text style={styles.infoValue}>טלפון: {clientPhone}</Text>
           </View>
         )}
         {clientEmail && clientEmail.trim() && (
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>דוא"ל:</Text>
-            <Text style={styles.infoValue}>{clientEmail}</Text>
+            <Text style={styles.infoValue}>דוא"ל: {clientEmail}</Text>
           </View>
         )}
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>תאריך פגישה:</Text>
-          <Text style={styles.infoValue}>{formatDate(meetingDate)}</Text>
+          <Text style={styles.infoValue}>תאריך פגישה: {formatDate(meetingDate)}</Text>
         </View>
         {location && location.trim() && (
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>מיקום:</Text>
-            <Text style={styles.infoValue}>{location}</Text>
+            <Text style={styles.infoValue}>מיקום: {location}</Text>
           </View>
         )}
       </View>
