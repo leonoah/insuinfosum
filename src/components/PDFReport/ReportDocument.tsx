@@ -138,6 +138,8 @@ export const ReportDocument = ({
             highlightBullets={productStats.highlightBullets}
             totalCurrentAmount={productStats.totalCurrentAmount}
             totalRecommendedAmount={productStats.totalRecommendedAmount}
+            currentProducts={productStats.currentProducts}
+            recommendedProducts={productStats.recommendedProducts}
           />
         )}
 
