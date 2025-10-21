@@ -89,12 +89,23 @@ export const ReturnsChartSection = ({
     const chartHeight = 200;
     const barHeight = 20;
     const spacing = 40;
-    const leftMargin = 100;
+    const leftMargin = 140;
 
     return (
       <View style={{ marginBottom: 20 }}>
         <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>{title}</Text>
         <Svg width={chartWidth} height={Math.max(data.length * spacing + 40, 100)} viewBox={`0 0 ${chartWidth} ${data.length * spacing + 40}`}>
+          {/* X-axis grid and ticks */}
+          {Array.from({ length: 5 }).map((_, i) => {
+            const x = leftMargin + (i * (chartWidth - leftMargin - 80) / 4);
+            const value = (maxValue * (i / 4));
+            return (
+              <G key={`grid-${i}`}>
+                <SvgLine x1={x} y1={12} x2={x} y2={data.length * spacing + 6} stroke="#475569" strokeWidth={0.5} />
+                <text x={x} y={10} fontSize="9" fill="#94a3b8" textAnchor="middle">{value.toFixed(0)}%</text>
+              </G>
+            );
+          })}
           {/* Y-axis labels and bars */}
           {data.map((item, index) => {
             const y = index * spacing + 20;
@@ -108,9 +119,9 @@ export const ReturnsChartSection = ({
                   x={leftMargin - 5}
                   y={y + barHeight / 2}
                   textAnchor="end"
-                  fontSize="11"
+                  fontSize="12"
                   fill="#e2e8f0"
-                  fontWeight="500"
+                  fontWeight="600"
                   dominantBaseline="middle"
                 >
                   {item.label}
@@ -124,16 +135,16 @@ export const ReturnsChartSection = ({
                   height={barHeight / 2 - 2}
                   fill="#64748b"
                 />
-                <text
+                <SvgText
                   x={leftMargin + currentBarWidth + 5}
                   y={y - barHeight / 4}
-                  fontSize="10"
+                  fontSize="12"
                   fill="#ffffff"
-                  fontWeight="500"
+                  fontWeight="600"
                   dominantBaseline="middle"
                 >
                   {item.current.toFixed(2)}%
-                </text>
+                </SvgText>
 
                 {/* Recommended bar */}
                 <Rect
@@ -143,16 +154,16 @@ export const ReturnsChartSection = ({
                   height={barHeight / 2 - 2}
                   fill="#06b6d4"
                 />
-                <text
+                <SvgText
                   x={leftMargin + recommendedBarWidth + 5}
                   y={y + barHeight / 4 + 2}
-                  fontSize="10"
+                  fontSize="12"
                   fill="#ffffff"
-                  fontWeight="500"
+                  fontWeight="600"
                   dominantBaseline="middle"
                 >
                   {item.recommended.toFixed(2)}%
-                </text>
+                </SvgText>
               </G>
             );
           })}
@@ -160,10 +171,10 @@ export const ReturnsChartSection = ({
           {/* Legend */}
           <G>
             <Rect x={leftMargin} y={data.length * spacing + 10} width={15} height={8} fill="#64748b" />
-            <text x={leftMargin + 20} y={data.length * spacing + 18} fontSize="11" fill="#e2e8f0" fontWeight="500">מצב קיים</text>
+            <SvgText x={leftMargin + 20} y={data.length * spacing + 18} fontSize="12" fill="#e2e8f0" fontWeight="600">מצב קיים</SvgText>
             
             <Rect x={leftMargin + 100} y={data.length * spacing + 10} width={15} height={8} fill="#06b6d4" />
-            <text x={leftMargin + 120} y={data.length * spacing + 18} fontSize="11" fill="#e2e8f0" fontWeight="500">מצב מוצע</text>
+            <SvgText x={leftMargin + 120} y={data.length * spacing + 18} fontSize="12" fill="#e2e8f0" fontWeight="600">מצב מוצע</SvgText>
           </G>
         </Svg>
       </View>
