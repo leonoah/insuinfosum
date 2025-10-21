@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import * as XLSX from 'npm:xlsx@0.18.5';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +11,7 @@ interface SearchExposureRequest {
   category: string;
   subCategory: string;
   investmentTrack?: string;
-  searchQuery: string;
+  productName: string;
 }
 
 interface ExposureData {
@@ -29,68 +30,90 @@ serve(async (req) => {
   }
 
   try {
-    const { company, category, subCategory, investmentTrack, searchQuery }: SearchExposureRequest = await req.json();
+    const { company, category, subCategory, investmentTrack, productName }: SearchExposureRequest = await req.json();
     
-    console.log('Searching exposure for:', { company, category, subCategory, investmentTrack });
+    console.log('Searching exposure for:', { company, category, subCategory, investmentTrack, productName });
 
-    // Use Tavily AI search API (or any other search API)
-    // For now, we'll use a simple web search approach
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+    // Step 1: Find the product link from Excel file
+    const productLink = await findProductLink(category, productName);
     
-    // In a real implementation, you would:
-    // 1. Use a proper search API (like Tavily, SerpAPI, or Google Custom Search)
-    // 2. Parse the results to extract exposure data
-    // 3. Use AI to interpret the results and extract structured data
-    
-    // For now, return a placeholder response
-    // You can integrate with web search APIs or scraping services here
-    
-    // Example: Using Tavily Search API (requires API key)
-    // const TAVILY_API_KEY = Deno.env.get('TAVILY_API_KEY');
-    // if (!TAVILY_API_KEY) {
-    //   throw new Error('TAVILY_API_KEY not configured');
-    // }
-    
-    // const tavilyResponse = await fetch('https://api.tavily.com/search', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     api_key: TAVILY_API_KEY,
-    //     query: searchQuery,
-    //     search_depth: 'advanced',
-    //     max_results: 5
-    //   })
-    // });
+    if (!productLink) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `לא נמצא לינק עבור המוצר: ${productName} בקטגוריה: ${category}`,
+          exposureData: null
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        }
+      );
+    }
 
-    // Placeholder response - in production, this should extract real data
-    const exposureData: ExposureData = {
-      // These values should be extracted from search results
-      exposureStocks: undefined,
-      exposureBonds: undefined,
-      exposureForeignCurrency: undefined,
-      exposureForeignInvestments: undefined,
-      exposureIsrael: undefined,
-      exposureIlliquidAssets: undefined
-    };
+    console.log('Found product link:', productLink);
 
-    // Try to extract numbers from search results
-    // This is a simplified example - in production, use proper AI/NLP
-    const summary = `חיפוש עבור: ${company} - ${category} - ${subCategory}${investmentTrack ? ` - ${investmentTrack}` : ''}`;
+    // Step 2: Fetch the webpage content
+    try {
+      const pageResponse = await fetch(productLink, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        }
+      });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        exposureData: null, // Set to null for now - implement actual search
-        summary: summary + '\n\nשירות החיפוש טרם הופעל. נא להוסיף API key לשירות חיפוש (למשל Tavily או SerpAPI).',
-        searchQuery
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      if (!pageResponse.ok) {
+        throw new Error(`Failed to fetch page: ${pageResponse.status}`);
       }
-    );
+
+      const htmlContent = await pageResponse.text();
+      console.log('Fetched page content, length:', htmlContent.length);
+
+      // Step 3: Extract exposure data from the page
+      const exposureData = extractExposureFromPage(htmlContent);
+
+      if (!exposureData || Object.keys(exposureData).length === 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'לא הצלחנו לחלץ נתוני חשיפה מהדף',
+            exposureData: null,
+            link: productLink
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          exposureData,
+          link: productLink,
+          summary: `נתוני חשיפה נמצאו עבור: ${productName}`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+
+    } catch (fetchError) {
+      console.error('Error fetching or parsing page:', fetchError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'שגיאה בטעינת הדף או בחילוץ הנתונים',
+          exposureData: null,
+          link: productLink
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
 
   } catch (error) {
     console.error('Error in search-exposure function:', error);
@@ -106,3 +129,204 @@ serve(async (req) => {
     );
   }
 });
+
+/**
+ * Find product link from embedded Excel data
+ */
+async function findProductLink(category: string, productName: string): Promise<string | null> {
+  try {
+    // In edge functions, we need to embed the Excel data or fetch it from a URL
+    // For now, we'll use a hardcoded mapping approach
+    // In production, you should upload the Excel to Supabase Storage and fetch it
+    
+    console.log(`Looking for product: ${productName} in category: ${category}`);
+    
+    // Normalize product name for matching
+    const normalizedSearch = normalizeProductName(productName);
+    console.log(`Normalized search term: ${normalizedSearch}`);
+    
+    // For now, construct the likely URL based on product name
+    // The pattern is: https://www.igemel-net.co.il/kopot_gamel/[product-name-with-hyphens]
+    const urlFriendlyName = productName
+      .replace(/\s+/g, '-')
+      .replace(/"/g, '')
+      .replace(/'/g, '');
+    
+    const possibleUrls = [
+      `https://www.igemel-net.co.il/kopot_gamel/${urlFriendlyName}`,
+      `https://www.igemel-net.co.il/קופות-גמל/${urlFriendlyName}`,
+    ];
+    
+    // Try to validate the URL exists
+    for (const url of possibleUrls) {
+      try {
+        console.log(`Trying URL: ${url}`);
+        const response = await fetch(url, { method: 'HEAD' });
+        if (response.ok) {
+          console.log(`Found valid URL: ${url}`);
+          return url;
+        }
+      } catch (e) {
+        // URL doesn't exist, try next
+        continue;
+      }
+    }
+    
+    // If not found, return the first constructed URL anyway
+    // The page fetching will handle the error
+    return possibleUrls[0];
+    
+  } catch (error) {
+    console.error('Error finding product link:', error);
+    return null;
+  }
+}
+
+/**
+ * Normalize product name for matching
+ */
+function normalizeProductName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\u0590-\u05FF\w]/g, '') // Keep Hebrew and alphanumeric
+    .trim();
+}
+
+/**
+ * Extract exposure data from webpage HTML
+ * Based on the mapping provided in the user's image
+ */
+function extractExposureFromPage(htmlContent: string): ExposureData {
+  const exposureData: ExposureData = {};
+
+  try {
+    // Remove HTML tags for easier parsing
+    const textContent = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+    
+    console.log('Parsing page content for exposure data...');
+
+    // Extract percentages using various patterns
+    // e - חשיפה למניות (Stocks exposure)
+    const stocksPatterns = [
+      /חשיפה למניות[^\d]*(\d+\.?\d*)%/i,
+      /מניות[^\d]*(\d+\.?\d*)%/i,
+    ];
+    
+    for (const pattern of stocksPatterns) {
+      const match = textContent.match(pattern);
+      if (match) {
+        exposureData.exposureStocks = parseFloat(match[1]);
+        console.log(`Found stocks exposure: ${exposureData.exposureStocks}%`);
+        break;
+      }
+    }
+
+    // f - חשיפה לחו"ל (Foreign investments)
+    const foreignPatterns = [
+      /חשיפה לחו["']ל[^\d]*(\d+\.?\d*)%/i,
+      /השקעות חו["']ל[^\d]*(\d+\.?\d*)%/i,
+    ];
+    
+    for (const pattern of foreignPatterns) {
+      const match = textContent.match(pattern);
+      if (match) {
+        exposureData.exposureForeignInvestments = parseFloat(match[1]);
+        console.log(`Found foreign investments: ${exposureData.exposureForeignInvestments}%`);
+        break;
+      }
+    }
+
+    // g - חשיפה למט"ח (Foreign currency)
+    const currencyPatterns = [
+      /חשיפה למט["']ח[^\d]*(\d+\.?\d*)%/i,
+      /מט["']ח[^\d]*(\d+\.?\d*)%/i,
+    ];
+    
+    for (const pattern of currencyPatterns) {
+      const match = textContent.match(pattern);
+      if (match) {
+        exposureData.exposureForeignCurrency = parseFloat(match[1]);
+        console.log(`Found foreign currency: ${exposureData.exposureForeignCurrency}%`);
+        break;
+      }
+    }
+
+    // j - נכסים סחירים (Traded assets)
+    const tradedMatch = textContent.match(/נכסים סחירים[^\d]*(\d+\.?\d*)%/i);
+    let tradedAssets: number | undefined;
+    if (tradedMatch) {
+      tradedAssets = parseFloat(tradedMatch[1]);
+      console.log(`Found traded assets: ${tradedAssets}%`);
+    }
+
+    // k - נכסים לא סחירים (Non-traded assets / illiquid)
+    const nonTradedMatch = textContent.match(/נכסים לא סחירים[^\d]*(\d+\.?\d*)%/i);
+    if (nonTradedMatch) {
+      exposureData.exposureIlliquidAssets = parseFloat(nonTradedMatch[1]);
+      console.log(`Found illiquid assets: ${exposureData.exposureIlliquidAssets}%`);
+    }
+
+    // Calculate bonds if we have traded assets and stocks
+    if (exposureData.exposureStocks !== undefined && tradedAssets !== undefined) {
+      exposureData.exposureBonds = Math.max(0, tradedAssets - exposureData.exposureStocks);
+      console.log(`Calculated bonds: ${exposureData.exposureBonds}%`);
+    }
+
+    // Calculate Israel exposure as complement of foreign
+    if (exposureData.exposureForeignInvestments !== undefined) {
+      exposureData.exposureIsrael = Math.max(0, 100 - exposureData.exposureForeignInvestments);
+      console.log(`Calculated Israel exposure: ${exposureData.exposureIsrael}%`);
+    }
+
+    // Alternative: Extract from detailed asset breakdown table
+    if (Object.keys(exposureData).length === 0) {
+      console.log('Trying detailed table extraction...');
+      extractFromDetailedTable(textContent, exposureData);
+    }
+
+  } catch (error) {
+    console.error('Error extracting exposure data:', error);
+  }
+
+  return exposureData;
+}
+
+/**
+ * Extract from detailed asset allocation table
+ */
+function extractFromDetailedTable(textContent: string, exposureData: ExposureData): void {
+  // Look for the 9 asset categories from the image
+  const categories = [
+    { name: 'governmentBonds', pattern: /אג["']ח\s+ממשלתיות\s+סחירות[^\d]*(\d+\.?\d*)%/i },
+    { name: 'corporateBonds', pattern: /אג["']ח\s+קונצרניות\s+סחירות[^\d]*(\d+\.?\d*)%/i },
+    { name: 'nonTradedBonds', pattern: /אג["']ח.*?לא\s+סחירות[^\d]*(\d+\.?\d*)%/i },
+    { name: 'stocks', pattern: /מניות.*?ותעודות[^\d]*(\d+\.?\d*)%/i },
+  ];
+
+  const values: Record<string, number> = {};
+
+  for (const { name, pattern } of categories) {
+    const match = textContent.match(pattern);
+    if (match) {
+      values[name] = parseFloat(match[1]);
+      console.log(`Found ${name}: ${values[name]}%`);
+    }
+  }
+
+  // Aggregate the data
+  if (values.stocks && !exposureData.exposureStocks) {
+    exposureData.exposureStocks = values.stocks;
+  }
+
+  const totalBonds = (values.governmentBonds || 0) + 
+                     (values.corporateBonds || 0) + 
+                     (values.nonTradedBonds || 0);
+  
+  if (totalBonds > 0 && !exposureData.exposureBonds) {
+    exposureData.exposureBonds = totalBonds;
+  }
+
+  if (values.nonTradedBonds && !exposureData.exposureIlliquidAssets) {
+    exposureData.exposureIlliquidAssets = values.nonTradedBonds;
+  }
+}

@@ -307,11 +307,12 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     setExposureSearchResults(null);
 
     try {
-      const searchQuery = `${step.selectedCompany} ${step.selectedCategory} ${step.selectedSubCategory} ${formData.investmentTrack || ''} חשיפות מניות אגח מטח השקעות חול ישראל תמהיל נכסים`;
+      // Build product name from company and sub-category
+      const productName = `${step.selectedCompany} ${step.selectedSubCategory}${formData.investmentTrack ? ` ${formData.investmentTrack}` : ''}`.trim();
       
       toast({
         title: "מחפש ברשת...",
-        description: `מחפש נתוני חשיפות עבור ${step.selectedCompany} - ${step.selectedSubCategory}`
+        description: `מחפש נתוני חשיפות עבור ${productName}`
       });
 
       const response = await fetch(`https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/search-exposure`, {
@@ -325,7 +326,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
           category: step.selectedCategory,
           subCategory: step.selectedSubCategory,
           investmentTrack: formData.investmentTrack || '',
-          searchQuery
+          productName
         })
       });
 
