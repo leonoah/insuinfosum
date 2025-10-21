@@ -9,6 +9,7 @@ import { DisclosuresSection } from './sections/DisclosuresSection';
 import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/products';
 import { ExposureTableSection } from './sections/ExposureTableSection';
+import { ReturnsChartSection } from './sections/ReturnsChartSection';
 
 // Disable hyphenation entirely to avoid RTL letter reordering
 Font.registerHyphenationCallback((word) => [word]);
@@ -172,6 +173,12 @@ export const ReportDocument = ({
             }}
           />
         )}
+
+        {/* Returns Chart - Always shown */}
+        <ReturnsChartSection
+          currentProducts={productStats.currentProducts}
+          recommendedProducts={productStats.recommendedProducts}
+        />
 
         {/* Next Steps */}
         {selectedSections.nextSteps && nextStepsText && nextStepsText.trim() && (

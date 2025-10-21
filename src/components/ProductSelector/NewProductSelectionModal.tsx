@@ -757,6 +757,18 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">תשואה (%)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    className="glass"
+                    value={formData.returns || ''}
+                    onChange={(e) => setFormData({ ...formData, returns: parseFloat(e.target.value) || undefined })}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-sm font-medium">מסלול השקעה</label>
                   <Input
                     type="text"

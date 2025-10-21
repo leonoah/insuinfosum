@@ -31,6 +31,7 @@ export interface SelectedProduct {
   status?: 'פעיל' | 'לא פעיל'; // סטטוס המוצר (מקבצי פנסיה)
   productNumber?: string; // מספר מוצר לזיהוי במאגר
   includeExposureData?: boolean; // האם לכלול מידע חשיפה בדוח
+  returns?: number; // תשואה באחוזים
   // Exposure data (populated from DB)
   exposureStocks?: number;
   exposureBonds?: number;

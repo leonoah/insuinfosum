@@ -83,6 +83,9 @@ const ProductItem: React.FC<{
                   <div className="flex gap-4">
                     <span>דמי ניהול: {product.managementFeeOnDeposit}% / {product.managementFeeOnAccumulation}%</span>
                   </div>
+                  {product.returns !== undefined && (
+                    <div>תשואה: {product.returns}%</div>
+                  )}
                   {product.investmentTrack && (
                     <div>מסלול: {product.investmentTrack}</div>
                   )}
