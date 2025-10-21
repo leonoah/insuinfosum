@@ -2,6 +2,7 @@ import { View, Text, Svg, Rect, Line as SvgLine, G } from '@react-pdf/renderer';
 import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
 
+const SvgText = (Svg as any).Text as any;
 interface ReturnsChartSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
@@ -102,7 +103,7 @@ export const ReturnsChartSection = ({
             return (
               <G key={`grid-${i}`}>
                 <SvgLine x1={x} y1={12} x2={x} y2={data.length * spacing + 6} stroke="#475569" strokeWidth={0.5} />
-                <Text x={x} y={10} fill="#94a3b8" textAnchor="middle">{value.toFixed(0)}%</Text>
+                <SvgText x={x} y={10} fill="#94a3b8" textAnchor="middle">{value.toFixed(0)}%</SvgText>
               </G>
             );
           })}
@@ -115,14 +116,14 @@ export const ReturnsChartSection = ({
             return (
               <G key={index}>
                 {/* Label */}
-                <Text
+                <SvgText
                   x={leftMargin - 5}
                   y={y + barHeight / 2}
                   textAnchor="end"
                   fill="#e2e8f0"
                 >
                   {item.label}
-                </Text>
+                </SvgText>
 
                 {/* Current bar */}
                 <Rect
@@ -132,13 +133,13 @@ export const ReturnsChartSection = ({
                   height={barHeight / 2 - 2}
                   fill="#64748b"
                 />
-                <Text
+                <SvgText
                   x={leftMargin + currentBarWidth + 5}
                   y={y - barHeight / 4}
                   fill="#ffffff"
                 >
                   {item.current.toFixed(2)}%
-                </Text>
+                </SvgText>
 
                 {/* Recommended bar */}
                 <Rect
@@ -148,13 +149,13 @@ export const ReturnsChartSection = ({
                   height={barHeight / 2 - 2}
                   fill="#06b6d4"
                 />
-                <Text
+                <SvgText
                   x={leftMargin + recommendedBarWidth + 5}
                   y={y + barHeight / 4 + 2}
                   fill="#ffffff"
                 >
                   {item.recommended.toFixed(2)}%
-                </Text>
+                </SvgText>
               </G>
             );
           })}
@@ -162,10 +163,10 @@ export const ReturnsChartSection = ({
           {/* Legend */}
           <G>
             <Rect x={leftMargin} y={data.length * spacing + 10} width={15} height={8} fill="#64748b" />
-            <Text x={leftMargin + 20} y={data.length * spacing + 18} fill="#e2e8f0">מצב קיים</Text>
+            <SvgText x={leftMargin + 20} y={data.length * spacing + 18} fill="#e2e8f0">מצב קיים</SvgText>
             
             <Rect x={leftMargin + 100} y={data.length * spacing + 10} width={15} height={8} fill="#06b6d4" />
-            <Text x={leftMargin + 120} y={data.length * spacing + 18} fill="#e2e8f0">מצב מוצע</Text>
+            <SvgText x={leftMargin + 120} y={data.length * spacing + 18} fill="#e2e8f0">מצב מוצע</SvgText>
           </G>
         </Svg>
       </View>
