@@ -206,6 +206,12 @@ const AppForm = () => {
 
     setIsSaving(true);
     try {
+      console.log('Saving form with products:', formData.products.map(p => ({ 
+        company: p.company,
+        category: p.category,
+        returns: p.returns 
+      })));
+      
       const { error } = await supabase
         .from('saved_forms')
         .upsert([{
@@ -237,6 +243,12 @@ const AppForm = () => {
   };
 
   const loadFormFromDatabase = (savedForm: SavedForm) => {
+    console.log('Loading form with products:', savedForm.form_data.products?.map((p: any) => ({ 
+      company: p.company,
+      category: p.category,
+      returns: p.returns 
+    })));
+    
     setFormData(savedForm.form_data as FormData);
     setShowLoadDialog(false);
     
