@@ -135,7 +135,7 @@ export const ReturnsChartSection = ({
                   height={barHeight / 2 - 2}
                   fill="#64748b"
                 />
-                <SvgText
+                <text
                   x={leftMargin + currentBarWidth + 5}
                   y={y - barHeight / 4}
                   fontSize="12"
@@ -144,7 +144,7 @@ export const ReturnsChartSection = ({
                   dominantBaseline="middle"
                 >
                   {item.current.toFixed(2)}%
-                </SvgText>
+                </text>
 
                 {/* Recommended bar */}
                 <Rect
@@ -154,7 +154,7 @@ export const ReturnsChartSection = ({
                   height={barHeight / 2 - 2}
                   fill="#06b6d4"
                 />
-                <SvgText
+                <text
                   x={leftMargin + recommendedBarWidth + 5}
                   y={y + barHeight / 4 + 2}
                   fontSize="12"
@@ -163,7 +163,7 @@ export const ReturnsChartSection = ({
                   dominantBaseline="middle"
                 >
                   {item.recommended.toFixed(2)}%
-                </SvgText>
+                </text>
               </G>
             );
           })}
@@ -171,10 +171,10 @@ export const ReturnsChartSection = ({
           {/* Legend */}
           <G>
             <Rect x={leftMargin} y={data.length * spacing + 10} width={15} height={8} fill="#64748b" />
-            <SvgText x={leftMargin + 20} y={data.length * spacing + 18} fontSize="12" fill="#e2e8f0" fontWeight="600">מצב קיים</SvgText>
+            <text x={leftMargin + 20} y={data.length * spacing + 18} fontSize="12" fill="#e2e8f0" fontWeight="600">מצב קיים</text>
             
             <Rect x={leftMargin + 100} y={data.length * spacing + 10} width={15} height={8} fill="#06b6d4" />
-            <SvgText x={leftMargin + 120} y={data.length * spacing + 18} fontSize="12" fill="#e2e8f0" fontWeight="600">מצב מוצע</SvgText>
+            <text x={leftMargin + 120} y={data.length * spacing + 18} fontSize="12" fill="#e2e8f0" fontWeight="600">מצב מוצע</text>
           </G>
         </Svg>
       </View>
