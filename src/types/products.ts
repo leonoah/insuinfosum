@@ -28,6 +28,7 @@ export interface SelectedProduct {
   riskLevelChange?: 'ירידה' | 'העלאה' | 'פיזור מחדש' | 'no-change' | '';
   notes: string;
   type: 'current' | 'recommended';
+  status?: 'פעיל' | 'לא פעיל'; // סטטוס המוצר (מקבצי פנסיה)
   productNumber?: string; // מספר מוצר לזיהוי במאגר
   includeExposureData?: boolean; // האם לכלול מידע חשיפה בדוח
   // Exposure data (populated from DB)

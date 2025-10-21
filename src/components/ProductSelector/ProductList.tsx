@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
 
 interface ProductListProps {
@@ -49,6 +50,14 @@ const ProductItem: React.FC<{
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <div className="font-medium">{product.category}</div>
+                {product.status && (
+                  <Badge 
+                    variant={product.status === 'פעיל' ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {product.status}
+                  </Badge>
+                )}
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"

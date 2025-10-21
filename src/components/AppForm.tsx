@@ -395,11 +395,29 @@ const AppForm = () => {
     setIsAutoFilling(true);
     
     try {
+      // סינון מוצרים: רק מוצרים פעילים (סטטוס "פעיל" או ללא סטטוס)
+      const filterActiveProducts = (products: any[]) => 
+        products.filter(p => !p.status || p.status === 'פעיל');
+
+      const currentProducts = filterActiveProducts(formData.products.filter(p => p.type === 'current'));
+      const recommendedProducts = filterActiveProducts(formData.products.filter(p => p.type === 'recommended'));
+      
+      // הצגת הודעה על מספר המוצרים שנשלחו
+      const totalActiveProducts = currentProducts.length + recommendedProducts.length;
+      const totalInactiveProducts = formData.products.filter(p => p.status === 'לא פעיל').length;
+      
+      if (totalInactiveProducts > 0) {
+        toast({
+          title: "מידע",
+          description: `נשלחים ${totalActiveProducts} מוצרים פעילים למילוי אוטומטי. ${totalInactiveProducts} מוצרים לא פעילים לא נכללו.`,
+        });
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-decisions', {
         body: {
           products: {
-            current: formData.products.filter(p => p.type === 'current'),
-            recommended: formData.products.filter(p => p.type === 'recommended')
+            current: currentProducts,
+            recommended: recommendedProducts
           },
           currentDecisions: {
             currentSituation: formData.currentSituation,
@@ -925,7 +943,7 @@ const AppForm = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
-                    ימלא אוטומטי את 3 השדות על בסיס המוצרים שנבחרו ובהתאם לרמת הפירוט שנבחרה
+                    ימלא אוטומטי את 3 השדות על בסיס המוצרים שנבחרו (רק מוצרים פעילים) ובהתאם לרמת הפירוט שנבחרה
                   </p>
                 </div>
                 <div>

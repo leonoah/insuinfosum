@@ -178,6 +178,7 @@ export class PensionParser {
       subCategory: 'מסלול כללי', // ברירת מחדל - will be matched by caller
       company: initialCompany,
       type: 'current',
+      status: pensionProduct.status, // שמירת הסטטוס
       amount: pensionProduct.currentBalance,
       managementFeeOnDeposit: pensionProduct.managementFeeFromDeposit,
       managementFeeOnAccumulation: pensionProduct.managementFeeFromBalance,
