@@ -127,7 +127,7 @@ export const styles = StyleSheet.create({
     marginTop: 15,
   },
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     borderBottom: '1px solid #334155',
     paddingVertical: 8,
   },
@@ -156,7 +156,7 @@ export const styles = StyleSheet.create({
     marginTop: 15,
   },
   comparisonGrid: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     gap: 15,
   },
   comparisonColumn: {
@@ -191,7 +191,7 @@ export const styles = StyleSheet.create({
   
   // Stats box
   statsBox: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-around',
     backgroundColor: '#334155',
     padding: 15,

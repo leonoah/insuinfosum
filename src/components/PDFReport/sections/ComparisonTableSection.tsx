@@ -30,7 +30,7 @@ export const ComparisonTableSection = ({
       <Text style={styles.sectionTitle}>השוואת תיקים - מצב קיים מול מוצע</Text>
       
       {/* Summary Cards */}
-      <View style={{ flexDirection: 'row', gap: 15, marginBottom: 20 }}>
+      <View style={{ flexDirection: 'row-reverse', gap: 15, marginBottom: 20 }}>
         {/* Current State Card */}
         <View style={{ flex: 1, backgroundColor: '#1e293b', padding: 15, borderRadius: 8, border: '1px solid #334155' }}>
           <View style={{ width: 40, height: 40, backgroundColor: '#334155', borderRadius: 8, marginBottom: 10, alignItems: 'center', justifyContent: 'center' }}>
