@@ -334,10 +334,6 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       }
     }
 
-    if (highlightBullets.length === 0) {
-      highlightBullets.push('לא זוהו שינויים מהותיים בין התיק הקיים למוצע בשלב זה.');
-    }
-
     return {
       currentProducts,
       recommendedProducts,
