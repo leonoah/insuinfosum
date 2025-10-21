@@ -146,6 +146,17 @@ export const ReportDocument = ({
           />
         )}
 
+        {/* Additional Details */}
+        {selectedSections.additionalNotes && (
+          <AdditionalDetailsSection
+            currentSituation={formData.currentSituation}
+            risks={formData.risks}
+            decisions={formData.decisions}
+            additionalNotes={additionalNotesText}
+            documents={formData.documents}
+          />
+        )}
+
         {/* Comparison Table */}
         {selectedSections.detailedBreakdown && (
           <ComparisonTableSection
@@ -167,17 +178,6 @@ export const ReportDocument = ({
           <ExposureTableSection
             currentProducts={productStats.currentProducts}
             recommendedProducts={productStats.recommendedProducts}
-          />
-        )}
-
-        {/* Additional Details */}
-        {selectedSections.additionalNotes && (
-          <AdditionalDetailsSection
-            currentSituation={formData.currentSituation}
-            risks={formData.risks}
-            decisions={formData.decisions}
-            additionalNotes={additionalNotesText}
-            documents={formData.documents}
           />
         )}
 
