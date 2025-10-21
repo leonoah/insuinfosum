@@ -327,8 +327,6 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       const accumulationDelta = avgRecommendedAccumulation - avgCurrentAccumulation;
       if (accumulationDelta < 0) {
         highlightBullets.push(`הפחתת דמי הניהול מהצבירה ב-${Math.abs(accumulationDelta).toFixed(2)}%.`);
-      } else if (accumulationDelta > 0) {
-        highlightBullets.push(`דמי הניהול מהצבירה עלו ב-${accumulationDelta.toFixed(2)}% לטובת מסלול בעל פוטנציאל תשואה גבוה יותר.`);
       }
 
       if (riskShiftCount > 0) {
