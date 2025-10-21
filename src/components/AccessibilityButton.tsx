@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Wheelchair } from "lucide-react";
+import { Accessibility } from "lucide-react";
 
 declare global {
   interface Window {
@@ -33,7 +33,7 @@ export const AccessibilityButton = () => {
       className="fixed bottom-4 left-4 z-50 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
       onClick={handleClick}
     >
-      <Wheelchair className="h-6 w-6" />
+      <Accessibility className="h-6 w-6" />
       <span className="sr-only">אפשרויות נגישות</span>
     </button>
   );
