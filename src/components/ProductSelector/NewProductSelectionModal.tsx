@@ -237,6 +237,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       riskLevelChange: formData.riskLevelChange === 'no-change' ? '' : formData.riskLevelChange || '',
       notes: formData.notes || '',
       type: productType,
+      returns: formData.returns,
       includeExposureData: formData.exposureStocks !== undefined,
       exposureStocks: formData.exposureStocks,
       exposureBonds: formData.exposureBonds,
