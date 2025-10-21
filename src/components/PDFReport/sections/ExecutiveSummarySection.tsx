@@ -8,6 +8,7 @@ interface ExecutiveSummarySectionProps {
   totalRecommendedAmount: number;
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
+  includeProductsTable?: boolean;
 }
 
 export const ExecutiveSummarySection = ({
@@ -15,7 +16,8 @@ export const ExecutiveSummarySection = ({
   totalCurrentAmount,
   totalRecommendedAmount,
   currentProducts,
-  recommendedProducts
+  recommendedProducts,
+  includeProductsTable = true
 }: ExecutiveSummarySectionProps) => {
   const difference = totalRecommendedAmount - totalCurrentAmount;
   
@@ -53,7 +55,7 @@ export const ExecutiveSummarySection = ({
       </View>
 
       {/* Detailed Products Table - Current */}
-      {currentProducts.length > 0 && (
+      {includeProductsTable && currentProducts.length > 0 && (
         <View style={{ marginTop: 20 }}>
           <Text style={[styles.sectionTitle, { fontSize: 14, marginBottom: 10 }]}>מוצרים קיימים - פירוט מלא</Text>
           <View style={styles.table}>
@@ -100,7 +102,7 @@ export const ExecutiveSummarySection = ({
       )}
 
       {/* Detailed Products Table - Recommended */}
-      {recommendedProducts.length > 0 && (
+      {includeProductsTable && recommendedProducts.length > 0 && (
         <View style={{ marginTop: 20 }}>
           <Text style={[styles.sectionTitle, { fontSize: 14, marginBottom: 10 }]}>מוצרים מוצעים - פירוט מלא</Text>
           <View style={styles.table}>

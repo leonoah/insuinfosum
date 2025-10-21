@@ -137,6 +137,8 @@ interface FormData {
   timeframes: string;
   approvals: string;
   includeDecisionsInReport: boolean;
+  includeProductsTable: boolean;
+  includeExposureReport: boolean;
 }
 
 interface SummaryGeneratorProps {
@@ -409,7 +411,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       ...formData,
       products: formData.products.map(product => ({
         ...product,
-        includeExposureData: includeExposureInReport
+        includeExposureData: formData.includeExposureReport !== false
       }))
     };
 

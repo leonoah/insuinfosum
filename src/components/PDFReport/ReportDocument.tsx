@@ -66,6 +66,8 @@ interface FormData {
   risks?: string;
   decisions?: string;
   documents?: string[];
+  includeProductsTable?: boolean;
+  includeExposureReport?: boolean;
 }
 
 interface ProductStats {
@@ -140,6 +142,7 @@ export const ReportDocument = ({
             totalRecommendedAmount={productStats.totalRecommendedAmount}
             currentProducts={productStats.currentProducts}
             recommendedProducts={productStats.recommendedProducts}
+            includeProductsTable={formData.includeProductsTable !== false}
           />
         )}
 
@@ -160,7 +163,7 @@ export const ReportDocument = ({
         )}
 
         {/* Exposure Table */}
-        {selectedSections.detailedBreakdown && (
+        {selectedSections.detailedBreakdown && formData.includeExposureReport !== false && (
           <ExposureTableSection
             currentProducts={productStats.currentProducts}
             recommendedProducts={productStats.recommendedProducts}

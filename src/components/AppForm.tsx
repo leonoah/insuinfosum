@@ -80,6 +80,8 @@ interface FormData {
   timeframes: string;
   approvals: string;
   includeDecisionsInReport: boolean;
+  includeProductsTable: boolean;
+  includeExposureReport: boolean;
 }
 
 const insuranceTopics = [
@@ -118,7 +120,9 @@ const AppForm = () => {
     documents: [],
     timeframes: "",
     approvals: "",
-    includeDecisionsInReport: true
+    includeDecisionsInReport: true,
+    includeProductsTable: true,
+    includeExposureReport: true
   });
 
   const [autoFillDetailLevel, setAutoFillDetailLevel] = useState<"summary" | "detailed">("summary");
@@ -1049,25 +1053,69 @@ const AppForm = () => {
                   />
                 </div>
 
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Checkbox
-                      id="includeDecisionsInReport"
-                      checked={formData.includeDecisionsInReport}
-                      onCheckedChange={(checked) => 
-                        setFormData(prev => ({ ...prev, includeDecisionsInReport: checked === true }))
-                      }
-                    />
-                    <Label 
-                      htmlFor="includeDecisionsInReport" 
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      כלול החלטות זו בדוח המסכם
-                    </Label>
+                <div className="pt-4 border-t border-border space-y-4">
+                  <div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="includeDecisionsInReport"
+                        checked={formData.includeDecisionsInReport}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, includeDecisionsInReport: checked === true }))
+                        }
+                      />
+                      <Label 
+                        htmlFor="includeDecisionsInReport" 
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        כלול החלטות בדוח המסכם
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 mr-6">
+                      בחר אם להציג את פרטי ההחלטות, המסמכים וטווחי הזמן בדוח ה-PDF הסופי
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 mr-6">
-                    בחר אם להציג את פרטי ההחלטות, המסמכים וטווחי הזמן בדוח ה-PDF הסופי
-                  </p>
+
+                  <div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="includeProductsTable"
+                        checked={formData.includeProductsTable}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, includeProductsTable: checked === true }))
+                        }
+                      />
+                      <Label 
+                        htmlFor="includeProductsTable" 
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        כלול טבלת מוצרים מפורטת
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 mr-6">
+                      טבלה מלאה עם כל פרטי המוצרים: מסלול, דמי ניהול, סכום והערות
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="includeExposureReport"
+                        checked={formData.includeExposureReport}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, includeExposureReport: checked === true }))
+                        }
+                      />
+                      <Label 
+                        htmlFor="includeExposureReport" 
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        כלול דוח חשיפות
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 mr-6">
+                      טבלת חשיפות מפורטת למניות, אג"ח, מט"ח והשקעות חו"ל
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
