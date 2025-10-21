@@ -89,8 +89,15 @@ export const ReturnsChartSection = ({
     const chartWidth = 500;
     const chartHeight = 200;
     const barHeight = 20;
-    const spacing = 40;
+    const spacing = 50;
     const leftMargin = 140;
+
+    const TICK_FONT = 9;
+    const LABEL_FONT = 10;
+    const VALUE_FONT = 11;
+    const LEGEND_FONT = 10;
+
+    const truncate = (s: string, max = 22) => (s.length > max ? s.slice(0, max) + '…' : s);
 
     return (
       <View style={{ marginBottom: 20 }}>
@@ -103,7 +110,7 @@ export const ReturnsChartSection = ({
             return (
               <G key={`grid-${i}`}>
                 <SvgLine x1={x} y1={12} x2={x} y2={data.length * spacing + 6} stroke="#475569" strokeWidth={0.5} />
-                <SvgText x={x} y={10} fill="#94a3b8" textAnchor="middle">{value.toFixed(0)}%</SvgText>
+                <SvgText x={x} y={10} fill="#94a3b8" textAnchor="middle" fontFamily="Alef" fontSize={TICK_FONT}>{value.toFixed(0)}%</SvgText>
               </G>
             );
           })}
@@ -121,8 +128,10 @@ export const ReturnsChartSection = ({
                   y={y + barHeight / 2}
                   textAnchor="end"
                   fill="#e2e8f0"
+                  fontFamily="Alef"
+                  fontSize={LABEL_FONT}
                 >
-                  {item.label}
+                  {truncate(item.label)}
                 </SvgText>
 
                 {/* Current bar */}
@@ -137,8 +146,10 @@ export const ReturnsChartSection = ({
                   x={leftMargin + currentBarWidth + 5}
                   y={y - barHeight / 4}
                   fill="#ffffff"
+                  fontFamily="Alef"
+                  fontSize={VALUE_FONT}
                 >
-                  {item.current.toFixed(2)}%
+                  {item.current.toFixed(1)}%
                 </SvgText>
 
                 {/* Recommended bar */}
@@ -153,8 +164,10 @@ export const ReturnsChartSection = ({
                   x={leftMargin + recommendedBarWidth + 5}
                   y={y + barHeight / 4 + 2}
                   fill="#ffffff"
+                  fontFamily="Alef"
+                  fontSize={VALUE_FONT}
                 >
-                  {item.recommended.toFixed(2)}%
+                  {item.recommended.toFixed(1)}%
                 </SvgText>
               </G>
             );
@@ -163,10 +176,10 @@ export const ReturnsChartSection = ({
           {/* Legend */}
           <G>
             <Rect x={leftMargin} y={data.length * spacing + 10} width={15} height={8} fill="#64748b" />
-            <SvgText x={leftMargin + 20} y={data.length * spacing + 18} fill="#e2e8f0">מצב קיים</SvgText>
+            <SvgText x={leftMargin + 20} y={data.length * spacing + 18} fill="#e2e8f0" fontFamily="Alef" fontSize={LEGEND_FONT}>מצב קיים</SvgText>
             
             <Rect x={leftMargin + 100} y={data.length * spacing + 10} width={15} height={8} fill="#06b6d4" />
-            <SvgText x={leftMargin + 120} y={data.length * spacing + 18} fill="#e2e8f0">מצב מוצע</SvgText>
+            <SvgText x={leftMargin + 120} y={data.length * spacing + 18} fill="#e2e8f0" fontFamily="Alef" fontSize={LEGEND_FONT}>מצב מוצע</SvgText>
           </G>
         </Svg>
       </View>
