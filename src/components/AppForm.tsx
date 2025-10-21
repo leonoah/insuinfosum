@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon, FolderOpen, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,15 @@ interface Client {
   client_name: string;
   client_phone: string;
   client_email: string;
+}
+
+interface SavedForm {
+  id: string;
+  client_name: string;
+  client_id: string;
+  form_data: any; // JSON from database
+  created_at: string;
+  updated_at: string;
 }
 
 interface FormData {
@@ -88,6 +97,9 @@ const AppForm = () => {
   const [clientSearchValue, setClientSearchValue] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [hasSkippedProducts, setHasSkippedProducts] = useState(false);
+  const [savedForms, setSavedForms] = useState<SavedForm[]>([]);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
     clientId: "",
@@ -122,9 +134,10 @@ const AppForm = () => {
     (formData.isAnonymous || (formData.clientName.trim() && formData.clientPhone.trim()))
   );
 
-  // Load clients on component mount
+  // Load clients and saved forms on component mount
   useEffect(() => {
     loadClients();
+    loadSavedForms();
   }, []);
 
   const loadClients = async () => {
@@ -161,6 +174,72 @@ const AppForm = () => {
     } catch (error) {
       console.error('Error saving client:', error);
     }
+  };
+
+  const loadSavedForms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('saved_forms')
+        .select('*')
+        .order('updated_at', { ascending: false });
+      
+      if (error) throw error;
+      setSavedForms(data || []);
+    } catch (error) {
+      console.error('Error loading saved forms:', error);
+    }
+  };
+
+  const saveFormToDatabase = async () => {
+    if (!formData.clientName || !formData.clientId) {
+      toast({
+        title: "חסרים פרטים",
+        description: "נא למלא שם לקוח ותעודת זהות לפני השמירה",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('saved_forms')
+        .upsert([{
+          client_id: formData.clientId,
+          client_name: formData.clientName,
+          form_data: formData as any
+        }], {
+          onConflict: 'client_id,client_name'
+        });
+      
+      if (error) throw error;
+      
+      await loadSavedForms();
+      
+      toast({
+        title: "הטופס נשמר בהצלחה",
+        description: `הנתונים של ${formData.clientName} נשמרו`,
+      });
+    } catch (error) {
+      console.error('Error saving form:', error);
+      toast({
+        title: "שגיאה בשמירה",
+        description: "לא הצלחנו לשמור את הטופס. אנא נסה שוב.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const loadFormFromDatabase = (savedForm: SavedForm) => {
+    setFormData(savedForm.form_data as FormData);
+    setShowLoadDialog(false);
+    
+    toast({
+      title: "הטופס נטען",
+      description: `נתוני ${savedForm.client_name} נטענו בהצלחה`,
+    });
   };
 
   const selectClient = (client: Client) => {
@@ -477,6 +556,36 @@ const AppForm = () => {
               <span className="text-sm font-medium">{Math.round(calculateProgress())}%</span>
             </div>
             <Progress value={calculateProgress()} className="h-2" />
+          </div>
+
+          {/* Save and Load Buttons */}
+          <div className="mt-4 flex gap-3 justify-center">
+            <Button
+              onClick={saveFormToDatabase}
+              disabled={isSaving || !formData.clientName || !formData.clientId}
+              variant="outline"
+              className="rounded-xl"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  שומר...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 ml-2" />
+                  שמור טופס
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => setShowLoadDialog(true)}
+              variant="outline"
+              className="rounded-xl"
+            >
+              <FolderOpen className="h-4 w-4 ml-2" />
+              טען טופס שמור
+            </Button>
           </div>
         </div>
 
@@ -985,6 +1094,69 @@ const AppForm = () => {
         initialClientId={formData.clientId}
         initialClientName={formData.clientName}
       />
+
+      {/* Load Form Dialog */}
+      {showLoadDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5" />
+                  טען טופס שמור
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowLoadDialog(false)}
+                  className="rounded-full"
+                >
+                  ✕
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-y-auto max-h-[60vh]">
+              {savedForms.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Upload className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>אין טפסים שמורים</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedForms.map((form) => (
+                    <Card
+                      key={form.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => loadFormFromDatabase(form)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-medium">{form.client_name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              ת"ז: {form.client_id}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              עודכן: {new Date(form.updated_at).toLocaleDateString('he-IL')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-xl"
+                          >
+                            טען
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {showSummary && (
         <SummaryGenerator formData={formData} onBack={() => setShowSummary(false)} />

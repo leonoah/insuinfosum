@@ -1411,6 +1411,33 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_forms: {
+        Row: {
+          client_id: string
+          client_name: string
+          created_at: string | null
+          form_data: Json
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          client_name: string
+          created_at?: string | null
+          form_data: Json
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_name?: string
+          created_at?: string | null
+          form_data?: Json
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           created_at: string
