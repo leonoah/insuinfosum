@@ -60,39 +60,27 @@ export const ExecutiveSummarySection = ({
           <Text style={[styles.sectionTitle, { fontSize: 14, marginBottom: 10 }]}>מוצרים קיימים - פירוט מלא</Text>
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
-              <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
-              <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
-              <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
-              <Text style={[styles.tableCell, { width: '10%' }]}>סכום צבירה</Text>
-              <Text style={[styles.tableCell, { width: '10%' }]}>דמי ניהול הפקדה</Text>
-              <Text style={[styles.tableCell, { width: '10%' }]}>דמי ניהול צבירה</Text>
-              <Text style={[styles.tableCell, { width: '6%' }]}>מניות</Text>
-              <Text style={[styles.tableCell, { width: '6%' }]}>אג"ח</Text>
-              <Text style={[styles.tableCell, { width: '6%' }]}>מט"ח</Text>
+              <Text style={[styles.tableCell, { width: '16%' }]}>חברה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>קטגוריה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>מסלול</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>סכום צבירה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>דמי ניהול הפקדה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>דמי ניהול צבירה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>הערות</Text>
             </View>
             {currentProducts.map((product, index) => (
               <View key={index} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
-                <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
-                <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
-                <Text style={[styles.tableCell, { width: '10%' }]}>
+                <Text style={[styles.tableCell, { width: '16%' }]}>{product.company}</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>{product.category}</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>{product.investmentTrack}</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
                 </Text>
-                <Text style={[styles.tableCell, { width: '10%' }]}>
+                <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
                 </Text>
-                <Text style={[styles.tableCell, { width: '10%' }]}>
+                <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
-                </Text>
-                <Text style={[styles.tableCell, { width: '6%' }]}>
-                  {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
-                </Text>
-                <Text style={[styles.tableCell, { width: '6%' }]}>
-                  {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
-                </Text>
-                <Text style={[styles.tableCell, { width: '6%' }]}>
-                  {product.exposureForeignCurrency !== undefined ? `${product.exposureForeignCurrency}%` : '-'}
                 </Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>{product.notes || '-'}</Text>
               </View>
@@ -107,39 +95,27 @@ export const ExecutiveSummarySection = ({
           <Text style={[styles.sectionTitle, { fontSize: 14, marginBottom: 10 }]}>מוצרים מוצעים - פירוט מלא</Text>
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
-              <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
-              <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
-              <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
-              <Text style={[styles.tableCell, { width: '10%' }]}>סכום צבירה</Text>
-              <Text style={[styles.tableCell, { width: '10%' }]}>דמי ניהול הפקדה</Text>
-              <Text style={[styles.tableCell, { width: '10%' }]}>דמי ניהול צבירה</Text>
-              <Text style={[styles.tableCell, { width: '6%' }]}>מניות</Text>
-              <Text style={[styles.tableCell, { width: '6%' }]}>אג"ח</Text>
-              <Text style={[styles.tableCell, { width: '6%' }]}>מט"ח</Text>
+              <Text style={[styles.tableCell, { width: '16%' }]}>חברה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>קטגוריה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>מסלול</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>סכום צבירה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>דמי ניהול הפקדה</Text>
+              <Text style={[styles.tableCell, { width: '14%' }]}>דמי ניהול צבירה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>הערות</Text>
             </View>
             {recommendedProducts.map((product, index) => (
               <View key={index} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
-                <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
-                <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
-                <Text style={[styles.tableCell, { width: '10%' }]}>
+                <Text style={[styles.tableCell, { width: '16%' }]}>{product.company}</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>{product.category}</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>{product.investmentTrack}</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
                 </Text>
-                <Text style={[styles.tableCell, { width: '10%' }]}>
+                <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
                 </Text>
-                <Text style={[styles.tableCell, { width: '10%' }]}>
+                <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
-                </Text>
-                <Text style={[styles.tableCell, { width: '6%' }]}>
-                  {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
-                </Text>
-                <Text style={[styles.tableCell, { width: '6%' }]}>
-                  {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
-                </Text>
-                <Text style={[styles.tableCell, { width: '6%' }]}>
-                  {product.exposureForeignCurrency !== undefined ? `${product.exposureForeignCurrency}%` : '-'}
                 </Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>{product.notes || '-'}</Text>
               </View>

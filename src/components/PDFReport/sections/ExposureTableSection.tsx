@@ -62,66 +62,11 @@ export const ExposureTableSection = ({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>טבלת חשיפות - מצב קיים מול מוצע</Text>
+      <Text style={styles.sectionTitle}>השוואת חשיפות</Text>
       
-      {/* Current Products Table */}
-      {currentWithExposure.length > 0 && (
-        <View style={{ marginBottom: 15 }}>
-          <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>מצב קיים</Text>
-          <View style={styles.table}>
-            <View style={[styles.tableRow, styles.tableHeaderRow]}>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>מוצר</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>מניות</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>אג"ח</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>מט"ח</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>חו"ל</Text>
-            </View>
-            {currentWithExposure.map((product, index) => (
-              <View key={product.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {product.category} - {product.company} - {product.subCategory}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureStocks)}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureBonds)}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureForeignCurrency)}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureForeignInvestments)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* Recommended Products Table */}
-      {recommendedWithExposure.length > 0 && (
-        <View>
-          <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>מצב מוצע</Text>
-          <View style={styles.table}>
-            <View style={[styles.tableRow, styles.tableHeaderRow]}>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>מוצר</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>מניות</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>אג"ח</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>מט"ח</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>חו"ל</Text>
-            </View>
-            {recommendedWithExposure.map((product, index) => (
-              <View key={product.id} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {product.category} - {product.company} - {product.subCategory}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureStocks)}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureBonds)}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureForeignCurrency)}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{formatExposure(product.exposureForeignInvestments)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
       {/* Aggregate Comparison Table */}
       {currentWithExposure.length > 0 && recommendedWithExposure.length > 0 && (
-        <View style={{ marginTop: 15 }}>
-          <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>השוואת ממוצעים</Text>
+        <View>
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>סוג חשיפה</Text>
