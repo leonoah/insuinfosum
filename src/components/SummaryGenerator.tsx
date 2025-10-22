@@ -1186,20 +1186,20 @@ ${agentData.name}`;
     conversationInsights: selectedSections.conversationInsights ? (
       <ReportSection sectionKey="conversationInsights" isEditable>
         <div className="space-y-4">
-          {formData.currentSituation && (
-            <div>
-              <h4 className="font-semibold text-white mb-2">המצב הנוכחי:</h4>
-              <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
-                {formData.currentSituation}
-              </div>
-            </div>
-          )}
-
           {formData.meetingContext && (
             <div>
               <h4 className="font-semibold text-white mb-2">רקע ועיקרי הפגישה:</h4>
               <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-sm text-gray-300">
                 {formData.meetingContext}
+              </div>
+            </div>
+          )}
+
+          {formData.currentSituation && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">המצב הנוכחי:</h4>
+              <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
+                {formData.currentSituation}
               </div>
             </div>
           )}
