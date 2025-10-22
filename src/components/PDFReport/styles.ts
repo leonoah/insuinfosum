@@ -7,7 +7,7 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
   return StyleSheet.create({
     // Page styles
     page: {
-      backgroundColor: isDark ? '#0f172a' : '#ffffff',
+      backgroundColor: isDark ? '#0f172a' : '#e0f2f1',
       padding: 30,
       fontFamily: 'Alef',
       direction: 'rtl',
