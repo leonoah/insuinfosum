@@ -1974,6 +1974,24 @@ ${agentData.name}`;
                 </div>
               </div>
             </div>
+
+            {/* Generate Report Button */}
+            <div className="glass p-6 rounded-2xl border border-glass-border mt-6">
+              <div className="flex flex-col items-center gap-4">
+                <h3 className="text-lg font-semibold text-foreground">מוכן לייצא את הדוח?</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  צור דוח PDF מקצועי עם אפשרויות הורדה, שליחה במייל ושיתוף
+                </p>
+                <Button 
+                  onClick={() => setShowFinalReport(true)}
+                  size="lg"
+                  className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow"
+                >
+                  <FileText className="h-5 w-5 ml-2" />
+                  צור דוח PDF מלא
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
