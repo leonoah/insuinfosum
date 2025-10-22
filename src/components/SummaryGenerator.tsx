@@ -976,7 +976,7 @@ ${agentData.name}`;
         השוואת תיקים - מצב קיים מול מוצע
       </h4>
       
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
         <div className="bg-gray-800/50 p-4 rounded-xl border border-green-500/30">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-green-500/20 flex items-center justify-center">
@@ -1419,23 +1419,23 @@ ${agentData.name}`;
   };
 
   const FinalReportContent = () => (
-    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-black text-white">
+    <div id="final-report-content" className="max-w-4xl mx-auto p-4 sm:p-8 bg-black text-white">
       {/* Header */}
       <div className="text-center mb-8 border-b border-gray-700 pb-6">
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4">
           {agentData.logo_url ? (
-            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
+            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-20 h-20 sm:w-24 sm:h-24 object-contain" />
           ) : (
-            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
+            <img src={agentLogo} alt="לוגו הסוכן" className="w-20 h-20 sm:w-24 sm:h-24 object-contain" />
           )}
           <div>
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
               דוח סיכום ביטוח
             </h1>
-            <p className="text-lg text-gray-300">{agentData.name}</p>
+            <p className="text-base sm:text-lg text-gray-300">{agentData.name}</p>
           </div>
         </div>
-        <div className="text-lg text-cyan-400 font-medium">
+        <div className="text-base sm:text-lg text-cyan-400 font-medium">
           {formData.clientName} • {formatDate(formData.meetingDate)}
         </div>
       </div>
@@ -1616,7 +1616,7 @@ ${agentData.name}`;
             }
           }}
         >
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto">
             {templateFormState ? (
               <>
                 <DialogHeader>
@@ -1671,7 +1671,7 @@ ${agentData.name}`;
                           <div
                             key={sectionKey}
                             className={cn(
-                              'flex items-start justify-between gap-4 rounded-xl border p-4',
+                              'flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 rounded-xl border p-3 sm:p-4',
                               templateFormState.sections[sectionKey]
                                 ? 'border-cyan-500/40 bg-cyan-500/10'
                                 : 'border-gray-800 bg-gray-900/50'
@@ -1766,7 +1766,7 @@ ${agentData.name}`;
                           key={template.id}
                           className="border border-gray-800 rounded-xl p-4 bg-gray-900/50 flex flex-col gap-3"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                                 <IconComponent className="w-4 h-4 text-cyan-300" />
@@ -1778,7 +1778,7 @@ ${agentData.name}`;
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                               <Button size="sm" variant="outline" onClick={() => { applyTemplateToState(template); setShowManageTemplates(false); }}>
                                 בחר
                               </Button>
@@ -1979,7 +1979,7 @@ ${agentData.name}`;
 
         {/* Final Report Dialog */}
         <Dialog open={showFinalReport} onOpenChange={setShowFinalReport}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-6xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>דוח סיכום פגישת ביטוח</DialogTitle>
               <DialogDescription>
@@ -1991,11 +1991,12 @@ ${agentData.name}`;
               <Button variant="outline" onClick={() => setShowFinalReport(false)}>
                 סגור
               </Button>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
                 <Button 
                   variant="outline" 
                   onClick={() => sendReportByEmail()}
                   title="שלח במייל"
+                  className="flex-1 sm:flex-none"
                 >
                   <Mail className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שלח במייל</span>
@@ -2004,6 +2005,7 @@ ${agentData.name}`;
                   variant="outline" 
                   onClick={() => sendReportByWhatsApp()}
                   title="שלח בוואטסאפ"
+                  className="flex-1 sm:flex-none"
                 >
                   <MessageCircle className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שלח בוואטסאפ</span>
@@ -2012,11 +2014,16 @@ ${agentData.name}`;
                   variant="outline" 
                   onClick={shareReport}
                   title="שתף"
+                  className="flex-1 sm:flex-none"
                 >
                   <Share className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שתף</span>
                 </Button>
-                <Button onClick={downloadReport} title="הורד PDF">
+                <Button 
+                  onClick={downloadReport} 
+                  title="הורד PDF"
+                  className="flex-1 sm:flex-none"
+                >
                   <Download className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">הורד PDF</span>
                 </Button>
