@@ -242,12 +242,12 @@ serve(async (req) => {
             console.log('Successfully parsed after fixing common issues');
           } catch (secondError) {
             console.error('Both parse attempts failed:', {
-              firstError: firstError.message,
-              secondError: secondError.message,
+              firstError: firstError instanceof Error ? firstError.message : String(firstError),
+              secondError: secondError instanceof Error ? secondError.message : String(secondError),
               originalContent: jsonContent.substring(0, 500),
               fixedContent: fixedContent.substring(0, 500)
             });
-            throw new Error(`Failed to parse JSON: ${secondError.message}`);
+            throw new Error(`Failed to parse JSON: ${secondError instanceof Error ? secondError.message : String(secondError)}`);
           }
         }
         
@@ -268,13 +268,13 @@ serve(async (req) => {
         });
       } catch (parseError) {
         console.error('Error parsing JSON response:', {
-          error: parseError.message,
+          error: parseError instanceof Error ? parseError.message : String(parseError),
           content: generatedContent.substring(0, 500)
         });
         return new Response(JSON.stringify({ 
           error: 'שגיאה בעיבוד התשובה מה-AI. אנא נסה שוב.',
-          details: parseError.message,
-          success: false 
+          details: parseError instanceof Error ? parseError.message : String(parseError),
+          success: false
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

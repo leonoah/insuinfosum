@@ -28,6 +28,9 @@ export const ReportFooter = ({ agentName, agentPhone, agentEmail, logoUrl }: Rep
             style={{ ...styles.footerLogo, marginTop: 10, marginBottom: 10 }}
           />
         )}
+        <Text style={{ ...styles.footerText, fontSize: 8, marginTop: 8, color: '#94a3b8' }}>
+          מדיניות פרטיות: כל המידע מעובד באופן מקומי במכשיר שלך בלבד. אנו לא שומרים או מעבירים מידע אישי לשרתים חיצוניים.
+        </Text>
         <Text style={styles.footerBrand}>דוח זה נוצר בעזרת מערכת InMinds</Text>
         <Image 
           src={inMindsLogo} 
