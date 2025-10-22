@@ -173,6 +173,7 @@ export const ReportDocument = ({
     ) : null,
     conversationInsights: selectedSections.conversationInsights ? (
       <AdditionalDetailsSection
+        meetingContext={formData.meetingContext}
         currentSituation={formData.currentSituation}
         decisions={
           formData.includeDecisionsInReport === false

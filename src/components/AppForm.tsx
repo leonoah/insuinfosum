@@ -141,8 +141,9 @@ const AppForm = () => {
     detailed: "פירוט מורחב",
   };
 
-  // Required fields: current situation, and client details only if not anonymous
+  // Required fields: meeting context, current situation, and client details only if not anonymous
   const isSummaryEligible = Boolean(
+    formData.meetingContext.trim() &&
     formData.currentSituation.trim() &&
     (formData.isAnonymous || (formData.clientName.trim() && formData.clientPhone.trim()))
   );
@@ -1246,7 +1247,7 @@ const AppForm = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="meetingContext">רקע ועיקרי הפגישה</Label>
+                    <Label htmlFor="meetingContext">רקע ועיקרי הפגישה *</Label>
                     <VoiceTextInput
                       onTextProcessed={(enhancedText, transcribedText) => {
                         setFormData(prev => ({ ...prev, meetingContext: enhancedText }));
@@ -1261,6 +1262,7 @@ const AppForm = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, meetingContext: e.target.value }))}
                     className="mt-2 bg-input rounded-xl min-h-[150px]"
                     placeholder="תיאור כללי של הפגישה - מה שהוסכם, המטרות והנקודות העיקריות שדובר עליהן..."
+                    required
                   />
                 </div>
 
