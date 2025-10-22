@@ -185,6 +185,7 @@ interface SummaryGeneratorProps {
 
 const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const { toast } = useToast();
+  const { theme } = useTheme();
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
   const [showFinalReport, setShowFinalReport] = useState(false);
   const [selectedSections, setSelectedSections] = useState<Record<ReportSectionKey, boolean>>(() => {
