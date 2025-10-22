@@ -52,7 +52,7 @@ const REPORT_SECTIONS_DEFAULT: Record<ReportSectionKey, boolean> = {
   returnsComparison: true,
   productDetails: true,
   exposureComparison: true,
-  disclosures: true,
+  disclosures: false,
 };
 
 const REPORT_SECTION_LABELS: Record<ReportSectionKey, { title: string; description: string; icon: LucideIcon; }> = {

@@ -1,7 +1,6 @@
 import { View, Text } from '@react-pdf/renderer';
 
 interface AdditionalDetailsSectionProps {
-  meetingContext?: string;
   currentSituation?: string;
   decisions?: string;
   additionalNotes?: string;
@@ -12,7 +11,6 @@ interface AdditionalDetailsSectionProps {
 }
 
 export const AdditionalDetailsSection = ({
-  meetingContext,
   currentSituation,
   decisions,
   additionalNotes,
@@ -30,7 +28,7 @@ export const AdditionalDetailsSection = ({
       .trim();
   };
 
-  const hasContent = meetingContext || currentSituation || decisions || additionalNotes || timeframes || nextSteps || (documents && documents.length > 0);
+  const hasContent = currentSituation || decisions || additionalNotes || timeframes || nextSteps || (documents && documents.length > 0);
 
   if (!hasContent) {
     return null;
@@ -40,13 +38,6 @@ export const AdditionalDetailsSection = ({
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>פרטים נוספים מהשיחה</Text>
       
-      {meetingContext && (
-        <View style={{ marginBottom: 15 }}>
-          <Text style={styles.sectionSubtitle}>רקע ועיקרי הפגישה</Text>
-          <Text style={styles.text}>{stripHtml(meetingContext)}</Text>
-        </View>
-      )}
-
       {currentSituation && (
         <View style={{ marginBottom: 15 }}>
           <Text style={styles.sectionSubtitle}>מצב קיים</Text>
