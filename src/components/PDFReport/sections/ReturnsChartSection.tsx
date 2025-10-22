@@ -83,81 +83,195 @@ export const ReturnsChartSection = ({
     ? recommendedWithReturns.reduce((sum, p) => sum + (p.returns || 0), 0) / recommendedWithReturns.length
     : 0;
 
-  const SimpleBarChart = ({ data, title }: { data: Array<{ label: string; current: number; recommended: number }>; title: string }) => {
-    const maxValue = Math.max(...data.map(d => Math.max(d.current, d.recommended)), 10);
+  const DualBarChart = ({
+    data,
+    title,
+    valueLabel
+  }: {
+    data: Array<{ label: string; current: number; recommended: number }>;
+    title: string;
+    valueLabel: string;
+  }) => {
+    if (data.length === 0) {
+      return null;
+    }
+
+    const maxValue = Math.max(...data.map(d => Math.max(d.current, d.recommended)));
+    const safeMax = maxValue === 0 ? 1 : Math.ceil(maxValue / 5) * 5;
+    const tickCount = 4;
+    const ticks = Array.from({ length: tickCount + 1 }, (_, index) => Math.round(((safeMax / tickCount) * index) * 10) / 10);
 
     return (
-      <View style={{ marginBottom: 20 }}>
-        <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>{title}</Text>
-        
-        {data.map((item, index) => (
-          <View key={index} style={{ marginBottom: 15 }}>
-            {/* Label */}
-            <Text style={{ fontSize: 10, color: '#e2e8f0', marginBottom: 4, textAlign: 'right' }}>
-              {item.label}
-            </Text>
-            
-            {/* Current bar */}
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 3 }}>
-              <View style={{ width: 60, marginLeft: 5 }}>
-                <Text style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>מצב קיים:</Text>
-              </View>
-              <View style={{ flex: 1, backgroundColor: '#334155', height: 12, borderRadius: 2, position: 'relative' }}>
-                <View 
-                  style={{ 
-                    width: `${(item.current / maxValue) * 100}%`,
-                    height: 12,
-                    backgroundColor: '#64748b',
-                    borderRadius: 2
-                  }}
-                />
-              </View>
-              <View style={{ width: 50, marginRight: 5 }}>
-                <Text style={{ fontSize: 10, color: '#ffffff', textAlign: 'left' }}>
-                  {item.current.toFixed(1)}%
-                </Text>
-              </View>
+      <View style={{ marginBottom: 24 }}>
+        <Text style={[styles.sectionSubtitle, { marginBottom: 12 }]}>{title}</Text>
+        <View style={{ backgroundColor: '#1e293b', borderRadius: 10, padding: 14 }}>
+          <View style={{ flexDirection: 'row-reverse', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginLeft: 16 }}>
+              <View style={{ width: 10, height: 10, backgroundColor: '#06b6d4', borderRadius: 2, marginLeft: 6 }} />
+              <Text style={{ fontSize: 8, color: '#cbd5f5' }}>מצב מוצע</Text>
             </View>
-            
-            {/* Recommended bar */}
             <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
-              <View style={{ width: 60, marginLeft: 5 }}>
-                <Text style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>מצב מוצע:</Text>
-              </View>
-              <View style={{ flex: 1, backgroundColor: '#334155', height: 12, borderRadius: 2, position: 'relative' }}>
-                <View 
-                  style={{ 
-                    width: `${(item.recommended / maxValue) * 100}%`,
-                    height: 12,
-                    backgroundColor: '#06b6d4',
-                    borderRadius: 2
-                  }}
-                />
-              </View>
-              <View style={{ width: 50, marginRight: 5 }}>
-                <Text style={{ fontSize: 10, color: '#ffffff', textAlign: 'left' }}>
-                  {item.recommended.toFixed(1)}%
-                </Text>
-              </View>
+              <View style={{ width: 10, height: 10, backgroundColor: '#64748b', borderRadius: 2, marginLeft: 6 }} />
+              <Text style={{ fontSize: 8, color: '#cbd5f5' }}>מצב קיים</Text>
             </View>
           </View>
-        ))}
+          {data.map((item, index) => (
+            <View key={index} style={{ marginBottom: index === data.length - 1 ? 0 : 16 }}>
+              <Text style={{ fontSize: 11, color: '#e2e8f0', marginBottom: 6, textAlign: 'right' }}>{item.label}</Text>
+
+              <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 6 }}>
+                <View style={{ width: 64, marginLeft: 8 }}>
+                  <Text style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>מצב קיים</Text>
+                </View>
+                <View style={{ flex: 1, height: 14, borderRadius: 3, backgroundColor: '#0f172a', position: 'relative', overflow: 'hidden' }}>
+                  {ticks.slice(1, -1).map((tick, tickIndex) => (
+                    <View
+                      key={tickIndex}
+                      style={{
+                        position: 'absolute',
+                        left: `${(tick / safeMax) * 100}%`,
+                        top: 0,
+                        bottom: 0,
+                        width: 1,
+                        backgroundColor: '#1f2937'
+                      }}
+                    />
+                  ))}
+                  <View
+                    style={{
+                      width: `${safeMax === 0 ? 0 : (item.current / safeMax) * 100}%`,
+                      height: 14,
+                      backgroundColor: '#64748b',
+                      borderRadius: 3
+                    }}
+                  />
+                </View>
+                <View style={{ width: 54, marginRight: 8 }}>
+                  <Text style={{ fontSize: 10, color: '#f8fafc', textAlign: 'left' }}>{item.current.toFixed(1)}%</Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+                <View style={{ width: 64, marginLeft: 8 }}>
+                  <Text style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>מצב מוצע</Text>
+                </View>
+                <View style={{ flex: 1, height: 14, borderRadius: 3, backgroundColor: '#0f172a', position: 'relative', overflow: 'hidden' }}>
+                  {ticks.slice(1, -1).map((tick, tickIndex) => (
+                    <View
+                      key={tickIndex}
+                      style={{
+                        position: 'absolute',
+                        left: `${(tick / safeMax) * 100}%`,
+                        top: 0,
+                        bottom: 0,
+                        width: 1,
+                        backgroundColor: '#1f2937'
+                      }}
+                    />
+                  ))}
+                  <View
+                    style={{
+                      width: `${safeMax === 0 ? 0 : (item.recommended / safeMax) * 100}%`,
+                      height: 14,
+                      backgroundColor: '#06b6d4',
+                      borderRadius: 3
+                    }}
+                  />
+                </View>
+                <View style={{ width: 54, marginRight: 8 }}>
+                  <Text style={{ fontSize: 10, color: '#f8fafc', textAlign: 'left' }}>{item.recommended.toFixed(1)}%</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+
+          <View style={{ marginTop: 12 }}>
+            <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }}>
+              {ticks.map((tick, tickIndex) => (
+                <Text key={tickIndex} style={{ fontSize: 8, color: '#94a3b8' }}>
+                  {tick.toFixed(tick >= 10 ? 0 : 1)}%
+                </Text>
+              ))}
+            </View>
+            <Text style={{ fontSize: 8, color: '#64748b', textAlign: 'center', marginTop: 4 }}>{valueLabel}</Text>
+          </View>
+        </View>
       </View>
     );
   };
 
   // Prepare data for charts
-  const categoryData = Array.from(new Set([...currentCategoryAvgs.map(c => c.category), ...recommendedCategoryAvgs.map(c => c.category)])).map(category => ({
+  const categoryData = Array.from(
+    new Set([...currentCategoryAvgs.map(c => c.category), ...recommendedCategoryAvgs.map(c => c.category)])
+  ).map(category => ({
     label: category,
     current: currentCategoryAvgs.find(c => c.category === category)?.average || 0,
     recommended: recommendedCategoryAvgs.find(c => c.category === category)?.average || 0
-  }));
+  })).sort((a, b) => Math.max(b.current, b.recommended) - Math.max(a.current, a.recommended));
 
-  const companyData = Array.from(new Set([...currentCompanyAvgs.map(c => c.company), ...recommendedCompanyAvgs.map(c => c.company)])).map(company => ({
+  const companyData = Array.from(
+    new Set([...currentCompanyAvgs.map(c => c.company), ...recommendedCompanyAvgs.map(c => c.company)])
+  ).map(company => ({
     label: company,
     current: currentCompanyAvgs.find(c => c.company === company)?.average || 0,
     recommended: recommendedCompanyAvgs.find(c => c.company === company)?.average || 0
-  }));
+  })).sort((a, b) => Math.max(b.current, b.recommended) - Math.max(a.current, a.recommended));
+
+  const currentExposureProducts = currentProducts.filter(p =>
+    p.includeExposureData && (
+      p.exposureStocks !== undefined ||
+      p.exposureBonds !== undefined ||
+      p.exposureForeignCurrency !== undefined ||
+      p.exposureForeignInvestments !== undefined
+    )
+  );
+
+  const recommendedExposureProducts = recommendedProducts.filter(p =>
+    p.includeExposureData && (
+      p.exposureStocks !== undefined ||
+      p.exposureBonds !== undefined ||
+      p.exposureForeignCurrency !== undefined ||
+      p.exposureForeignInvestments !== undefined
+    )
+  );
+
+  const calculateExposureAverage = (products: SelectedProduct[], field: keyof SelectedProduct) => {
+    const values = products
+      .map(p => p[field] as number | undefined)
+      .filter((value): value is number => value !== undefined && !isNaN(value));
+
+    if (values.length === 0) {
+      return 0;
+    }
+
+    const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+    return Math.round(average * 10) / 10;
+  };
+
+  const exposureData = [
+    {
+      label: 'מניות',
+      current: calculateExposureAverage(currentExposureProducts, 'exposureStocks'),
+      recommended: calculateExposureAverage(recommendedExposureProducts, 'exposureStocks')
+    },
+    {
+      label: 'אג"ח',
+      current: calculateExposureAverage(currentExposureProducts, 'exposureBonds'),
+      recommended: calculateExposureAverage(recommendedExposureProducts, 'exposureBonds')
+    },
+    {
+      label: 'מט"ח',
+      current: calculateExposureAverage(currentExposureProducts, 'exposureForeignCurrency'),
+      recommended: calculateExposureAverage(recommendedExposureProducts, 'exposureForeignCurrency')
+    },
+    {
+      label: 'השקעות חו"ל',
+      current: calculateExposureAverage(currentExposureProducts, 'exposureForeignInvestments'),
+      recommended: calculateExposureAverage(recommendedExposureProducts, 'exposureForeignInvestments')
+    }
+  ]
+    .filter(item => item.current !== 0 || item.recommended !== 0)
+    .sort((a, b) => Math.max(b.current, b.recommended) - Math.max(a.current, a.recommended));
 
   return (
     <View style={styles.section}>
@@ -186,12 +300,17 @@ export const ReturnsChartSection = ({
 
       {/* Category comparison */}
       {categoryData.length > 0 && (
-        <SimpleBarChart data={categoryData} title="תשואות לפי סוג מוצר" />
+        <DualBarChart data={categoryData} title="תשואות לפי סוג מוצר" valueLabel="תשואה ממוצעת (%)" />
       )}
 
       {/* Company comparison */}
       {companyData.length > 0 && (
-        <SimpleBarChart data={companyData} title="תשואות לפי חברה" />
+        <DualBarChart data={companyData} title="תשואות לפי חברה" valueLabel="תשואה ממוצעת (%)" />
+      )}
+
+      {/* Exposure comparison */}
+      {exposureData.length > 0 && (
+        <DualBarChart data={exposureData} title="השוואת חשיפות ממוצעת" valueLabel="חשיפה ממוצעת (%)" />
       )}
     </View>
   );
