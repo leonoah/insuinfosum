@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon, FolderOpen, Upload } from "lucide-react";
+import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon, FolderOpen, Upload, Share2, Mail, Download } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -1127,6 +1127,83 @@ const AppForm = () => {
                     <p className="text-xs text-muted-foreground mt-1 mr-6">
                       טבלת חשיפות מפורטת למניות, אג"ח, מט"ח והשקעות חו"ל
                     </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-6 border-t border-border">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Button
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-2 hover:bg-accent"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'סיכום פגישה',
+                            text: formData.decisions
+                          }).catch(() => {
+                            toast({
+                              title: "שיתוף לא זמין",
+                              description: "דפדפן זה אינו תומך בשיתוף",
+                              variant: "destructive"
+                            });
+                          });
+                        } else {
+                          toast({
+                            title: "שיתוף לא זמין",
+                            description: "דפדפן זה אינו תומך בשיתוף",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                    >
+                      <Share2 className="h-4 w-4" />
+                      שתף
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-2 hover:bg-accent"
+                      onClick={() => {
+                        const subject = encodeURIComponent('סיכום פגישה - ' + formData.clientName);
+                        const body = encodeURIComponent(
+                          `מצב קיים:\n${formData.currentSituation}\n\n` +
+                          `פערים וסיכונים:\n${formData.risks}\n\n` +
+                          `החלטות:\n${formData.decisions}`
+                        );
+                        window.open(`mailto:?subject=${subject}&body=${body}`);
+                      }}
+                    >
+                      <Mail className="h-4 w-4" />
+                      שלח במייל
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-2 hover:bg-accent"
+                      onClick={() => {
+                        const content = `סיכום פגישה - ${formData.clientName}\n\n` +
+                          `מצב קיים:\n${formData.currentSituation}\n\n` +
+                          `פערים וסיכונים:\n${formData.risks}\n\n` +
+                          `החלטות:\n${formData.decisions}`;
+                        
+                        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `סיכום-פגישה-${formData.clientName || 'לקוח'}.txt`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        
+                        toast({
+                          title: "הקובץ הורד בהצלחה",
+                          description: "הסיכום נשמר במכשיר שלך",
+                        });
+                      }}
+                    >
+                      <Download className="h-4 w-4" />
+                      הורדה
+                    </Button>
                   </div>
                 </div>
               </CardContent>
