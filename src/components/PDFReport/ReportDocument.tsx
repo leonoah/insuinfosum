@@ -12,6 +12,7 @@ import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/products';
 import { ExposureTableSection } from './sections/ExposureTableSection';
 import { ReturnsChartSection } from './sections/ReturnsChartSection';
+import { formatCurrency } from '@/utils/numberFormat';
 
 // Disable hyphenation entirely to avoid RTL letter reordering
 Font.registerHyphenationCallback((word) => [word]);
@@ -229,7 +230,7 @@ export const ReportDocument = ({
                     <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
                     <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
                     <Text style={[styles.tableCell, { width: '11%' }]}>
-                      {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
+                      {product.amount ? formatCurrency(product.amount) : '-'}
                     </Text>
                     <Text style={[styles.tableCell, { width: '10%' }]}>
                       {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
@@ -272,7 +273,7 @@ export const ReportDocument = ({
                     <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
                     <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
                     <Text style={[styles.tableCell, { width: '11%' }]}>
-                      {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
+                      {product.amount ? formatCurrency(product.amount) : '-'}
                     </Text>
                     <Text style={[styles.tableCell, { width: '10%' }]}>
                       {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}

@@ -1,6 +1,7 @@
 import { View, Text } from '@react-pdf/renderer';
 import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
+import { formatCurrency, formatCurrencyWithSign } from '@/utils/numberFormat';
 
 interface ExecutiveSummarySectionProps {
   highlightBullets: string[];
@@ -39,17 +40,17 @@ export const ExecutiveSummarySection = ({
 
       <View style={styles.statsBox}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>₪{totalCurrentAmount.toLocaleString()}</Text>
+          <Text style={styles.statValue}>{formatCurrency(totalCurrentAmount)}</Text>
           <Text style={styles.statLabel}>סה"כ צבירה נוכחית</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: difference >= 0 ? '#10b981' : '#ef4444' }]}>
-            {difference >= 0 ? '+' : ''}₪{difference.toLocaleString()}
+            {formatCurrencyWithSign(difference)}
           </Text>
           <Text style={styles.statLabel}>שינוי מוצע</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>₪{totalRecommendedAmount.toLocaleString()}</Text>
+          <Text style={styles.statValue}>{formatCurrency(totalRecommendedAmount)}</Text>
           <Text style={styles.statLabel}>סה"כ צבירה מוצעת</Text>
         </View>
       </View>
@@ -63,7 +64,7 @@ export const ExecutiveSummarySection = ({
               <Text style={[styles.tableCell, { width: '16%' }]}>חברה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>קטגוריה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>מסלול</Text>
-              <Text style={[styles.tableCell, { width: '14%' }]}>סכום צבירה</Text>
+                <Text style={[styles.tableCell, { width: '14%' }]}>סכום צבירה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>דמי ניהול הפקדה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>דמי ניהול צבירה</Text>
               <Text style={[styles.tableCell, { width: '14%' }]}>הערות</Text>
@@ -74,7 +75,7 @@ export const ExecutiveSummarySection = ({
                 <Text style={[styles.tableCell, { width: '14%' }]}>{product.category}</Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>{product.investmentTrack}</Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>
-                  {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
+                  {product.amount ? formatCurrency(product.amount) : '-'}
                 </Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
@@ -109,7 +110,7 @@ export const ExecutiveSummarySection = ({
                 <Text style={[styles.tableCell, { width: '14%' }]}>{product.category}</Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>{product.investmentTrack}</Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>
-                  {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
+                  {product.amount ? formatCurrency(product.amount) : '-'}
                 </Text>
                 <Text style={[styles.tableCell, { width: '14%' }]}>
                   {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}

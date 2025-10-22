@@ -1,6 +1,7 @@
 import { View, Text, Svg, Rect, Path } from '@react-pdf/renderer';
 import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
+import { formatCurrency, formatCurrencyWithSign } from '@/utils/numberFormat';
 
 interface ComparisonTableSectionProps {
   currentProducts: SelectedProduct[];
@@ -41,7 +42,7 @@ export const ComparisonTableSection = ({
             </Svg>
           </View>
           <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>מצב קיים</Text>
-          <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>₪{stats.totalCurrentAmount.toLocaleString()}</Text>
+          <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>{formatCurrency(stats.totalCurrentAmount)}</Text>
           <Text style={{ fontSize: 10, color: '#94a3b8' }}>{currentProducts.length} מוצרים</Text>
         </View>
 
@@ -53,7 +54,7 @@ export const ComparisonTableSection = ({
             </Svg>
           </View>
           <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>מצב מוצע</Text>
-          <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>₪{stats.totalRecommendedAmount.toLocaleString()}</Text>
+          <Text style={{ fontSize: 18, color: '#06b6d4', marginBottom: 3 }}>{formatCurrency(stats.totalRecommendedAmount)}</Text>
           <Text style={{ fontSize: 10, color: '#94a3b8' }}>{recommendedProducts.length} מוצרים</Text>
         </View>
 
@@ -72,7 +73,7 @@ export const ComparisonTableSection = ({
           </View>
           <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>הפרש</Text>
           <Text style={{ fontSize: 18, color: difference >= 0 ? '#10b981' : '#ef4444', marginBottom: 3 }}>
-            {difference >= 0 ? '+' : ''}₪{Math.abs(difference).toLocaleString()}
+            {formatCurrencyWithSign(difference)}
           </Text>
           <Text style={{ fontSize: 10, color: '#94a3b8' }}>מוצרים</Text>
         </View>
@@ -91,10 +92,10 @@ export const ComparisonTableSection = ({
         {/* Total Accumulation Row */}
         <View style={styles.tableRow}>
           <Text style={[styles.tableCell, { flex: 2 }]}>סה"כ צבירה</Text>
-          <Text style={styles.tableCell}>₪{stats.totalCurrentAmount.toLocaleString()}</Text>
-          <Text style={styles.tableCell}>₪{stats.totalRecommendedAmount.toLocaleString()}</Text>
+          <Text style={styles.tableCell}>{formatCurrency(stats.totalCurrentAmount)}</Text>
+          <Text style={styles.tableCell}>{formatCurrency(stats.totalRecommendedAmount)}</Text>
           <Text style={[styles.tableCell, { color: difference >= 0 ? '#10b981' : '#ef4444' }]}>
-            {difference >= 0 ? '+' : ''}₪{Math.abs(difference).toLocaleString()}
+            {formatCurrencyWithSign(difference)}
           </Text>
         </View>
 
