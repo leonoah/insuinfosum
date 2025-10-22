@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-final.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const AppNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,6 +48,8 @@ const AppNavigation = () => {
               </Link>
             ))}
             
+            <ThemeToggle />
+            
             <Button 
               asChild 
               className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-6 rounded-2xl shadow-glow"
@@ -56,14 +59,16 @@ const AppNavigation = () => {
           </div>
 
           {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}

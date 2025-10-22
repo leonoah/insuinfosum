@@ -57,6 +57,53 @@
     
     --radius: 1.5rem;
   }
+
+  .light {
+    /* Core Light Glassy Theme */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 10%;
+    
+    /* Glass surfaces */
+    --glass-background: 210 20% 95%;
+    --glass-foreground: 215 25% 10%;
+    --glass-border: 215 15% 80%;
+    
+    /* Primary accent - Turquoise */
+    --primary: 188 97% 42%;
+    --primary-foreground: 210 20% 98%;
+    --primary-hover: 188 97% 35%;
+    
+    /* Secondary surfaces */
+    --secondary: 210 15% 90%;
+    --secondary-foreground: 215 25% 10%;
+    
+    /* Muted elements */
+    --muted: 210 15% 92%;
+    --muted-foreground: 215 12% 45%;
+    
+    /* Accent elements */
+    --accent: 210 15% 92%;
+    --accent-foreground: 215 25% 10%;
+    
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+    
+    /* Interactive elements */
+    --border: 215 15% 80%;
+    --input-background: 0 0% 100%;
+    --input-foreground: 215 25% 10%;
+    --ring: 188 97% 42%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(188, 97%, 42%) 0%, hsl(215, 60%, 70%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
+    
+    /* Shadows and effects */
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --shadow-glow: 0 0 40px rgba(6, 182, 212, 0.2);
+    --backdrop-blur: blur(20px);
+  }
 }
 
 @layer base {
@@ -72,10 +119,20 @@
   body {
     @apply bg-background text-foreground;
     background: hsl(var(--background));
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  body:not(.light) {
     background-image: 
       radial-gradient(circle at 25% 25%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
       radial-gradient(circle at 75% 75%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
-    min-height: 100vh;
+  }
+  
+  .light body {
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
   }
   
   /* Glass morphism utilities */
@@ -104,16 +161,28 @@
   }
   
   ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  :root:not(.light) ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  :root:not(.light) ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  :root:not(.light) ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
   
@@ -208,19 +277,17 @@
 }
 
 /* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .transcript-highlights .product-name {
-    color: hsl(142, 76%, 60%);
-    background-color: hsl(142, 76%, 15%);
-  }
-  
-  .transcript-highlights .company-name {
-    color: hsl(262, 83%, 75%);
-    background-color: hsl(262, 83%, 15%);
-  }
-  
-  .transcript-highlights .numbers {
-    color: hsl(0, 84%, 70%);
-    background-color: hsl(0, 84%, 15%);
-  }
+.dark .transcript-highlights .product-name {
+  color: hsl(142, 76%, 60%);
+  background-color: hsl(142, 76%, 15%);
+}
+
+.dark .transcript-highlights .company-name {
+  color: hsl(262, 83%, 75%);
+  background-color: hsl(262, 83%, 15%);
+}
+
+.dark .transcript-highlights .numbers {
+  color: hsl(0, 84%, 70%);
+  background-color: hsl(0, 84%, 15%);
 }
