@@ -117,12 +117,12 @@ const TEMPLATE_ICONS_MAP: Record<string, LucideIcon> = TEMPLATE_ICON_OPTIONS.red
 );
 
 const EXPOSURE_FIELDS = [
-  { key: "exposureStocks", label: "חשיפה למניות" },
-  { key: "exposureBonds", label: "חשיפה לאג"ח" },
-  { key: "exposureForeignCurrency", label: "חשיפה למט"ח" },
-  { key: "exposureForeignInvestments", label: "חשיפה להשקעות חו"ל" },
-  { key: "exposureIsrael", label: "חשיפה לישראל" },
-  { key: "exposureIlliquidAssets", label: "נכסים לא סחירים" },
+  { key: "exposureStocks", label: 'חשיפה למניות' },
+  { key: "exposureBonds", label: 'חשיפה לאג"ח' },
+  { key: "exposureForeignCurrency", label: 'חשיפה למט"ח' },
+  { key: "exposureForeignInvestments", label: 'חשיפה להשקעות חו"ל' },
+  { key: "exposureIsrael", label: 'חשיפה לישראל' },
+  { key: "exposureIlliquidAssets", label: 'נכסים לא סחירים' },
 ] as const satisfies ReadonlyArray<{ key: keyof SelectedProduct; label: string }>;
 
 type ExposureKey = typeof EXPOSURE_FIELDS[number]["key"];
@@ -555,7 +555,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     setTemplateFormState({
       id: template.id,
       name: template.name,
-      icon: template.icon || TEMPLATE_ICON_OPTIONS[0]?.value ?? "star",
+      icon: (template.icon || TEMPLATE_ICON_OPTIONS[0]?.value) ?? "star",
       sections: { ...template.sections },
       sectionOrder: template.sectionOrder && template.sectionOrder.length > 0
         ? template.sectionOrder.filter((key): key is ReportSectionKey => REPORT_SECTION_KEYS.includes(key))
@@ -1568,7 +1568,7 @@ ${agentData.name}`;
               <Textarea
                 value={customSectionContent}
                 onChange={(e) => setCustomSectionContent(e.target.value)}
-                placeholder="הקלד כאן טקסט שתרצה שיופיע בכל דו"ח עבור סוג זה."
+                placeholder='הקלד כאן טקסט שתרצה שיופיע בכל דו"ח עבור סוג זה.'
                 rows={4}
               />
             </div>
@@ -1733,7 +1733,7 @@ ${agentData.name}`;
                     <Textarea
                       value={templateFormState.customSectionContent}
                       onChange={(e) => setTemplateFormState(prev => prev ? { ...prev, customSectionContent: e.target.value } : prev)}
-                      placeholder="טקסט שיופיע בכל דו\"ח שנוצר מתבנית זו"
+                      placeholder='טקסט שיופיע בכל דו"ח שנוצר מתבנית זו'
                       rows={4}
                     />
                   </div>
