@@ -7,6 +7,8 @@ interface AdditionalDetailsSectionProps {
   decisions?: string;
   additionalNotes?: string;
   documents?: string[];
+  timeframes?: string;
+  nextSteps?: string;
 }
 
 export const AdditionalDetailsSection = ({
@@ -14,7 +16,9 @@ export const AdditionalDetailsSection = ({
   risks,
   decisions,
   additionalNotes,
-  documents
+  documents,
+  timeframes,
+  nextSteps
 }: AdditionalDetailsSectionProps) => {
   const stripHtml = (html: string) => {
     if (!html) return '';
@@ -25,7 +29,7 @@ export const AdditionalDetailsSection = ({
       .trim();
   };
 
-  const hasContent = currentSituation || risks || decisions || additionalNotes || (documents && documents.length > 0);
+  const hasContent = currentSituation || risks || decisions || additionalNotes || timeframes || nextSteps || (documents && documents.length > 0);
 
   if (!hasContent) {
     return null;
@@ -53,6 +57,20 @@ export const AdditionalDetailsSection = ({
         <View style={{ marginBottom: 15 }}>
           <Text style={styles.sectionSubtitle}>החלטות</Text>
           <Text style={styles.text}>{stripHtml(decisions)}</Text>
+        </View>
+      )}
+
+      {timeframes && (
+        <View style={{ marginBottom: 15 }}>
+          <Text style={styles.sectionSubtitle}>לוחות זמנים</Text>
+          <Text style={styles.text}>{stripHtml(timeframes)}</Text>
+        </View>
+      )}
+
+      {nextSteps && (
+        <View style={{ marginBottom: 15 }}>
+          <Text style={styles.sectionSubtitle}>משימות להמשך</Text>
+          <Text style={styles.text}>{stripHtml(nextSteps)}</Text>
         </View>
       )}
 
