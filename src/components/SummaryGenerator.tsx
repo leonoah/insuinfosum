@@ -1607,6 +1607,48 @@ ${agentData.name}`;
           </div>
         </div>
 
+        {/* Quick Actions Bar */}
+        <div className="glass p-6 rounded-2xl border border-glass-border mb-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">פעולות מהירות:</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => sendReportByEmail()}
+            >
+              <Mail className="h-5 w-5" />
+              <span className="text-sm">שליחה במייל</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => sendReportByWhatsApp()}
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span className="text-sm">שליחה בוואטסאפ</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => shareReport()}
+            >
+              <Share className="h-5 w-5" />
+              <span className="text-sm">שתף</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => downloadReport()}
+            >
+              <Download className="h-5 w-5" />
+              <span className="text-sm">הורד PDF</span>
+            </Button>
+          </div>
+        </div>
+
         <Dialog
           open={showManageTemplates}
           onOpenChange={(open) => {
