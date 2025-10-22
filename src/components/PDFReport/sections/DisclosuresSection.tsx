@@ -1,11 +1,11 @@
 import { View, Text } from '@react-pdf/renderer';
-import { styles } from '../styles';
 
 interface DisclosuresSectionProps {
   text: string;
+  styles: any;
 }
 
-export const DisclosuresSection = ({ text }: DisclosuresSectionProps) => {
+export const DisclosuresSection = ({ text, styles }: DisclosuresSectionProps) => {
   if (!text) {
     return null;
   }

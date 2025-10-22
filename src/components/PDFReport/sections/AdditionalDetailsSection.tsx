@@ -1,5 +1,4 @@
 import { View, Text } from '@react-pdf/renderer';
-import { styles } from '../styles';
 
 interface AdditionalDetailsSectionProps {
   currentSituation?: string;
@@ -9,6 +8,7 @@ interface AdditionalDetailsSectionProps {
   documents?: string[];
   timeframes?: string;
   nextSteps?: string;
+  styles: any;
 }
 
 export const AdditionalDetailsSection = ({
@@ -18,7 +18,8 @@ export const AdditionalDetailsSection = ({
   additionalNotes,
   documents,
   timeframes,
-  nextSteps
+  nextSteps,
+  styles
 }: AdditionalDetailsSectionProps) => {
   const stripHtml = (html: string) => {
     if (!html) return '';

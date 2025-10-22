@@ -1,5 +1,4 @@
 import { View, Text } from '@react-pdf/renderer';
-import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
 
 interface ExecutiveSummarySectionProps {
@@ -9,6 +8,7 @@ interface ExecutiveSummarySectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
   includeProductsTable?: boolean;
+  styles: any;
 }
 
 export const ExecutiveSummarySection = ({
@@ -17,7 +17,8 @@ export const ExecutiveSummarySection = ({
   totalRecommendedAmount,
   currentProducts,
   recommendedProducts,
-  includeProductsTable = true
+  includeProductsTable = true,
+  styles
 }: ExecutiveSummarySectionProps) => {
   const difference = totalRecommendedAmount - totalCurrentAmount;
   

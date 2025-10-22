@@ -1,15 +1,16 @@
 import { View, Text } from '@react-pdf/renderer';
-import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
 
 interface ReturnsChartSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
+  styles: any;
 }
 
 export const ReturnsChartSection = ({
   currentProducts,
-  recommendedProducts
+  recommendedProducts,
+  styles
 }: ReturnsChartSectionProps) => {
   // Filter products with returns data
   const currentWithReturns = currentProducts.filter(p => p.returns !== undefined && p.returns !== null);

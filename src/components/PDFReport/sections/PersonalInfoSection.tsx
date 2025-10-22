@@ -1,5 +1,4 @@
 import { View, Text } from '@react-pdf/renderer';
-import { styles } from '../styles';
 
 interface PersonalInfoSectionProps {
   clientName: string;
@@ -9,6 +8,7 @@ interface PersonalInfoSectionProps {
   meetingDate: string;
   location?: string;
   isAnonymous: boolean;
+  styles: any;
 }
 
 export const PersonalInfoSection = ({
@@ -18,7 +18,8 @@ export const PersonalInfoSection = ({
   clientEmail,
   meetingDate,
   location,
-  isAnonymous
+  isAnonymous,
+  styles
 }: PersonalInfoSectionProps) => {
   if (isAnonymous) {
     return null;

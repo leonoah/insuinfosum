@@ -1,14 +1,14 @@
 import { View, Text, Image } from '@react-pdf/renderer';
-import { styles } from '../styles';
 
 interface ReportHeaderProps {
   title: string;
   date: string;
   agentName: string;
   logoUrl?: string | null;
+  styles: any;
 }
 
-export const ReportHeader = ({ title, date, agentName, logoUrl }: ReportHeaderProps) => {
+export const ReportHeader = ({ title, date, agentName, logoUrl, styles }: ReportHeaderProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('he-IL', {

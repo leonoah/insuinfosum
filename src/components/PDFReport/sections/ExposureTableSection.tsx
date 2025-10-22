@@ -1,15 +1,16 @@
 import { View, Text } from '@react-pdf/renderer';
-import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
 
 interface ExposureTableSectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
+  styles: any;
 }
 
 export const ExposureTableSection = ({
   currentProducts,
-  recommendedProducts
+  recommendedProducts,
+  styles
 }: ExposureTableSectionProps) => {
   // Only show products that have exposure data AND includeExposureData flag is true
   const currentWithExposure = currentProducts.filter(p => 

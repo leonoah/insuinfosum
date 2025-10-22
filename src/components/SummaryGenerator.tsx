@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -690,6 +691,8 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       }))
     };
 
+    const pdfTheme = theme === 'light' ? 'light' : 'dark';
+    
     const blob = await pdf(
       <ReportDocument
         formData={updatedFormData}
@@ -702,6 +705,7 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         nextStepsText={nextStepsText}
         customSectionTitle={customSectionTitle}
         customSectionContent={customSectionContent}
+        theme={pdfTheme}
       />
     ).toBlob();
     

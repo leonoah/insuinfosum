@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, Font } from '@react-pdf/renderer';
 import { Fragment } from 'react';
 import type { ReactElement } from 'react';
-import { styles } from './styles';
+import { createStyles } from './styles';
 import { ReportHeader } from './sections/ReportHeader';
 import { PersonalInfoSection } from './sections/PersonalInfoSection';
 import { ExecutiveSummarySection } from './sections/ExecutiveSummarySection';
@@ -122,6 +122,7 @@ interface ReportDocumentProps {
   customSectionTitle?: string;
   customSectionContent?: string;
   sectionOrder?: ReportSectionKey[];
+  theme?: 'light' | 'dark';
 }
 
 export const ReportDocument = ({
@@ -134,8 +135,11 @@ export const ReportDocument = ({
   nextStepsText,
   customSectionTitle,
   customSectionContent,
-  sectionOrder
+  sectionOrder,
+  theme = 'dark'
 }: ReportDocumentProps) => {
+  const styles = createStyles(theme);
+  
   const orderedSectionKeys =
     sectionOrder && sectionOrder.length > 0
       ? sectionOrder
@@ -151,6 +155,7 @@ export const ReportDocument = ({
         meetingDate={formData.meetingDate}
         location={formData.meetingLocation}
         isAnonymous={formData.isAnonymous}
+        styles={styles}
       />
     ) : null,
     executiveSummary: selectedSections.executiveSummary ? (
@@ -161,6 +166,7 @@ export const ReportDocument = ({
         currentProducts={productStats.currentProducts}
         recommendedProducts={productStats.recommendedProducts}
         includeProductsTable={false}
+        styles={styles}
       />
     ) : null,
     conversationInsights: selectedSections.conversationInsights ? (
@@ -180,6 +186,7 @@ export const ReportDocument = ({
             : formData.timeframes
         }
         nextSteps={nextStepsText}
+        styles={styles}
       />
     ) : null,
     portfolioComparison: selectedSections.portfolioComparison ? (
@@ -194,12 +201,14 @@ export const ReportDocument = ({
           avgCurrentAccumulation: productStats.avgCurrentAccumulation,
           avgRecommendedAccumulation: productStats.avgRecommendedAccumulation,
         }}
+        styles={styles}
       />
     ) : null,
     returnsComparison: selectedSections.returnsComparison ? (
       <ReturnsChartSection
         currentProducts={productStats.currentProducts}
         recommendedProducts={productStats.recommendedProducts}
+        styles={styles}
       />
     ) : null,
     productDetails:
@@ -299,10 +308,11 @@ export const ReportDocument = ({
         <ExposureTableSection
           currentProducts={productStats.currentProducts}
           recommendedProducts={productStats.recommendedProducts}
+          styles={styles}
         />
       ) : null,
     disclosures: selectedSections.disclosures ? (
-      <DisclosuresSection text={disclosureText} />
+      <DisclosuresSection text={disclosureText} styles={styles} />
     ) : null,
   };
 
@@ -315,6 +325,7 @@ export const ReportDocument = ({
           date={formData.meetingDate}
           agentName={agentData.name}
           logoUrl={agentData.logo_url}
+          styles={styles}
         />
 
         {orderedSectionKeys.map((key) => {
@@ -337,6 +348,7 @@ export const ReportDocument = ({
           agentPhone={agentData.phone}
           agentEmail={agentData.email}
           logoUrl={agentData.logo_url}
+          styles={styles}
         />
       </Page>
     </Document>

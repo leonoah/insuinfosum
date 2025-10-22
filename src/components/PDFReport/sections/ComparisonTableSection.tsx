@@ -1,5 +1,4 @@
 import { View, Text, Svg, Rect, Path } from '@react-pdf/renderer';
-import { styles } from '../styles';
 import { SelectedProduct } from '@/types/products';
 
 interface ComparisonTableSectionProps {
@@ -13,12 +12,14 @@ interface ComparisonTableSectionProps {
     avgCurrentAccumulation: number;
     avgRecommendedAccumulation: number;
   };
+  styles: any;
 }
 
 export const ComparisonTableSection = ({
   currentProducts,
   recommendedProducts,
-  stats
+  stats,
+  styles
 }: ComparisonTableSectionProps) => {
   const difference = stats.totalRecommendedAmount - stats.totalCurrentAmount;
   const productsDiff = recommendedProducts.length - currentProducts.length;

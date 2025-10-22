@@ -1,5 +1,4 @@
 import { View, Text, Image } from '@react-pdf/renderer';
-import { styles } from '../styles';
 import inMindsLogo from '@/assets/inminds-logo-final-transparent.png';
 
 interface ReportFooterProps {
@@ -7,9 +6,10 @@ interface ReportFooterProps {
   agentPhone?: string | null;
   agentEmail?: string | null;
   logoUrl?: string | null;
+  styles: any;
 }
 
-export const ReportFooter = ({ agentName, agentPhone, agentEmail, logoUrl }: ReportFooterProps) => {
+export const ReportFooter = ({ agentName, agentPhone, agentEmail, logoUrl, styles }: ReportFooterProps) => {
   return (
     <View style={styles.footer}>
       <View style={{ alignItems: 'center', width: '100%' }}>
