@@ -143,9 +143,9 @@ const AppForm = () => {
 
   // Required fields: meeting context, current situation, and client details only if not anonymous
   const isSummaryEligible = Boolean(
-    formData.meetingContext.trim() &&
-    formData.currentSituation.trim() &&
-    (formData.isAnonymous || (formData.clientName.trim() && formData.clientPhone.trim()))
+    formData.meetingContext?.trim() &&
+    formData.currentSituation?.trim() &&
+    (formData.isAnonymous || (formData.clientName?.trim() && formData.clientPhone?.trim()))
   );
 
   // Load clients and saved forms on component mount
@@ -287,7 +287,13 @@ const AppForm = () => {
       returns: p.returns 
     })));
     
-    setFormData(savedForm.form_data as FormData);
+    // Ensure meetingContext exists in loaded data
+    const loadedData = {
+      ...savedForm.form_data,
+      meetingContext: savedForm.form_data.meetingContext || ""
+    };
+    
+    setFormData(loadedData as FormData);
     setShowLoadDialog(false);
     
     toast({
@@ -379,7 +385,13 @@ const AppForm = () => {
   const loadDraft = () => {
     const draft = localStorage.getItem('insurNote-draft');
     if (draft) {
-      setFormData(JSON.parse(draft));
+      const parsedData = JSON.parse(draft);
+      // Ensure meetingContext exists in loaded draft
+      const loadedData = {
+        ...parsedData,
+        meetingContext: parsedData.meetingContext || ""
+      };
+      setFormData(loadedData);
       toast({
         title: "טיוטה נטענה",
         description: "הנתונים השמורים נטענו בהצלחה",
