@@ -17,6 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon, FolderOpen, Upload, Share2, Mail, Download } from "lucide-react";
+import { pdf } from "@react-pdf/renderer";
+import { ReportDocument } from "@/components/PDFReport/ReportDocument";
+import agentLogo from "@/assets/agent-logo.png";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -98,6 +101,12 @@ const AppForm = () => {
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
+  const [agentData, setAgentData] = useState({
+    name: "הסוכן שלכם",
+    phone: null as string | null,
+    email: null as string | null,
+    logo_url: null as string | null
+  });
   const [hasSkippedProducts, setHasSkippedProducts] = useState(false);
   const [savedForms, setSavedForms] = useState<SavedForm[]>([]);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
@@ -142,7 +151,35 @@ const AppForm = () => {
   useEffect(() => {
     loadClients();
     loadSavedForms();
+    loadAgentInfo();
   }, []);
+
+  const loadAgentInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('agent_info')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading agent info:', error);
+        return;
+      }
+
+      if (data) {
+        setAgentData({
+          name: data.name || "הסוכן שלכם",
+          phone: data.phone,
+          email: data.email,
+          logo_url: data.logo_url
+        });
+      }
+    } catch (error) {
+      console.error('Error loading agent info:', error);
+    }
+  };
 
   const loadClients = async () => {
     try {
@@ -346,6 +383,229 @@ const AppForm = () => {
         title: "טיוטה נטענה",
         description: "הנתונים השמורים נטענו בהצלחה",
       });
+    }
+  };
+
+  const generateReactPDF = async (): Promise<Blob> => {
+    const currentProducts = formData.products.filter(p => p.type === 'current');
+    const recommendedProducts = formData.products.filter(p => p.type === 'recommended');
+
+    const totalCurrentAmount = currentProducts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalRecommendedAmount = recommendedProducts.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const amountDifference = totalRecommendedAmount - totalCurrentAmount;
+    const productCountDifference = recommendedProducts.length - currentProducts.length;
+
+    const avgCurrentDeposit = currentProducts.length > 0
+      ? currentProducts.reduce((sum, p) => sum + (p.managementFeeOnDeposit || 0), 0) / currentProducts.length
+      : 0;
+    const avgRecommendedDeposit = recommendedProducts.length > 0
+      ? recommendedProducts.reduce((sum, p) => sum + (p.managementFeeOnDeposit || 0), 0) / recommendedProducts.length
+      : 0;
+    const avgCurrentAccumulation = currentProducts.length > 0
+      ? currentProducts.reduce((sum, p) => sum + (p.managementFeeOnAccumulation || 0), 0) / currentProducts.length
+      : 0;
+    const avgRecommendedAccumulation = recommendedProducts.length > 0
+      ? recommendedProducts.reduce((sum, p) => sum + (p.managementFeeOnAccumulation || 0), 0) / recommendedProducts.length
+      : 0;
+
+    const riskShiftCount = recommendedProducts.filter(p => p.riskLevelChange && p.riskLevelChange !== 'no-change' && p.riskLevelChange.trim() !== '').length;
+
+    const highlightBullets: string[] = [];
+
+    if (recommendedProducts.length === 0 && currentProducts.length === 0) {
+      highlightBullets.push('לא הוזנו נתוני מוצרים להשוואה בשלב זה.');
+    } else {
+      if (recommendedProducts.length > 0 && currentProducts.length === 0) {
+        highlightBullets.push(`נבנה תיק מוצע חדש הכולל ${recommendedProducts.length} מוצרים מותאמים.`);
+      }
+
+      if (amountDifference > 0) {
+        highlightBullets.push(`הגדלת היקף החיסכון המצטבר ב-₪${amountDifference.toLocaleString()}.`);
+      } else if (amountDifference < 0) {
+        highlightBullets.push(`הפחתת היקף החיסכון המצטבר ב-₪${Math.abs(amountDifference).toLocaleString()} לטובת איזון או נזילות.`);
+      }
+
+      if (productCountDifference > 0) {
+        highlightBullets.push(`נוספו ${productCountDifference} מוצרים חדשים לפיזור ולהעמקת הכיסוי.`);
+      } else if (productCountDifference < 0) {
+        highlightBullets.push(`צומצמו ${Math.abs(productCountDifference)} מוצרים לצורך ייעול וחיסכון בדמי ניהול.`);
+      }
+
+      const depositDelta = avgRecommendedDeposit - avgCurrentDeposit;
+      if (depositDelta < 0) {
+        highlightBullets.push(`שיפור דמי הניהול הממוצעים מהפקדה ב-${Math.abs(depositDelta).toFixed(2)}%.`);
+      } else if (depositDelta > 0) {
+        highlightBullets.push(`דמי הניהול הממוצעים מהפקדה עלו ב-${depositDelta.toFixed(2)}% עבור פתרון מקצועי יותר.`);
+      }
+
+      const accumulationDelta = avgRecommendedAccumulation - avgCurrentAccumulation;
+      if (accumulationDelta < 0) {
+        highlightBullets.push(`הפחתת דמי הניהול מהצבירה ב-${Math.abs(accumulationDelta).toFixed(2)}%.`);
+      }
+
+      if (riskShiftCount > 0) {
+        highlightBullets.push(`בוצעו ${riskShiftCount} התאמות ברמות הסיכון של התיק.`);
+      }
+    }
+
+    const productStats = {
+      currentProducts,
+      recommendedProducts,
+      totalCurrentAmount,
+      totalRecommendedAmount,
+      amountDifference,
+      productCountDifference,
+      avgCurrentDeposit,
+      avgRecommendedDeposit,
+      avgCurrentAccumulation,
+      avgRecommendedAccumulation,
+      riskShiftCount,
+      highlightBullets,
+    };
+
+    // Default sections
+    const selectedSections = {
+      personalInfo: !formData.isAnonymous,
+      executiveSummary: true,
+      detailedBreakdown: true,
+      additionalNotes: true,
+      disclosures: true,
+      nextSteps: formData.includeDecisionsInReport,
+    };
+
+    const updatedFormData = {
+      ...formData,
+      products: formData.products.map(product => ({
+        ...product,
+        includeExposureData: formData.includeExposureReport !== false
+      }))
+    };
+
+    const blob = await pdf(
+      <ReportDocument 
+        formData={updatedFormData}
+        agentData={agentData}
+        productStats={productStats}
+        selectedSections={selectedSections}
+        additionalNotesText=""
+        disclosureText="הסיכונים הכרוכים בהשקעה כוללים אובדן חלק או כל ההון המושקע. תשואות עבר אינן מבטיחות תשואות עתידיות. יש להתייעץ עם יועץ השקעות מוסמך לפני קבלת החלטה."
+        nextStepsText=""
+      />
+    ).toBlob();
+    
+    return blob;
+  };
+
+  const sendReportByEmail = async () => {
+    try {
+      toast({
+        title: "מייצר דוח...",
+        description: "אנא המתן",
+      });
+
+      const blob = await generateReactPDF();
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+      
+      const pdfBase64 = await base64Promise;
+      
+      const response = await supabase.functions.invoke('send-report-email', {
+        body: {
+          to: formData.clientEmail || 'client@example.com',
+          subject: `דוח סיכום פגישת ביטוח - ${formData.clientName}`,
+          clientName: formData.clientName,
+          meetingDate: formData.meetingDate,
+          pdfBase64: pdfBase64,
+          agentData: agentData,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast({
+        title: "האימייל נשלח בהצלחה",
+        description: `הדוח נשלח למייל ${formData.clientEmail}`,
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "שגיאה בשליחת מייל",
+        description: "לא הצלחנו לשלוח את הדוח. אנא נסה שוב.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadPDF = async () => {
+    try {
+      toast({
+        title: "מייצר דוח...",
+        description: "אנא המתן",
+      });
+
+      const blob = await generateReactPDF();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `דוח-סיכום-${formData.clientName || 'לקוח'}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "הדוח הורד בהצלחה",
+        description: "הקובץ נשמר במכשיר שלך",
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: "שגיאה בהורדה",
+        description: "לא הצלחנו להוריד את הדוח. אנא נסה שוב.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sharePDF = async () => {
+    try {
+      toast({
+        title: "מייצר דוח...",
+        description: "אנא המתן",
+      });
+
+      const blob = await generateReactPDF();
+      const file = new File([blob], `דוח-סיכום-${formData.clientName || 'לקוח'}.pdf`, { type: 'application/pdf' });
+      
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'סיכום פגישה',
+          files: [file]
+        });
+      } else {
+        toast({
+          title: "שיתוף לא זמין",
+          description: "דפדפן זה אינו תומך בשיתוף קבצים. הדוח יורד במקום.",
+        });
+        await downloadPDF();
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing PDF:', error);
+        toast({
+          title: "שגיאה בשיתוף",
+          description: "לא הצלחנו לשתף את הדוח. אנא נסה שוב.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -1136,73 +1396,28 @@ const AppForm = () => {
                     <Button
                       variant="outline"
                       className="rounded-xl flex items-center justify-center gap-2 hover:bg-accent"
-                      onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({
-                            title: 'סיכום פגישה',
-                            text: formData.decisions
-                          }).catch(() => {
-                            toast({
-                              title: "שיתוף לא זמין",
-                              description: "דפדפן זה אינו תומך בשיתוף",
-                              variant: "destructive"
-                            });
-                          });
-                        } else {
-                          toast({
-                            title: "שיתוף לא זמין",
-                            description: "דפדפן זה אינו תומך בשיתוף",
-                            variant: "destructive"
-                          });
-                        }
-                      }}
+                      onClick={sharePDF}
                     >
                       <Share2 className="h-4 w-4" />
-                      שתף
+                      שתף דוח PDF
                     </Button>
                     
                     <Button
                       variant="outline"
                       className="rounded-xl flex items-center justify-center gap-2 hover:bg-accent"
-                      onClick={() => {
-                        const subject = encodeURIComponent('סיכום פגישה - ' + formData.clientName);
-                        const body = encodeURIComponent(
-                          `מצב קיים:\n${formData.currentSituation}\n\n` +
-                          `פערים וסיכונים:\n${formData.risks}\n\n` +
-                          `החלטות:\n${formData.decisions}`
-                        );
-                        window.open(`mailto:?subject=${subject}&body=${body}`);
-                      }}
+                      onClick={sendReportByEmail}
                     >
                       <Mail className="h-4 w-4" />
-                      שלח במייל
+                      שלח דוח במייל
                     </Button>
                     
                     <Button
                       variant="outline"
                       className="rounded-xl flex items-center justify-center gap-2 hover:bg-accent"
-                      onClick={() => {
-                        const content = `סיכום פגישה - ${formData.clientName}\n\n` +
-                          `מצב קיים:\n${formData.currentSituation}\n\n` +
-                          `פערים וסיכונים:\n${formData.risks}\n\n` +
-                          `החלטות:\n${formData.decisions}`;
-                        
-                        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `סיכום-פגישה-${formData.clientName || 'לקוח'}.txt`;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                        
-                        toast({
-                          title: "הקובץ הורד בהצלחה",
-                          description: "הסיכום נשמר במכשיר שלך",
-                        });
-                      }}
+                      onClick={downloadPDF}
                     >
                       <Download className="h-4 w-4" />
-                      הורדה
+                      הורד דוח PDF
                     </Button>
                   </div>
                 </div>
