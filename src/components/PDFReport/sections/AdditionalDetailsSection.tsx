@@ -2,7 +2,6 @@ import { View, Text } from '@react-pdf/renderer';
 
 interface AdditionalDetailsSectionProps {
   currentSituation?: string;
-  risks?: string;
   decisions?: string;
   additionalNotes?: string;
   documents?: string[];
@@ -13,7 +12,6 @@ interface AdditionalDetailsSectionProps {
 
 export const AdditionalDetailsSection = ({
   currentSituation,
-  risks,
   decisions,
   additionalNotes,
   documents,
@@ -30,7 +28,7 @@ export const AdditionalDetailsSection = ({
       .trim();
   };
 
-  const hasContent = currentSituation || risks || decisions || additionalNotes || timeframes || nextSteps || (documents && documents.length > 0);
+  const hasContent = currentSituation || decisions || additionalNotes || timeframes || nextSteps || (documents && documents.length > 0);
 
   if (!hasContent) {
     return null;
@@ -44,13 +42,6 @@ export const AdditionalDetailsSection = ({
         <View style={{ marginBottom: 15 }}>
           <Text style={styles.sectionSubtitle}>מצב קיים</Text>
           <Text style={styles.text}>{stripHtml(currentSituation)}</Text>
-        </View>
-      )}
-
-      {risks && (
-        <View style={{ marginBottom: 15 }}>
-          <Text style={styles.sectionSubtitle}>פערים וסיכונים</Text>
-          <Text style={styles.text}>{stripHtml(risks)}</Text>
         </View>
       )}
 

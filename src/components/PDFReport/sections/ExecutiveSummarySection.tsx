@@ -9,6 +9,7 @@ interface ExecutiveSummarySectionProps {
   currentProducts: SelectedProduct[];
   recommendedProducts: SelectedProduct[];
   includeProductsTable?: boolean;
+  meetingContext?: string;
   styles: any;
 }
 
@@ -19,16 +20,21 @@ export const ExecutiveSummarySection = ({
   currentProducts,
   recommendedProducts,
   includeProductsTable = true,
+  meetingContext,
   styles
 }: ExecutiveSummarySectionProps) => {
   const difference = totalRecommendedAmount - totalCurrentAmount;
   
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>תקציר מנהלים</Text>
-      <Text style={styles.text}>
-        במסגרת השיחה הובהר המצב הקיים, הוצג המצב המוצע ונבחנו השינויים המומלצים. להלן תקציר השינויים העיקריים:
-      </Text>
+      <Text style={styles.sectionTitle}>רקע ועיקרי הפגישה</Text>
+      {meetingContext && meetingContext.trim() ? (
+        <Text style={styles.text}>{meetingContext}</Text>
+      ) : (
+        <Text style={styles.text}>
+          במסגרת השיחה הובהר המצב הקיים, הוצג המצב המוצע ונבחנו השינויים המומלצים. להלן תקציר השינויים העיקריים:
+        </Text>
+      )}
       
       <View style={styles.bulletList}>
         {highlightBullets.map((bullet, index) => (

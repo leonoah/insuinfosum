@@ -70,7 +70,7 @@ interface FormData {
   
   // Agent recommendations
   currentSituation: string;
-  risks: string;
+  meetingContext: string;
   recommendations: string[];
   estimatedCost: string;
   
@@ -121,7 +121,7 @@ const AppForm = () => {
     topics: [],
     isAnonymous: false,
     currentSituation: "",
-    risks: "",
+    meetingContext: "",
     recommendations: [""],
     estimatedCost: "",
     products: [],
@@ -647,7 +647,7 @@ const AppForm = () => {
 תאריך: ${formData.meetingDate || new Date().toLocaleDateString('he-IL')}
 נושאים: ${formData.topics}
 מצב קיים: ${formData.currentSituation}
-סיכונים: ${formData.risks}
+רקע ועיקרי הפגישה: ${formData.meetingContext}
 המלצות: ${formData.recommendations.join(', ')}
 עלות משוערת: ${formData.estimatedCost}
 החלטות: ${formData.decisions}`;
@@ -699,7 +699,7 @@ const AppForm = () => {
           },
           currentDecisions: {
             currentSituation: formData.currentSituation,
-            risks: formData.risks,
+            meetingContext: formData.meetingContext,
             decisions: formData.decisions
           },
           clientInfo: {
@@ -735,11 +735,11 @@ const AppForm = () => {
         return;
       }
 
-      if (data?.currentSituation || data?.risks || data?.decisions) {
+      if (data?.currentSituation || data?.meetingContext || data?.decisions) {
         setFormData(prev => ({
           ...prev,
           currentSituation: data.currentSituation || prev.currentSituation,
-          risks: data.risks || prev.risks,
+          meetingContext: data.meetingContext || prev.meetingContext,
           decisions: data.decisions || prev.decisions
         }));
         toast({
@@ -1220,8 +1220,8 @@ const AppForm = () => {
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    ימלא אוטומטי את 3 השדות על בסיס המוצרים שנבחרו (רק מוצרים פעילים) ובהתאם לרמת הפירוט שנבחרה
+                   <p className="text-xs text-muted-foreground text-center">
+                    ימלא אוטומטי את השדות על בסיס המוצרים שנבחרו (רק מוצרים פעילים) ובהתאם לרמת הפירוט שנבחרה
                   </p>
                 </div>
                 <div>
@@ -1246,21 +1246,21 @@ const AppForm = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="risks">פערים / סיכונים שהודגשו</Label>
+                    <Label htmlFor="meetingContext">רקע ועיקרי הפגישה</Label>
                     <VoiceTextInput
                       onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, risks: enhancedText }));
+                        setFormData(prev => ({ ...prev, meetingContext: enhancedText }));
                       }}
-                      textType="risks"
+                      textType="meetingContext"
                       buttonText="הקלטה קולית"
                     />
                   </div>
                   <Textarea
-                    id="risks"
-                    value={formData.risks}
-                    onChange={(e) => setFormData(prev => ({ ...prev, risks: e.target.value }))}
-                    className="mt-2 bg-input rounded-xl min-h-[100px]"
-                    placeholder="רשמו פערים וסיכונים שזוהו..."
+                    id="meetingContext"
+                    value={formData.meetingContext}
+                    onChange={(e) => setFormData(prev => ({ ...prev, meetingContext: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl min-h-[150px]"
+                    placeholder="תיאור כללי של הפגישה - מה שהוסכם, המטרות והנקודות העיקריות שדובר עליהן..."
                   />
                 </div>
 

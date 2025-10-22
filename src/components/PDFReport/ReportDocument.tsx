@@ -67,7 +67,7 @@ interface FormData {
   isAnonymous: boolean;
   products: SelectedProduct[];
   currentSituation?: string;
-  risks?: string;
+  meetingContext?: string;
   decisions?: string;
   documents?: string[];
   includeProductsTable?: boolean;
@@ -167,13 +167,13 @@ export const ReportDocument = ({
         currentProducts={productStats.currentProducts}
         recommendedProducts={productStats.recommendedProducts}
         includeProductsTable={false}
+        meetingContext={formData.meetingContext}
         styles={styles}
       />
     ) : null,
     conversationInsights: selectedSections.conversationInsights ? (
       <AdditionalDetailsSection
         currentSituation={formData.currentSituation}
-        risks={formData.risks}
         decisions={
           formData.includeDecisionsInReport === false
             ? undefined

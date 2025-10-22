@@ -62,8 +62,8 @@ const REPORT_SECTION_LABELS: Record<ReportSectionKey, { title: string; descripti
     icon: User,
   },
   executiveSummary: {
-    title: "תקציר מנהלים",
-    description: "תמונה מרוכזת של עיקרי ההמלצות והשינויים",
+    title: "רקע ועיקרי הפגישה",
+    description: "סיכום כללי של הפגישה והנקודות המרכזיות",
     icon: BarChart3,
   },
   conversationInsights: {
@@ -165,7 +165,7 @@ interface FormData {
   topics: string[];
   isAnonymous: boolean;
   currentSituation: string;
-  risks: string;
+  meetingContext: string;
   recommendations: string[];
   estimatedCost: string;
   products: SelectedProduct[];
@@ -249,10 +249,10 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   
   // Edit mode states for AI-processed texts
   const [editingCurrentSituation, setEditingCurrentSituation] = useState(false);
-  const [editingRisks, setEditingRisks] = useState(false);
+  const [editingMeetingContext, setEditingMeetingContext] = useState(false);
   const [editingDecisions, setEditingDecisions] = useState(false);
   const [tempCurrentSituation, setTempCurrentSituation] = useState("");
-  const [tempRisks, setTempRisks] = useState("");
+  const [tempMeetingContext, setTempMeetingContext] = useState("");
   const [tempDecisions, setTempDecisions] = useState("");
 
   useEffect(() => {
@@ -930,26 +930,26 @@ ${agentData.name}`;
     }
   };
 
-  const startEditingField = (field: 'currentSituation' | 'risks' | 'decisions') => {
+  const startEditingField = (field: 'currentSituation' | 'meetingContext' | 'decisions') => {
     if (field === 'currentSituation') {
       setTempCurrentSituation(formData.currentSituation || '');
       setEditingCurrentSituation(true);
-    } else if (field === 'risks') {
-      setTempRisks(formData.risks || '');
-      setEditingRisks(true);
+    } else if (field === 'meetingContext') {
+      setTempMeetingContext(formData.meetingContext || '');
+      setEditingMeetingContext(true);
     } else if (field === 'decisions') {
       setTempDecisions(formData.decisions || '');
       setEditingDecisions(true);
     }
   };
 
-  const saveEditedField = (field: 'currentSituation' | 'risks' | 'decisions') => {
+  const saveEditedField = (field: 'currentSituation' | 'meetingContext' | 'decisions') => {
     if (field === 'currentSituation') {
       formData.currentSituation = tempCurrentSituation;
       setEditingCurrentSituation(false);
-    } else if (field === 'risks') {
-      formData.risks = tempRisks;
-      setEditingRisks(false);
+    } else if (field === 'meetingContext') {
+      formData.meetingContext = tempMeetingContext;
+      setEditingMeetingContext(false);
     } else if (field === 'decisions') {
       formData.decisions = tempDecisions;
       setEditingDecisions(false);
@@ -961,11 +961,11 @@ ${agentData.name}`;
     });
   };
 
-  const cancelEditingField = (field: 'currentSituation' | 'risks' | 'decisions') => {
+  const cancelEditingField = (field: 'currentSituation' | 'meetingContext' | 'decisions') => {
     if (field === 'currentSituation') {
       setEditingCurrentSituation(false);
-    } else if (field === 'risks') {
-      setEditingRisks(false);
+    } else if (field === 'meetingContext') {
+      setEditingMeetingContext(false);
     } else if (field === 'decisions') {
       setEditingDecisions(false);
     }
@@ -1195,11 +1195,11 @@ ${agentData.name}`;
             </div>
           )}
 
-          {formData.risks && (
+          {formData.meetingContext && (
             <div>
-              <h4 className="font-semibold text-white mb-2">סיכונים וחשיפות:</h4>
-              <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-sm text-gray-300">
-                {formData.risks}
+              <h4 className="font-semibold text-white mb-2">רקע ועיקרי הפגישה:</h4>
+              <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-sm text-gray-300">
+                {formData.meetingContext}
               </div>
             </div>
           )}
@@ -1913,38 +1913,38 @@ ${agentData.name}`;
                       )}
                     </div>
                   )}
-                  {formData.risks && (
+                  {formData.meetingContext && (
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-foreground">פערים / סיכונים שהודגשו:</h4>
+                        <h4 className="font-semibold text-foreground">רקע ועיקרי הפגישה:</h4>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => startEditingField('risks')}
+                          onClick={() => startEditingField('meetingContext')}
                         >
                           <Edit3 className="w-4 h-4" />
                         </Button>
                       </div>
-                      {editingRisks ? (
+                      {editingMeetingContext ? (
                         <div className="space-y-2">
                           <Textarea
-                            value={tempRisks}
-                            onChange={(e) => setTempRisks(e.target.value)}
+                            value={tempMeetingContext}
+                            onChange={(e) => setTempMeetingContext(e.target.value)}
                             className="min-h-[100px]"
-                            placeholder="ערוך את הסיכונים והפערים..."
+                            placeholder="ערוך את רקע הפגישה..."
                           />
                           <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveEditedField('risks')}>
+                            <Button size="sm" onClick={() => saveEditedField('meetingContext')}>
                               שמור
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('risks')}>
+                            <Button size="sm" variant="outline" onClick={() => cancelEditingField('meetingContext')}>
                               ביטול
                             </Button>
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-destructive/10 border border-destructive/30 p-4 rounded-xl text-sm">
-                          {formData.risks}
+                        <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-sm">
+                          {formData.meetingContext}
                         </div>
                       )}
                     </div>

@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceTextInputProps {
   onTextProcessed: (enhancedText: string, transcribedText: string) => void;
-  textType: 'currentSituation' | 'risks' | 'decisions';
+  textType: 'currentSituation' | 'meetingContext' | 'decisions';
   buttonText?: string;
   description?: string;
 }
