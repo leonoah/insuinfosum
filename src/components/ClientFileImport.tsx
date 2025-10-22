@@ -45,7 +45,7 @@ export function ClientFileImport({ onClientDataLoaded }: ClientFileImportProps) 
       <input
         type="file"
         id="client-file-upload"
-        accept=".xml,.zip,.pdf"
+        accept=".zip"
         onChange={handleFileUpload}
         className="hidden"
       />
