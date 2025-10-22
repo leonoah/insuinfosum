@@ -1227,26 +1227,6 @@ const AppForm = () => {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
-                    <VoiceTextInput
-                      onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
-                      }}
-                      textType="currentSituation"
-                      buttonText="הקלטה קולית"
-                    />
-                  </div>
-                  <Textarea
-                    id="currentSituation"
-                    value={formData.currentSituation}
-                    onChange={(e) => setFormData(prev => ({ ...prev, currentSituation: e.target.value }))}
-                    className="mt-2 bg-input rounded-xl min-h-[100px]"
-                    placeholder="תארו את המצב הביטוחי הנוכחי של הלקוח..."
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="meetingContext">רקע ועיקרי הפגישה *</Label>
                     <VoiceTextInput
                       onTextProcessed={(enhancedText, transcribedText) => {
@@ -1263,6 +1243,26 @@ const AppForm = () => {
                     className="mt-2 bg-input rounded-xl min-h-[150px]"
                     placeholder="תיאור כללי של הפגישה - מה שהוסכם, המטרות והנקודות העיקריות שדובר עליהן..."
                     required
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
+                    <VoiceTextInput
+                      onTextProcessed={(enhancedText, transcribedText) => {
+                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
+                      }}
+                      textType="currentSituation"
+                      buttonText="הקלטה קולית"
+                    />
+                  </div>
+                  <Textarea
+                    id="currentSituation"
+                    value={formData.currentSituation}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currentSituation: e.target.value }))}
+                    className="mt-2 bg-input rounded-xl min-h-[100px]"
+                    placeholder="תארו את המצב הביטוחי הנוכחי של הלקוח..."
                   />
                 </div>
 
