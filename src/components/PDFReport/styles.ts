@@ -42,9 +42,9 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
     section: {
       marginBottom: 15,
       padding: 12,
-      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+      backgroundColor: isDark ? '#1e293b' : '#e0f7fa',
       borderRadius: 8,
-      border: isDark ? '1px solid #334155' : '1px solid #cbd5e1',
+      border: isDark ? '1px solid #334155' : '1px solid #b2ebf2',
     },
     sectionTitle: {
       fontSize: 20,
@@ -135,7 +135,7 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
       paddingVertical: 8,
     },
     tableHeaderRow: {
-      backgroundColor: isDark ? '#334155' : '#e2e8f0',
+      backgroundColor: isDark ? '#334155' : '#b2ebf2',
       borderRadius: 4,
       marginBottom: 5,
     },
@@ -171,15 +171,15 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
       textAlign: 'center',
       marginBottom: 10,
       paddingVertical: 8,
-      backgroundColor: isDark ? '#334155' : '#e2e8f0',
+      backgroundColor: isDark ? '#334155' : '#b2ebf2',
       borderRadius: 4,
     },
     comparisonCard: {
-      backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+      backgroundColor: isDark ? '#1e293b' : '#e0f7fa',
       padding: 10,
       borderRadius: 6,
       marginBottom: 8,
-      border: isDark ? '1px solid #334155' : '1px solid #cbd5e1',
+      border: isDark ? '1px solid #334155' : '1px solid #b2ebf2',
     },
     productName: {
       fontSize: 11,
@@ -196,7 +196,7 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
     statsBox: {
       flexDirection: 'row-reverse',
       justifyContent: 'space-around',
-      backgroundColor: isDark ? '#334155' : '#e2e8f0',
+      backgroundColor: isDark ? '#334155' : '#b2ebf2',
       padding: 15,
       borderRadius: 8,
       marginTop: 15,
@@ -216,10 +216,10 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
   
     // Disclosure box
     disclosureBox: {
-      backgroundColor: isDark ? '#334155' : '#e2e8f0',
+      backgroundColor: isDark ? '#334155' : '#b2ebf2',
       padding: 15,
       borderRadius: 8,
-      border: isDark ? '1px solid #475569' : '1px solid #94a3b8',
+      border: isDark ? '1px solid #475569' : '1px solid #80deea',
     },
     disclosureText: {
       fontSize: 9,
