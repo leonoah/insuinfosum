@@ -467,10 +467,12 @@ const AppForm = () => {
     const selectedSections = {
       personalInfo: !formData.isAnonymous,
       executiveSummary: true,
-      detailedBreakdown: true,
-      additionalNotes: true,
+      conversationInsights: true,
+      portfolioComparison: true,
+      returnsComparison: true,
+      productDetails: true,
+      exposureComparison: formData.includeExposureReport !== false,
       disclosures: true,
-      nextSteps: formData.includeDecisionsInReport,
     };
 
     const updatedFormData = {

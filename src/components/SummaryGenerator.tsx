@@ -1,16 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Copy, Mail, MessageCircle, Download, Check, User, Phone, MapPin, Calendar, Shield, Layers, Layout, BarChart3, Sparkles, SlidersHorizontal, FileSpreadsheet, NotebookPen, ShieldAlert, Flag, PieChart, Loader2, FileText, Edit3, Settings, Expand, Share } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRight, ArrowDown, ArrowUp, ClipboardList, Copy, Download, Edit3, FileText, Folder, Heart, Mail, MessageCircle, NotebookPen, PieChart, ShieldAlert, Sparkles, Star, Target, Trash2, User, Phone, MapPin, Calendar, Layers, Layout, BarChart3, Share } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { pdf } from "@react-pdf/renderer";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,102 +21,137 @@ import { ReportDocument } from "@/components/PDFReport/ReportDocument";
 
 const REPORT_SECTION_KEYS = [
   "personalInfo",
-  "executiveSummary", 
-  "detailedBreakdown",
-  "additionalNotes",
+  "executiveSummary",
+  "conversationInsights",
+  "portfolioComparison",
+  "returnsComparison",
+  "productDetails",
+  "exposureComparison",
   "disclosures",
-  "nextSteps",
 ] as const;
 
 type ReportSectionKey = typeof REPORT_SECTION_KEYS[number];
 
+const DEFAULT_SECTION_ORDER: ReportSectionKey[] = [
+  "personalInfo",
+  "executiveSummary",
+  "conversationInsights",
+  "portfolioComparison",
+  "returnsComparison",
+  "productDetails",
+  "exposureComparison",
+  "disclosures",
+];
+
 const REPORT_SECTIONS_DEFAULT: Record<ReportSectionKey, boolean> = {
   personalInfo: true,
   executiveSummary: true,
-  detailedBreakdown: true,
-  additionalNotes: true,
+  conversationInsights: true,
+  portfolioComparison: true,
+  returnsComparison: true,
+  productDetails: true,
+  exposureComparison: true,
   disclosures: true,
-  nextSteps: true,
 };
 
-const REPORT_SECTION_LABELS: Record<ReportSectionKey, { title: string; description: string; icon: any; }> = {
+const REPORT_SECTION_LABELS: Record<ReportSectionKey, { title: string; description: string; icon: LucideIcon; }> = {
   personalInfo: {
-    title: "פרטים אישיים",
-    description: "שם הלקוח, פרטי קשר, מיקום ותאריך הפגישה",
+    title: "מידע אישי",
+    description: "פרטי הלקוח, פרטי קשר ומיקום הפגישה",
     icon: User,
   },
   executiveSummary: {
     title: "תקציר מנהלים",
-    description: "תמונה מרוכזת של השינויים המרכזיים בתיק",
+    description: "תמונה מרוכזת של עיקרי ההמלצות והשינויים",
     icon: BarChart3,
   },
-  detailedBreakdown: {
-    title: "פירוט שינויים",
-    description: "טבלאות, גרפים והשוואות בין התיק הקיים למוצע",
-    icon: PieChart,
-  },
-  additionalNotes: {
-    title: "הרחבות והערות", 
-    description: "מצב קיים, סיכונים ותובנות חשובות מהפגישה",
+  conversationInsights: {
+    title: "פרטים נוספים מהשיחה",
+    description: "החלטות, הערות וסיכומים חשובים מהפגישה",
     icon: NotebookPen,
+  },
+  portfolioComparison: {
+    title: "השוואת תיקים",
+    description: "השוואה בין המצב הקיים להצעה החדשה",
+    icon: Layout,
+  },
+  returnsComparison: {
+    title: "השוואת תשואות",
+    description: "ניתוח תשואות מוצרים בתיק הנוכחי והמוצע",
+    icon: Target,
+  },
+  productDetails: {
+    title: "פירוט מלא - מוצרים",
+    description: "מידע מפורט על המוצרים והמסלולים שנדונו",
+    icon: Layers,
+  },
+  exposureComparison: {
+    title: "השוואת חשיפות",
+    description: "פירוט חשיפות סיכון ונכסים עיקריים",
+    icon: PieChart,
   },
   disclosures: {
     title: "גילוי נאות",
     description: "הבהרות מקצועיות והסברים רגולטוריים",
     icon: ShieldAlert,
   },
-  nextSteps: {
-    title: "סיכום ומשימות",
-    description: "החלטות, משימות להמשך ולוחות זמנים",
-    icon: Flag,
-  },
 };
 
-const REPORT_TEMPLATES: Array<{
-  id: string;
-  name: string;
-  description: string;
-  sections: Record<ReportSectionKey, boolean>;
-}> = [
-  {
-    id: "full",
-    name: "דוח מלא",
-    description: "כולל את כל פרקי הסיכום, הגרפים וההרחבות.",
-    sections: { ...REPORT_SECTIONS_DEFAULT },
-  },
-  {
-    id: "executive", 
-    name: "תקציר מנהלים",
-    description: "ממוקד בשינויים המרכזיים והמלצות על המוצרים.",
-    sections: {
-      personalInfo: true,
-      executiveSummary: true,
-      detailedBreakdown: true,
-      additionalNotes: false,
-      disclosures: true,
-      nextSteps: true,
-    },
-  },
-  {
-    id: "actions",
-    name: "פוקוס משימות",
-    description: "מדגיש הערות, גילוי נאות ומשימות המשך ללקוח.",
-    sections: {
-      personalInfo: true,
-      executiveSummary: true,
-      detailedBreakdown: false,
-      additionalNotes: true,
-      disclosures: true,
-      nextSteps: true,
-    },
-  },
+const CUSTOM_TEMPLATE_STORAGE_KEY = "insurNote-custom-report-templates";
+
+const TEMPLATE_ICON_OPTIONS: Array<{ value: string; label: string; icon: LucideIcon; }> = [
+  { value: "star", label: "כוכב", icon: Star },
+  { value: "heart", label: "לב", icon: Heart },
+  { value: "sparkles", label: "ניצוץ", icon: Sparkles },
+  { value: "folder", label: "תיק", icon: Folder },
+  { value: "clipboard", label: "רשימה", icon: ClipboardList },
+  { value: "target", label: "מטרה", icon: Target },
 ];
+
+const TEMPLATE_ICONS_MAP: Record<string, LucideIcon> = TEMPLATE_ICON_OPTIONS.reduce(
+  (acc, option) => {
+    acc[option.value] = option.icon;
+    return acc;
+  },
+  {} as Record<string, LucideIcon>
+);
+
+const EXPOSURE_FIELDS = [
+  { key: "exposureStocks", label: 'חשיפה למניות' },
+  { key: "exposureBonds", label: 'חשיפה לאג"ח' },
+  { key: "exposureForeignCurrency", label: 'חשיפה למט"ח' },
+  { key: "exposureForeignInvestments", label: 'חשיפה להשקעות חו"ל' },
+  { key: "exposureIsrael", label: 'חשיפה לישראל' },
+  { key: "exposureIlliquidAssets", label: 'נכסים לא סחירים' },
+] as const satisfies ReadonlyArray<{ key: keyof SelectedProduct; label: string }>;
+
+type ExposureKey = typeof EXPOSURE_FIELDS[number]["key"];
 
 interface AgentData {
   name: string;
   phone: string | null;
   email: string | null;
   logo_url: string | null;
+}
+
+interface CustomReportTemplate {
+  id: string;
+  name: string;
+  icon: string;
+  sections: Record<ReportSectionKey, boolean>;
+  sectionOrder: ReportSectionKey[];
+  customSectionTitle?: string;
+  customSectionContent?: string;
+}
+
+interface TemplateFormState {
+  id?: string;
+  name: string;
+  icon: string;
+  sections: Record<ReportSectionKey, boolean>;
+  sectionOrder: ReportSectionKey[];
+  customSectionTitle: string;
+  customSectionContent: string;
 }
 
 interface FormData {
@@ -150,21 +186,49 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const { toast } = useToast();
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
   const [showFinalReport, setShowFinalReport] = useState(false);
-  const [showSectionsDialog, setShowSectionsDialog] = useState(false);
   const [selectedSections, setSelectedSections] = useState<Record<ReportSectionKey, boolean>>(() => {
-    // Disable personalInfo if anonymous
     const defaultSections = { ...REPORT_SECTIONS_DEFAULT };
     if (formData.isAnonymous) {
       defaultSections.personalInfo = false;
     }
-    // Apply includeDecisionsInReport setting
-    if (!formData.includeDecisionsInReport) {
-      defaultSections.nextSteps = false;
-    }
     return defaultSections;
   });
-  const [isExpandedMode, setIsExpandedMode] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedSectionOrder, setSelectedSectionOrder] = useState<ReportSectionKey[]>([...DEFAULT_SECTION_ORDER]);
+  const [selectedReportId, setSelectedReportId] = useState<string>("default");
+  const [customTemplates, setCustomTemplates] = useState<CustomReportTemplate[]>(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+    try {
+      const stored = localStorage.getItem(CUSTOM_TEMPLATE_STORAGE_KEY);
+      if (!stored) {
+        return [];
+      }
+      const parsed = JSON.parse(stored) as CustomReportTemplate[];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed
+        .filter(template => template && typeof template.id === "string" && typeof template.name === "string")
+        .map(template => ({
+          ...template,
+          sections: {
+            ...REPORT_SECTION_KEYS.reduce((acc, key) => ({ ...acc, [key]: false }), {} as Record<ReportSectionKey, boolean>),
+            ...template.sections,
+          },
+          sectionOrder: template.sectionOrder && template.sectionOrder.length > 0
+            ? template.sectionOrder.filter((key): key is ReportSectionKey => REPORT_SECTION_KEYS.includes(key))
+            : [...DEFAULT_SECTION_ORDER],
+        }));
+    } catch (error) {
+      console.error("Failed to load custom report templates", error);
+      return [];
+    }
+  });
+  const [showManageTemplates, setShowManageTemplates] = useState(false);
+  const [templateFormState, setTemplateFormState] = useState<TemplateFormState | null>(null);
+  const [customSectionTitle, setCustomSectionTitle] = useState("");
+  const [customSectionContent, setCustomSectionContent] = useState("");
   const [aiRiskNotes, setAiRiskNotes] = useState<string>("");
   const [isGeneratingRisks, setIsGeneratingRisks] = useState(false);
   const [additionalNotesText, setAdditionalNotesText] = useState("");
@@ -188,37 +252,21 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
   const [tempCurrentSituation, setTempCurrentSituation] = useState("");
   const [tempRisks, setTempRisks] = useState("");
   const [tempDecisions, setTempDecisions] = useState("");
-  const [isQuickSending, setIsQuickSending] = useState(false);
-  const [includeExposureInReport, setIncludeExposureInReport] = useState(true); // כללי לכל המוצרים
 
   useEffect(() => {
     loadAgentInfo();
   }, []);
 
   useEffect(() => {
-    try {
-      const savedTemplate = localStorage.getItem('insurNote-report-template');
-      if (!savedTemplate) return;
+    if (typeof window === "undefined") return;
+    localStorage.setItem(CUSTOM_TEMPLATE_STORAGE_KEY, JSON.stringify(customTemplates));
+  }, [customTemplates]);
 
-      const parsed = JSON.parse(savedTemplate) as {
-        sections?: Record<string, boolean>;
-        isExpanded?: boolean;
-        templateId?: string | null;
-      };
-
-      if (parsed.sections) {
-        setSelectedSections(prev => ({ ...prev, ...parsed.sections }));
-      }
-      if (typeof parsed.isExpanded === 'boolean') {
-        setIsExpandedMode(parsed.isExpanded);
-      }
-      if (parsed.templateId) {
-        setSelectedTemplateId(parsed.templateId);
-      }
-    } catch (error) {
-      console.error('Error loading saved report template:', error);
+  useEffect(() => {
+    if (formData.isAnonymous) {
+      setSelectedSections(prev => ({ ...prev, personalInfo: false }));
     }
-  }, []);
+  }, [formData.isAnonymous]);
 
   const loadAgentInfo = async () => {
     try {
@@ -334,6 +382,64 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       }
     }
 
+    const formatProductLabel = (product: SelectedProduct) => {
+      const company = product.company ? ` (${product.company})` : '';
+      return `${product.category}${company}`;
+    };
+
+    const currentReturnsProducts = currentProducts.filter(product => typeof product.returns === 'number');
+    const recommendedReturnsProducts = recommendedProducts.filter(product => typeof product.returns === 'number');
+
+    const avgCurrentReturn = currentReturnsProducts.length > 0
+      ? currentReturnsProducts.reduce((sum, product) => sum + (product.returns || 0), 0) / currentReturnsProducts.length
+      : null;
+    const avgRecommendedReturn = recommendedReturnsProducts.length > 0
+      ? recommendedReturnsProducts.reduce((sum, product) => sum + (product.returns || 0), 0) / recommendedReturnsProducts.length
+      : null;
+
+    const returnsComparison = {
+      current: currentReturnsProducts.map(product => ({
+        id: product.id,
+        label: formatProductLabel(product),
+        track: product.subCategory,
+        returns: product.returns ?? null,
+      })),
+      recommended: recommendedReturnsProducts.map(product => ({
+        id: product.id,
+        label: formatProductLabel(product),
+        track: product.subCategory,
+        returns: product.returns ?? null,
+      })),
+    };
+
+    const buildExposureSummary = (products: SelectedProduct[]) => {
+      const summary = {} as Record<ExposureKey, { total: number; count: number }>;
+      EXPOSURE_FIELDS.forEach(({ key }) => {
+        summary[key] = { total: 0, count: 0 };
+      });
+
+      products.forEach(product => {
+        EXPOSURE_FIELDS.forEach(({ key }) => {
+          const value = product[key];
+          if (typeof value === 'number') {
+            summary[key].total += value;
+            summary[key].count += 1;
+          }
+        });
+      });
+
+      return EXPOSURE_FIELDS.reduce((acc, { key }) => {
+        const entry = summary[key];
+        acc[key] = entry.count > 0 ? entry.total / entry.count : null;
+        return acc;
+      }, {} as Record<ExposureKey, number | null>);
+    };
+
+    const exposureSummary = {
+      current: buildExposureSummary(currentProducts),
+      recommended: buildExposureSummary(recommendedProducts),
+    };
+
     return {
       currentProducts,
       recommendedProducts,
@@ -347,8 +453,17 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
       avgRecommendedAccumulation,
       riskShiftCount,
       highlightBullets,
+      avgCurrentReturn,
+      avgRecommendedReturn,
+      returnsComparison,
+      exposureSummary,
     };
   }, [formData.products]);
+
+  const selectedSectionTitles = useMemo(
+    () => selectedSectionOrder.filter(key => selectedSections[key]).map(key => REPORT_SECTION_LABELS[key].title),
+    [selectedSectionOrder, selectedSections]
+  );
 
   const copyToClipboard = async (text: string, itemName: string) => {
     try {
@@ -374,28 +489,194 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     }
   };
 
-  const handleSectionToggle = (sectionKey: ReportSectionKey, checked: boolean) => {
-    setSelectedSections(prev => ({ ...prev, [sectionKey]: checked }));
+  const resetReportToDefault = () => {
+    const defaults = { ...REPORT_SECTIONS_DEFAULT };
+    if (formData.isAnonymous) {
+      defaults.personalInfo = false;
+    }
+    setSelectedSections(defaults);
+    setSelectedSectionOrder([...DEFAULT_SECTION_ORDER]);
+    setSelectedReportId("default");
+    setCustomSectionTitle("");
+    setCustomSectionContent("");
   };
 
-  const handleTemplateSelect = (templateId: string) => {
-    const template = REPORT_TEMPLATES.find(t => t.id === templateId);
+  const applyTemplateToState = (template: CustomReportTemplate) => {
+    const emptyState = REPORT_SECTION_KEYS.reduce(
+      (acc, key) => {
+        acc[key] = false;
+        return acc;
+      },
+      {} as Record<ReportSectionKey, boolean>
+    );
+
+    const sections = { ...emptyState, ...template.sections };
+    if (formData.isAnonymous) {
+      sections.personalInfo = false;
+    }
+
+    const templateOrder = template.sectionOrder && template.sectionOrder.length > 0
+      ? template.sectionOrder.filter((key): key is ReportSectionKey => REPORT_SECTION_KEYS.includes(key))
+      : [...DEFAULT_SECTION_ORDER];
+
+    const uniqueOrder = Array.from(new Set(templateOrder));
+
+    setSelectedSections(sections);
+    setSelectedSectionOrder(uniqueOrder.length > 0 ? uniqueOrder : [...DEFAULT_SECTION_ORDER]);
+    setSelectedReportId(template.id);
+    setCustomSectionTitle(template.customSectionTitle || "");
+    setCustomSectionContent(template.customSectionContent || "");
+  };
+
+  const handleReportTypeSelect = (reportId: string) => {
+    if (reportId === "default") {
+      resetReportToDefault();
+      return;
+    }
+
+    const template = customTemplates.find(item => item.id === reportId);
     if (template) {
-      setSelectedSections(template.sections);
-      setSelectedTemplateId(templateId);
+      applyTemplateToState(template);
     }
   };
 
-  const saveReportTemplate = () => {
-    const template = {
-      sections: selectedSections,
-      isExpanded: isExpandedMode,
-      templateId: selectedTemplateId,
+  const openTemplateCreation = () => {
+    setTemplateFormState({
+      name: "",
+      icon: TEMPLATE_ICON_OPTIONS[0]?.value ?? "star",
+      sections: { ...selectedSections },
+      sectionOrder: [...selectedSectionOrder],
+      customSectionTitle,
+      customSectionContent,
+    });
+  };
+
+  const openTemplateEditing = (template: CustomReportTemplate) => {
+    setTemplateFormState({
+      id: template.id,
+      name: template.name,
+      icon: (template.icon || TEMPLATE_ICON_OPTIONS[0]?.value) ?? "star",
+      sections: { ...template.sections },
+      sectionOrder: template.sectionOrder && template.sectionOrder.length > 0
+        ? template.sectionOrder.filter((key): key is ReportSectionKey => REPORT_SECTION_KEYS.includes(key))
+        : [...DEFAULT_SECTION_ORDER],
+      customSectionTitle: template.customSectionTitle || "",
+      customSectionContent: template.customSectionContent || "",
+    });
+  };
+
+  const closeTemplateForm = () => {
+    setTemplateFormState(null);
+  };
+
+  const updateTemplateFormSection = (sectionKey: ReportSectionKey, checked: boolean) => {
+    setTemplateFormState(prev => {
+      if (!prev) return prev;
+      const sections = { ...prev.sections, [sectionKey]: checked };
+      let sectionOrder = prev.sectionOrder.filter(key => key !== sectionKey);
+      if (checked) {
+        sectionOrder = [...sectionOrder, sectionKey];
+      }
+      return {
+        ...prev,
+        sections,
+        sectionOrder,
+      };
+    });
+  };
+
+  const moveTemplateSection = (sectionKey: ReportSectionKey, direction: "up" | "down") => {
+    setTemplateFormState(prev => {
+      if (!prev) return prev;
+      const order = prev.sectionOrder.filter(key => prev.sections[key]);
+      const index = order.indexOf(sectionKey);
+      if (index === -1) {
+        return prev;
+      }
+      const newIndex = direction === "up" ? Math.max(0, index - 1) : Math.min(order.length - 1, index + 1);
+      if (newIndex === index) {
+        return prev;
+      }
+      const updatedOrder = [...order];
+      updatedOrder.splice(index, 1);
+      updatedOrder.splice(newIndex, 0, sectionKey);
+      return {
+        ...prev,
+        sectionOrder: updatedOrder,
+      };
+    });
+  };
+
+  const saveTemplateForm = () => {
+    if (!templateFormState) return;
+
+    const trimmedName = templateFormState.name.trim();
+    if (!trimmedName) {
+      toast({
+        title: "שם תבנית חסר",
+        description: "יש להזין שם עבור הדוח המותאם.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const activeSections = REPORT_SECTION_KEYS.filter(key => templateFormState.sections[key]);
+    if (activeSections.length === 0) {
+      toast({
+        title: "לא נבחרו חלקים",
+        description: "בחר לפחות חלק אחד שיופיע בדוח.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const normalizedOrder = Array.from(
+      new Set(
+        (templateFormState.sectionOrder.length > 0 ? templateFormState.sectionOrder : activeSections)
+          .filter((key): key is ReportSectionKey => templateFormState.sections[key])
+      )
+    );
+
+    const templateToSave: CustomReportTemplate = {
+      id: templateFormState.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`),
+      name: trimmedName,
+      icon: templateFormState.icon,
+      sections: REPORT_SECTION_KEYS.reduce((acc, key) => {
+        acc[key] = !!templateFormState.sections[key];
+        return acc;
+      }, {} as Record<ReportSectionKey, boolean>),
+      sectionOrder: normalizedOrder.length > 0 ? normalizedOrder : activeSections,
+      customSectionTitle: templateFormState.customSectionTitle.trim() || undefined,
+      customSectionContent: templateFormState.customSectionContent.trim() || undefined,
     };
-    localStorage.setItem('insurNote-report-template', JSON.stringify(template));
+
+    setCustomTemplates(prev => {
+      const index = prev.findIndex(item => item.id === templateToSave.id);
+      if (index >= 0) {
+        const updated = [...prev];
+        updated[index] = templateToSave;
+        return updated;
+      }
+      return [...prev, templateToSave];
+    });
+
+    applyTemplateToState(templateToSave);
+    setTemplateFormState(null);
+    setShowManageTemplates(false);
     toast({
-      title: "תבנית נשמרה",
-      description: "הגדרות הדוח נשמרו בהצלחה",
+      title: "דוח מותאם נשמר",
+      description: `הדוח "${trimmedName}" נשמר בהצלחה.`,
+    });
+  };
+
+  const deleteTemplate = (templateId: string) => {
+    setCustomTemplates(prev => prev.filter(template => template.id !== templateId));
+    if (selectedReportId === templateId) {
+      resetReportToDefault();
+    }
+    toast({
+      title: "דוח הוסר",
+      description: "התבנית הוסרה מהרשימה.",
     });
   };
 
@@ -410,14 +691,17 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
     };
 
     const blob = await pdf(
-      <ReportDocument 
+      <ReportDocument
         formData={updatedFormData}
         agentData={agentData}
         productStats={productStats}
         selectedSections={selectedSections}
+        sectionOrder={selectedSectionOrder}
         additionalNotesText={additionalNotesText}
         disclosureText={disclosureText}
         nextStepsText={nextStepsText}
+        customSectionTitle={customSectionTitle}
+        customSectionContent={customSectionContent}
       />
     ).toBlob();
     
@@ -486,28 +770,6 @@ const SummaryGenerator = ({ formData, onBack }: SummaryGeneratorProps) => {
         description: "אנא נסה שנית",
         variant: "destructive",
       });
-    }
-  };
-
-  const quickSendReport = async (method: 'email' | 'whatsapp' | 'download' | 'share') => {
-    if (isQuickSending) return;
-    
-    setIsQuickSending(true);
-    
-    try {
-      if (method === 'email') {
-        await sendReportByEmail();
-      } else if (method === 'whatsapp') {
-        await sendReportByWhatsApp();
-      } else if (method === 'download') {
-        await downloadReport();
-      } else if (method === 'share') {
-        await shareReport();
-      }
-    } catch (error) {
-      console.error('Quick send error:', error);
-    } finally {
-      setIsQuickSending(false);
     }
   };
 
@@ -714,7 +976,7 @@ ${agentData.name}`;
         השוואת תיקים - מצב קיים מול מוצע
       </h4>
       
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6">
         <div className="bg-gray-800/50 p-4 rounded-xl border border-green-500/30">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-green-500/20 flex items-center justify-center">
@@ -847,230 +1109,346 @@ ${agentData.name}`;
     );
   };
 
-  const FinalReportContent = () => (
-    <div id="final-report-content" className="max-w-4xl mx-auto p-8 bg-black text-white">
-      {/* Header */}
-      <div className="text-center mb-8 border-b border-gray-700 pb-6">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          {agentData.logo_url ? (
-            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
-          ) : (
-            <img src={agentLogo} alt="לוגו הסוכן" className="w-24 h-24 object-contain" />
-          )}
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              דוח סיכום ביטוח
-            </h1>
-            <p className="text-lg text-gray-300">{agentData.name}</p>
+
+  const sectionComponents: Record<ReportSectionKey, ReactNode> = {
+    personalInfo: selectedSections.personalInfo ? (
+      <ReportSection sectionKey="personalInfo">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <User className="w-4 h-4 text-cyan-400" />
+              <span className="font-medium text-white">שם הלקוח:</span>
+              <span className="text-gray-300">{formData.clientName}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4 text-cyan-400" />
+              <span className="font-medium text-white">טלפון:</span>
+              <span className="text-gray-300">{formData.clientPhone}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Mail className="w-4 h-4 text-cyan-400" />
+              <span className="font-medium text-white">אימייל:</span>
+              <span className="text-gray-300">{formData.clientEmail || 'לא צויין'}</span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-4 h-4 text-cyan-400" />
+              <span className="font-medium text-white">תאריך הפגישה:</span>
+              <span className="text-gray-300">{formatDate(formData.meetingDate)}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-cyan-400" />
+              <span className="font-medium text-white">מיקום הפגישה:</span>
+              <span className="text-gray-300">{formData.meetingLocation || 'לא צויין'}</span>
+            </div>
+            {formData.topics.length > 0 && (
+              <div className="flex items-start gap-3">
+                <Layers className="w-4 h-4 text-cyan-400 mt-1" />
+                <div>
+                  <span className="font-medium text-white">נושאים מרכזיים:</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {formData.topics.map((topic, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs bg-gray-700 text-white">
+                        {topic}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        <div className="text-lg text-cyan-400 font-medium">
+      </ReportSection>
+    ) : null,
+    executiveSummary: selectedSections.executiveSummary ? (
+      <ReportSection sectionKey="executiveSummary">
+        <div className="space-y-4">
+          <div className="bg-gradient-to-r from-cyan-500/20 to-cyan-500/10 p-4 rounded-xl border border-cyan-500/30">
+            <h4 className="font-semibold text-cyan-400 mb-3">עיקרי השינויים:</h4>
+            <ul className="space-y-2">
+              {productStats.highlightBullets.map((highlight, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
+                  <span className="text-sm text-gray-300">{highlight}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </ReportSection>
+    ) : null,
+    conversationInsights: selectedSections.conversationInsights ? (
+      <ReportSection sectionKey="conversationInsights" isEditable>
+        <div className="space-y-4">
+          {formData.currentSituation && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">המצב הנוכחי:</h4>
+              <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
+                {formData.currentSituation}
+              </div>
+            </div>
+          )}
+
+          {formData.risks && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">סיכונים וחשיפות:</h4>
+              <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-sm text-gray-300">
+                {formData.risks}
+              </div>
+            </div>
+          )}
+
+          {additionalNotesText && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">הערות נוספות:</h4>
+              <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
+                {additionalNotesText}
+              </div>
+            </div>
+          )}
+
+          {formData.includeDecisionsInReport !== false && formData.decisions && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">החלטות שהתקבלו:</h4>
+              <div className="bg-cyan-500/10 p-4 rounded-xl text-sm overflow-x-auto text-gray-300">
+                {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
+                  <div
+                    className="ai-content"
+                    dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap">{formData.decisions}</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {formData.includeDecisionsInReport !== false && formData.timeframes && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">לוחות זמנים:</h4>
+              <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
+                {formData.timeframes}
+              </div>
+            </div>
+          )}
+
+          {nextStepsText && (
+            <div>
+              <h4 className="font-semibold text-white mb-2">משימות להמשך:</h4>
+              <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
+                {nextStepsText}
+              </div>
+            </div>
+          )}
+        </div>
+      </ReportSection>
+    ) : null,
+    portfolioComparison: selectedSections.portfolioComparison ? (
+      <ReportSection sectionKey="portfolioComparison">
+        <ComparisonSection
+          currentProducts={productStats.currentProducts}
+          recommendedProducts={productStats.recommendedProducts}
+        />
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-1">שווי תיק קיים</p>
+            <p className="text-lg font-semibold text-white">₪{productStats.totalCurrentAmount.toLocaleString()}</p>
+          </div>
+          <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-1">שווי תיק מוצע</p>
+            <p className="text-lg font-semibold text-white">₪{productStats.totalRecommendedAmount.toLocaleString()}</p>
+          </div>
+          <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-1">פער כספי</p>
+            <p className={cn(
+              "text-lg font-semibold",
+              productStats.amountDifference >= 0 ? 'text-green-400' : 'text-red-400'
+            )}>
+              {productStats.amountDifference >= 0 ? '+' : ''}₪{productStats.amountDifference.toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-1">שינוי במספר המוצרים</p>
+            <p className={cn(
+              "text-lg font-semibold",
+              productStats.productCountDifference >= 0 ? 'text-green-400' : 'text-red-400'
+            )}>
+              {productStats.productCountDifference >= 0 ? '+' : ''}{productStats.productCountDifference}
+            </p>
+          </div>
+        </div>
+      </ReportSection>
+    ) : null,
+    returnsComparison: selectedSections.returnsComparison ? (
+      <ReportSection sectionKey="returnsComparison">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+            <h4 className="font-semibold text-white mb-2">תיק קיים</h4>
+            <p className="text-sm text-gray-300 mb-3">
+              תשואה ממוצעת: {typeof productStats.avgCurrentReturn === 'number' ? `${productStats.avgCurrentReturn.toFixed(2)}%` : 'אין נתוני תשואה'}
+            </p>
+            <div className="space-y-2">
+              {productStats.returnsComparison.current.length > 0 ? (
+                productStats.returnsComparison.current.map(item => (
+                  <div key={item.id} className="flex items-center justify-between text-sm text-gray-300 bg-gray-800/60 rounded-lg px-3 py-2">
+                    <div>
+                      <div className="font-medium text-white">{item.label}</div>
+                      {item.track && <div className="text-xs text-gray-400">מסלול: {item.track}</div>}
+                    </div>
+                    <div className="text-cyan-300 font-semibold">{typeof item.returns === 'number' ? `${item.returns.toFixed(2)}%` : '—'}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-400">אין נתוני תשואה להצגה.</div>
+              )}
+            </div>
+          </div>
+          <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+            <h4 className="font-semibold text-white mb-2">תיק מוצע</h4>
+            <p className="text-sm text-gray-300 mb-3">
+              תשואה ממוצעת: {typeof productStats.avgRecommendedReturn === 'number' ? `${productStats.avgRecommendedReturn.toFixed(2)}%` : 'אין נתוני תשואה'}
+            </p>
+            <div className="space-y-2">
+              {productStats.returnsComparison.recommended.length > 0 ? (
+                productStats.returnsComparison.recommended.map(item => (
+                  <div key={item.id} className="flex items-center justify-between text-sm text-gray-300 bg-gray-800/60 rounded-lg px-3 py-2">
+                    <div>
+                      <div className="font-medium text-white">{item.label}</div>
+                      {item.track && <div className="text-xs text-gray-400">מסלול: {item.track}</div>}
+                    </div>
+                    <div className="text-cyan-300 font-semibold">{typeof item.returns === 'number' ? `${item.returns.toFixed(2)}%` : '—'}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-400">אין נתוני תשואה להצגה.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </ReportSection>
+    ) : null,
+    productDetails: selectedSections.productDetails ? (
+      <ReportSection sectionKey="productDetails">
+        {productStats.recommendedProducts.length > 0 ? (
+          <div className="space-y-3">
+            {productStats.recommendedProducts.map((product, index) => (
+              <div key={index} className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
+                <div className="space-y-2">
+                  <div className="font-medium text-cyan-400">
+                    {product.category}{product.company ? ` (${product.company})` : ''}
+                  </div>
+                  <div className="text-sm text-gray-300 space-y-1">
+                    <div>מסלול: {product.subCategory}</div>
+                    <div>סכום צבירה: ₪{product.amount.toLocaleString()}</div>
+                    <div>
+                      דמי ניהול: {product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה
+                    </div>
+                    {product.investmentTrack && (
+                      <div>מסלול השקעה: {product.investmentTrack}</div>
+                    )}
+                    {product.riskLevelChange && product.riskLevelChange !== 'no-change' && (
+                      <div className="text-orange-400">שינוי רמת סיכון: {product.riskLevelChange}</div>
+                    )}
+                  </div>
+                  {product.notes && (
+                    <div className="text-sm bg-gray-800/50 p-2 rounded text-gray-300">
+                      הערות: {product.notes}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400">לא נבחרו מוצרים להצגה.</div>
+        )}
+      </ReportSection>
+    ) : null,
+    exposureComparison: selectedSections.exposureComparison ? (
+      <ReportSection sectionKey="exposureComparison">
+        {(() => {
+          const hasExposureData = EXPOSURE_FIELDS.some(({ key }) =>
+            typeof productStats.exposureSummary.current[key] === 'number' || typeof productStats.exposureSummary.recommended[key] === 'number'
+          );
+          if (!hasExposureData) {
+            return <div className="text-sm text-gray-400">אין נתוני חשיפה זמינים למוצרים שנבחרו.</div>;
+          }
+          return (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-right">
+                <thead>
+                  <tr className="text-gray-400">
+                    <th className="px-4 py-2 font-medium text-white">קטגוריית חשיפה</th>
+                    <th className="px-4 py-2 font-medium">תיק קיים</th>
+                    <th className="px-4 py-2 font-medium">תיק מוצע</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {EXPOSURE_FIELDS.map(({ key, label }) => (
+                    <tr key={key} className="border-t border-gray-800">
+                      <td className="px-4 py-2 text-gray-200">{label}</td>
+                      <td className="px-4 py-2 text-gray-300">
+                        {typeof productStats.exposureSummary.current[key] === 'number'
+                          ? `${productStats.exposureSummary.current[key]?.toFixed(1)}%`
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-gray-300">
+                        {typeof productStats.exposureSummary.recommended[key] === 'number'
+                          ? `${productStats.exposureSummary.recommended[key]?.toFixed(1)}%`
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+      </ReportSection>
+    ) : null,
+    disclosures: selectedSections.disclosures ? (
+      <ReportSection sectionKey="disclosures" isEditable>
+        <div className="bg-gray-800/50 p-4 rounded-xl">
+          <div className="text-sm text-gray-300">
+            {disclosureText}
+          </div>
+        </div>
+      </ReportSection>
+    ) : null,
+  };
+
+  const FinalReportContent = () => (
+    <div id="final-report-content" className="max-w-4xl mx-auto p-4 sm:p-8 bg-black text-white">
+      {/* Header */}
+      <div className="text-center mb-8 border-b border-gray-700 pb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4">
+          {agentData.logo_url ? (
+            <img src={agentData.logo_url} alt="לוגו הסוכן" className="w-20 h-20 sm:w-24 sm:h-24 object-contain" />
+          ) : (
+            <img src={agentLogo} alt="לוגו הסוכן" className="w-20 h-20 sm:w-24 sm:h-24 object-contain" />
+          )}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+              דוח סיכום ביטוח
+            </h1>
+            <p className="text-base sm:text-lg text-gray-300">{agentData.name}</p>
+          </div>
+        </div>
+        <div className="text-base sm:text-lg text-cyan-400 font-medium">
           {formData.clientName} • {formatDate(formData.meetingDate)}
         </div>
       </div>
 
-      {/* Personal Info Section */}
-      {selectedSections.personalInfo && (
-        <ReportSection sectionKey="personalInfo">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User className="w-4 h-4 text-cyan-400" />
-                <span className="font-medium text-white">שם הלקוח:</span>
-                <span className="text-gray-300">{formData.clientName}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-cyan-400" />
-                <span className="font-medium text-white">טלפון:</span>
-                <span className="text-gray-300">{formData.clientPhone}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-cyan-400" />
-                <span className="font-medium text-white">אימייל:</span>
-                <span className="text-gray-300">{formData.clientEmail || 'לא צויין'}</span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-cyan-400" />
-                <span className="font-medium text-white">תאריך הפגישה:</span>
-                <span className="text-gray-300">{formatDate(formData.meetingDate)}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <MapPin className="w-4 h-4 text-cyan-400" />
-                <span className="font-medium text-white">מיקום הפגישה:</span>
-                <span className="text-gray-300">{formData.meetingLocation || 'לא צויין'}</span>
-              </div>
-              {formData.topics.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <Layers className="w-4 h-4 text-cyan-400 mt-1" />
-                  <div>
-                    <span className="font-medium text-white">נושאים מרכזיים:</span>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {formData.topics.map((topic, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs bg-gray-700 text-white">
-                          {topic}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </ReportSection>
-      )}
+      {selectedSectionOrder.map((sectionKey) => (
+        <Fragment key={sectionKey}>{sectionComponents[sectionKey]}</Fragment>
+      ))}
 
-      {/* Executive Summary Section */}
-      {selectedSections.executiveSummary && (
-        <ReportSection sectionKey="executiveSummary">
-          <div className="space-y-4">
-            <div className="bg-gradient-to-r from-cyan-500/20 to-cyan-500/10 p-4 rounded-xl border border-cyan-500/30">
-              <h4 className="font-semibold text-cyan-400 mb-3">עיקרי השינויים:</h4>
-              <ul className="space-y-2">
-                {productStats.highlightBullets.map((highlight, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
-                    <span className="text-sm text-gray-300">{highlight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </ReportSection>
-      )}
-
-      {/* Detailed Breakdown Section */}
-      {selectedSections.detailedBreakdown && (
-        <ReportSection sectionKey="detailedBreakdown">
-          <ComparisonSection 
-            currentProducts={productStats.currentProducts}
-            recommendedProducts={productStats.recommendedProducts}
-          />
-          
-          {productStats.recommendedProducts.length > 0 && (
-            <div className="mt-6">
-              <h4 className="font-semibold text-white mb-4">מוצרים מוצעים לשינוי:</h4>
-              <div className="space-y-3">
-                {productStats.recommendedProducts.map((product, index) => (
-                  <div key={index} className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="font-medium text-cyan-400">
-                          {product.category} ({product.company})
-                        </div>
-                        <div className="text-sm text-gray-300">
-                          <div>מסלול: {product.subCategory}</div>
-                          <div>סכום צבירה: ₪{product.amount.toLocaleString()}</div>
-                          <div>
-                            דמי ניהול: {product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה
-                          </div>
-                          {product.investmentTrack && (
-                            <div>מסלול השקעה: {product.investmentTrack}</div>
-                          )}
-                          {product.riskLevelChange && product.riskLevelChange !== 'no-change' && (
-                            <div className="text-orange-400">שינוי רמת סיכון: {product.riskLevelChange}</div>
-                          )}
-                        </div>
-                        {product.notes && (
-                          <div className="text-sm bg-gray-800/50 p-2 rounded text-gray-300">
-                            הערות: {product.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </ReportSection>
-      )}
-
-      {/* Additional Notes Section */}
-      {selectedSections.additionalNotes && (
-        <ReportSection sectionKey="additionalNotes" isEditable>
-          <div className="space-y-4">
-            {formData.currentSituation && (
-              <div>
-                <h4 className="font-semibold text-white mb-2">המצב הנוכחי:</h4>
-                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
-                  {formData.currentSituation}
-                </div>
-              </div>
-            )}
-            
-            {formData.risks && (
-              <div>
-                <h4 className="font-semibold text-white mb-2">סיכונים וחשיפות:</h4>
-                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-sm text-gray-300">
-                  {formData.risks}
-                </div>
-              </div>
-            )}
-
-            {additionalNotesText && (
-              <div>
-                <h4 className="font-semibold text-white mb-2">הערות נוספות:</h4>
-                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
-                  {additionalNotesText}
-                </div>
-              </div>
-            )}
-          </div>
-        </ReportSection>
-      )}
-
-      {/* Disclosures Section */}
-      {selectedSections.disclosures && (
-        <ReportSection sectionKey="disclosures" isEditable>
-          <div className="bg-gray-800/50 p-4 rounded-xl">
-            <div className="text-sm text-gray-300">
-              {disclosureText}
-            </div>
-          </div>
-        </ReportSection>
-      )}
-
-      {/* Next Steps Section */}
-      {selectedSections.nextSteps && (
-        <ReportSection sectionKey="nextSteps" isEditable>
-          <div className="space-y-4">
-            {formData.decisions && (
-              <div>
-                <h4 className="font-semibold text-white mb-2">החלטות שהתקבלו:</h4>
-                <div className="bg-cyan-500/10 p-4 rounded-xl text-sm overflow-x-auto text-gray-300">
-                  {(formData.decisions.includes('<') || formData.decisions.includes('```')) ? (
-                    <div
-                      className="ai-content"
-                      dangerouslySetInnerHTML={{ __html: normalizeAIHtml(formData.decisions) }}
-                    />
-                  ) : (
-                    <div className="whitespace-pre-wrap">{formData.decisions}</div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {formData.timeframes && (
-              <div>
-                <h4 className="font-semibold text-white mb-2">לוחות זמנים:</h4>
-                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
-                  {formData.timeframes}
-                </div>
-              </div>
-            )}
-
-            {nextStepsText && (
-              <div>
-                <h4 className="font-semibold text-white mb-2">משימות להמשך:</h4>
-                <div className="bg-gray-800/50 p-4 rounded-xl text-sm text-gray-300">
-                  {nextStepsText}
-                </div>
-              </div>
-            )}
-          </div>
-        </ReportSection>
+      {customSectionContent && (
+        <div className="bg-gray-900/50 p-6 rounded-2xl border border-gray-700 mb-6">
+          <h3 className="text-xl font-bold text-white mb-3">{customSectionTitle || 'הערה מותאמת אישית'}</h3>
+          <div className="text-sm text-gray-300 whitespace-pre-wrap">{customSectionContent}</div>
+        </div>
       )}
 
       {/* Footer */}
@@ -1092,11 +1470,12 @@ ${agentData.name}`;
           דוח זה נוצר בעזרת InMinds
         </div>
         <div className="mt-2 text-xs text-gray-400 leading-relaxed">
-          הצהרת אחריות: המידע בדוח זה הינו בגדר המלצה כללית בלבד ואינו מהווה ייעוץ פיננסי/ביטוחי אישי. קבלת החלטות תיעשה באחריות הלקוח לאחר בחינת צרכיו ומצבו. הסוכן והחברה לא יישאו באחריות לנזקים שייגרמו משימוש במידע זה.
+          {disclosureText}
         </div>
       </div>
     </div>
   );
+
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -1123,107 +1502,363 @@ ${agentData.name}`;
         <div className="glass p-6 rounded-2xl border border-glass-border mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-foreground">התאמת הדוח</h2>
-            <div className="flex gap-2">
-              <Button
-                variant={isExpandedMode ? "default" : "outline"}
-                size="sm"
-                onClick={() => setIsExpandedMode(!isExpandedMode)}
-              >
-                <SlidersHorizontal className="w-4 h-4 ml-2" />
-                דוח מורחב
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSectionsDialog(true)}
-              >
-                <Settings className="w-4 h-4 ml-2" />
-                הגדרות
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTemplateFormState(null);
+                setShowManageTemplates(true);
+              }}
+            >
+              ניהול דוחות
+            </Button>
           </div>
 
-          {isExpandedMode && (
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
-              {REPORT_TEMPLATES.map((template) => (
-                <div
+          <div className="flex flex-wrap gap-2">
+            <Button
+              key="default-report"
+              variant="ghost"
+              className={cn(
+                "rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
+                selectedReportId === "default"
+                  ? "bg-cyan-500 text-white border-cyan-400 shadow"
+                  : "bg-cyan-500/10 text-cyan-200 border-cyan-500/40 hover:bg-cyan-500/20"
+              )}
+              onClick={() => handleReportTypeSelect("default")}
+            >
+              <Star className="w-4 h-4 ml-2" />
+              דוח מלא
+            </Button>
+            {customTemplates.map((template) => {
+              const IconComponent = TEMPLATE_ICONS_MAP[template.icon] || FileText;
+              return (
+                <Button
                   key={template.id}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                    selectedTemplateId === template.id
-                      ? 'border-primary bg-primary/10'
-                      : 'border-glass-border bg-muted/20 hover:bg-muted/30'
-                  }`}
-                  onClick={() => handleTemplateSelect(template.id)}
+                  variant="ghost"
+                  className={cn(
+                    "rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
+                    selectedReportId === template.id
+                      ? "bg-cyan-500 text-white border-cyan-400 shadow"
+                      : "bg-cyan-500/10 text-cyan-200 border-cyan-500/40 hover:bg-cyan-500/20"
+                  )}
+                  onClick={() => handleReportTypeSelect(template.id)}
                 >
-                  <h3 className="font-medium text-foreground mb-1">{template.name}</h3>
-                  <p className="text-xs text-muted-foreground">{template.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
+                  <IconComponent className="w-4 h-4 ml-2" />
+                  {template.name}
+                </Button>
+              );
+            })}
+          </div>
 
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              {Object.values(selectedSections).filter(Boolean).length} מתוך {REPORT_SECTION_KEYS.length} חלקים נבחרו
+          <div className="mt-4 text-sm text-muted-foreground">
+            {selectedSectionTitles.length} מתוך {REPORT_SECTION_KEYS.length} חלקים ייכללו בדוח • {selectedSectionTitles.join(" • ") || "לא נבחרו חלקים"}
+          </div>
+
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">כותרת לחלק מותאם (אופציונלי)</Label>
+              <Input
+                value={customSectionTitle}
+                onChange={(e) => setCustomSectionTitle(e.target.value)}
+                placeholder="לדוגמה: דגשים אישיים"
+              />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={saveReportTemplate}>
-                שמירת תבנית
-              </Button>
-              <Button onClick={downloadReport} className="bg-primary hover:bg-primary-hover">
-                <FileText className="w-4 h-4 ml-2" />
-                יצירת דוח
-              </Button>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">תוכן חופשי שייכנס תמיד לדוח</Label>
+              <Textarea
+                value={customSectionContent}
+                onChange={(e) => setCustomSectionContent(e.target.value)}
+                placeholder='הקלד כאן טקסט שתרצה שיופיע בכל דו"ח עבור סוג זה.'
+                rows={4}
+              />
             </div>
           </div>
-          
-          {/* Quick Actions */}
-          <div className="mt-4 pt-4 border-t border-glass-border">
-            <div className="text-sm text-muted-foreground mb-3">פעולות מהירות:</div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={isQuickSending}
-                onClick={() => quickSendReport('email')}
-                title="שלח במייל"
-              >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Mail className="w-4 h-4 sm:ml-2" />}
-                <span className="hidden sm:inline">שלח במייל</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={isQuickSending}
-                onClick={() => quickSendReport('whatsapp')}
-                title="שלח בוואטסאפ"
-              >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <MessageCircle className="w-4 h-4 sm:ml-2" />}
-                <span className="hidden sm:inline">שלח בוואטסאפ</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={isQuickSending}
-                onClick={() => quickSendReport('share')}
-                title="שתף"
-              >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Share className="w-4 h-4 sm:ml-2" />}
-                <span className="hidden sm:inline">שתף</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                disabled={isQuickSending}
-                onClick={() => quickSendReport('download')}
-                title="הורד PDF"
-              >
-                {isQuickSending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Download className="w-4 h-4 sm:ml-2" />}
-                <span className="hidden sm:inline">הורד PDF</span>
-              </Button>
+
+          <Separator className="my-6" />
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">הערות נוספות (אופציונלי)</Label>
+              <Textarea
+                placeholder="הכנס הערות נוספות לדוח..."
+                value={additionalNotesText}
+                onChange={(e) => setAdditionalNotesText(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">משימות להמשך (אופציונלי)</Label>
+              <Textarea
+                placeholder="משימות ופעולות המשך..."
+                value={nextStepsText}
+                onChange={(e) => setNextStepsText(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button onClick={downloadReport} className="bg-primary hover:bg-primary-hover">
+              <FileText className="w-4 h-4 ml-2" />
+              יצירת דוח
+            </Button>
           </div>
         </div>
+
+        {/* Quick Actions Bar */}
+        <div className="glass p-6 rounded-2xl border border-glass-border mb-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">פעולות מהירות:</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => sendReportByEmail()}
+            >
+              <Mail className="h-5 w-5" />
+              <span className="text-sm">שליחה במייל</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => sendReportByWhatsApp()}
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span className="text-sm">שליחה בוואטסאפ</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => shareReport()}
+            >
+              <Share className="h-5 w-5" />
+              <span className="text-sm">שתף</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl hover:bg-accent"
+              onClick={() => downloadReport()}
+            >
+              <Download className="h-5 w-5" />
+              <span className="text-sm">הורד PDF</span>
+            </Button>
+          </div>
+        </div>
+
+        <Dialog
+          open={showManageTemplates}
+          onOpenChange={(open) => {
+            setShowManageTemplates(open);
+            if (!open) {
+              setTemplateFormState(null);
+            }
+          }}
+        >
+          <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto">
+            {templateFormState ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{templateFormState.id ? 'עריכת דוח מותאם' : 'דוח מותאם חדש'}</DialogTitle>
+                  <DialogDescription>
+                    בחר שם, אייקון והחלקים שיופיעו בדוח המותאם.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>שם הדוח</Label>
+                    <Input
+                      value={templateFormState.name}
+                      onChange={(e) => setTemplateFormState(prev => prev ? { ...prev, name: e.target.value } : prev)}
+                      placeholder="לדוגמה: דוח קצר למשקיע"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>אייקון</Label>
+                    <Select
+                      value={templateFormState.icon}
+                      onValueChange={(value) => setTemplateFormState(prev => prev ? { ...prev, icon: value } : prev)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר אייקון" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TEMPLATE_ICON_OPTIONS.map(option => {
+                          const IconComponent = option.icon;
+                          return (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="w-4 h-4" />
+                                <span>{option.label}</span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>חלקים בדוח</Label>
+                    <div className="space-y-2">
+                      {REPORT_SECTION_KEYS.map((sectionKey) => {
+                        const section = REPORT_SECTION_LABELS[sectionKey];
+                        const IconComponent = section.icon;
+                        return (
+                          <div
+                            key={sectionKey}
+                            className={cn(
+                              'flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 rounded-xl border p-3 sm:p-4',
+                              templateFormState.sections[sectionKey]
+                                ? 'border-cyan-500/40 bg-cyan-500/10'
+                                : 'border-gray-800 bg-gray-900/50'
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                                <IconComponent className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-white">{section.title}</div>
+                                <div className="text-sm text-gray-400">{section.description}</div>
+                              </div>
+                            </div>
+                            <Checkbox
+                              checked={templateFormState.sections[sectionKey]}
+                              onCheckedChange={(checked) => updateTemplateFormSection(sectionKey, checked === true)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="bg-gray-900/40 border border-gray-800 rounded-xl p-4 space-y-2">
+                      <h4 className="text-sm font-semibold text-white">סדר הופעה</h4>
+                      <div className="space-y-2">
+                        {templateFormState.sectionOrder.filter(key => templateFormState.sections[key]).map((key) => {
+                          const section = REPORT_SECTION_LABELS[key];
+                          return (
+                            <div key={key} className="flex items-center justify-between bg-gray-900/60 border border-gray-800 rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2 text-sm text-gray-200">
+                                <span>{section.title}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveTemplateSection(key, 'up')}>
+                                  <ArrowUp className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveTemplateSection(key, 'down')}>
+                                  <ArrowDown className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {templateFormState.sectionOrder.filter(key => templateFormState.sections[key]).length === 0 && (
+                          <div className="text-sm text-gray-400">בחר לפחות חלק אחד כדי לקבוע סדר.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>קטע טקסט קבוע (אופציונלי)</Label>
+                    <Input
+                      value={templateFormState.customSectionTitle}
+                      onChange={(e) => setTemplateFormState(prev => prev ? { ...prev, customSectionTitle: e.target.value } : prev)}
+                      placeholder="כותרת החלק"
+                    />
+                    <Textarea
+                      value={templateFormState.customSectionContent}
+                      onChange={(e) => setTemplateFormState(prev => prev ? { ...prev, customSectionContent: e.target.value } : prev)}
+                      placeholder='טקסט שיופיע בכל דו"ח שנוצר מתבנית זו'
+                      rows={4}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={closeTemplateForm} className="flex-1">
+                    ביטול
+                  </Button>
+                  <Button onClick={saveTemplateForm} className="flex-1 bg-primary hover:bg-primary-hover">
+                    שמירה
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>ניהול דוחות מותאמים</DialogTitle>
+                  <DialogDescription>
+                    צור, ערוך או מחק דוחות מותאמים כדי לבחור אותם במהירות בשלב ההתאמה.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                  {customTemplates.length > 0 ? (
+                    customTemplates.map((template) => {
+                      const IconComponent = TEMPLATE_ICONS_MAP[template.icon] || FileText;
+                      return (
+                        <div
+                          key={template.id}
+                          className="border border-gray-800 rounded-xl p-4 bg-gray-900/50 flex flex-col gap-3"
+                        >
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                <IconComponent className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-white">{template.name}</div>
+                                <div className="text-xs text-gray-400">
+                                  {REPORT_SECTION_KEYS.filter(key => template.sections[key]).map(key => REPORT_SECTION_LABELS[key].title).join(' • ')}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                              <Button size="sm" variant="outline" onClick={() => { applyTemplateToState(template); setShowManageTemplates(false); }}>
+                                בחר
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => openTemplateEditing(template)}>
+                                <Edit3 className="w-4 h-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => deleteTemplate(template.id)}>
+                                <Trash2 className="w-4 h-4 text-red-400" />
+                              </Button>
+                            </div>
+                          </div>
+                          {template.customSectionTitle && (
+                            <div className="text-xs text-gray-400">
+                              קטע טקסט קבוע: {template.customSectionTitle}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-sm text-gray-400 border border-dashed border-gray-700 rounded-xl p-6 text-center">
+                      עדיין לא נוצרו דוחות מותאמים. לחץ על "דוח מותאם חדש" כדי להתחיל.
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 mt-6">
+                  <Button variant="outline" onClick={openTemplateCreation} className="flex-1">
+                    דוח מותאם חדש
+                  </Button>
+                  <Button variant="ghost" onClick={() => setShowManageTemplates(false)} className="flex-1">
+                    סגירה
+                  </Button>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Preview */}
         {!showFinalReport && (
@@ -1381,12 +2016,30 @@ ${agentData.name}`;
                 </div>
               </div>
             </div>
+
+            {/* Generate Report Button */}
+            <div className="glass p-6 rounded-2xl border border-glass-border mt-6">
+              <div className="flex flex-col items-center gap-4">
+                <h3 className="text-lg font-semibold text-foreground">מוכן לייצא את הדוח?</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  צור דוח PDF מקצועי עם אפשרויות הורדה, שליחה במייל ושיתוף
+                </p>
+                <Button 
+                  onClick={() => setShowFinalReport(true)}
+                  size="lg"
+                  className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-8 py-4 rounded-2xl shadow-glow"
+                >
+                  <FileText className="h-5 w-5 ml-2" />
+                  צור דוח PDF מלא
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Final Report Dialog */}
         <Dialog open={showFinalReport} onOpenChange={setShowFinalReport}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-6xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>דוח סיכום פגישת ביטוח</DialogTitle>
               <DialogDescription>
@@ -1398,11 +2051,12 @@ ${agentData.name}`;
               <Button variant="outline" onClick={() => setShowFinalReport(false)}>
                 סגור
               </Button>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
                 <Button 
                   variant="outline" 
                   onClick={() => sendReportByEmail()}
                   title="שלח במייל"
+                  className="flex-1 sm:flex-none"
                 >
                   <Mail className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שלח במייל</span>
@@ -1411,6 +2065,7 @@ ${agentData.name}`;
                   variant="outline" 
                   onClick={() => sendReportByWhatsApp()}
                   title="שלח בוואטסאפ"
+                  className="flex-1 sm:flex-none"
                 >
                   <MessageCircle className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שלח בוואטסאפ</span>
@@ -1419,107 +2074,20 @@ ${agentData.name}`;
                   variant="outline" 
                   onClick={shareReport}
                   title="שתף"
+                  className="flex-1 sm:flex-none"
                 >
                   <Share className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">שתף</span>
                 </Button>
-                <Button onClick={downloadReport} title="הורד PDF">
+                <Button 
+                  onClick={downloadReport} 
+                  title="הורד PDF"
+                  className="flex-1 sm:flex-none"
+                >
                   <Download className="w-4 h-4 sm:ml-2" />
                   <span className="hidden sm:inline">הורד PDF</span>
                 </Button>
               </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Sections Configuration Dialog */}
-        <Dialog open={showSectionsDialog} onOpenChange={setShowSectionsDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>התאמת חלקי הדוח</DialogTitle>
-              <DialogDescription>
-                בחר אילו חלקים להכליל בדוח הסופי
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              {REPORT_SECTION_KEYS.map((sectionKey) => {
-                const section = REPORT_SECTION_LABELS[sectionKey];
-                const isPersonalInfoDisabled = sectionKey === 'personalInfo' && formData.isAnonymous;
-                return (
-                  <div key={sectionKey} className="flex items-start space-x-3 space-x-reverse">
-                    <Checkbox
-                      id={sectionKey}
-                      checked={selectedSections[sectionKey]}
-                      disabled={isPersonalInfoDisabled}
-                      onCheckedChange={(checked) => 
-                        handleSectionToggle(sectionKey, checked as boolean)
-                      }
-                    />
-                    <div className="flex-1">
-                      <Label htmlFor={sectionKey} className={`font-medium ${isPersonalInfoDisabled ? 'text-muted-foreground' : ''}`}>
-                        {section.title}
-                        {isPersonalInfoDisabled && <span className="text-xs text-muted-foreground mr-2">(מבוטל - דוח אנונימי)</span>}
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {section.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <Separator />
-            
-            <div className="space-y-4">
-              <Label className="text-sm font-medium">הערות נוספות (אופציונלי):</Label>
-              <Textarea
-                placeholder="הכנס הערות נוספות לדוח..."
-                value={additionalNotesText}
-                onChange={(e) => setAdditionalNotesText(e.target.value)}
-                className="resize-none"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <Label className="text-sm font-medium">משימות להמשך (אופציונלי):</Label>
-              <Textarea
-                placeholder="משימות ופעולות המשך..."
-                value={nextStepsText}
-                onChange={(e) => setNextStepsText(e.target.value)}
-                className="resize-none"
-                rows={3}
-              />
-            </div>
-
-            <Separator />
-
-            {/* Global Exposure Data Option */}
-            <div className="flex items-start space-x-3 space-x-reverse p-4 bg-muted/20 rounded-xl">
-              <Checkbox
-                id="includeExposure"
-                checked={includeExposureInReport}
-                onCheckedChange={(checked) => setIncludeExposureInReport(checked as boolean)}
-              />
-              <div className="flex-1">
-                <Label htmlFor="includeExposure" className="font-medium cursor-pointer">
-                  להוסיף נתוני חשיפה של המוצרים לדוח?
-                </Label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  יוצגו נתוני חשיפה (מניות, אג"ח, מט"ח וכו') עבור כל המוצרים שיש להם מידע זה
-                </p>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowSectionsDialog(false)}>
-                ביטול
-              </Button>
-              <Button onClick={() => setShowSectionsDialog(false)}>
-                שמור הגדרות
-              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -1,4 +1,6 @@
 import { Document, Page, View, Text, Font } from '@react-pdf/renderer';
+import { Fragment } from 'react';
+import type { ReactElement } from 'react';
 import { styles } from './styles';
 import { ReportHeader } from './sections/ReportHeader';
 import { PersonalInfoSection } from './sections/PersonalInfoSection';
@@ -69,6 +71,8 @@ interface FormData {
   documents?: string[];
   includeProductsTable?: boolean;
   includeExposureReport?: boolean;
+  timeframes?: string;
+  includeDecisionsInReport?: boolean;
 }
 
 interface ProductStats {
@@ -86,11 +90,26 @@ interface ProductStats {
 interface SelectedSections {
   personalInfo: boolean;
   executiveSummary: boolean;
-  detailedBreakdown: boolean;
-  additionalNotes: boolean;
+  conversationInsights: boolean;
+  portfolioComparison: boolean;
+  returnsComparison: boolean;
+  productDetails: boolean;
+  exposureComparison: boolean;
   disclosures: boolean;
-  nextSteps: boolean;
 }
+
+type ReportSectionKey = keyof SelectedSections;
+
+const DEFAULT_SECTION_ORDER: ReportSectionKey[] = [
+  'personalInfo',
+  'executiveSummary',
+  'conversationInsights',
+  'portfolioComparison',
+  'returnsComparison',
+  'productDetails',
+  'exposureComparison',
+  'disclosures',
+];
 
 interface ReportDocumentProps {
   formData: FormData;
@@ -100,6 +119,9 @@ interface ReportDocumentProps {
   additionalNotesText: string;
   disclosureText: string;
   nextStepsText: string;
+  customSectionTitle?: string;
+  customSectionContent?: string;
+  sectionOrder?: ReportSectionKey[];
 }
 
 export const ReportDocument = ({
@@ -109,8 +131,181 @@ export const ReportDocument = ({
   selectedSections,
   additionalNotesText,
   disclosureText,
-  nextStepsText
+  nextStepsText,
+  customSectionTitle,
+  customSectionContent,
+  sectionOrder
 }: ReportDocumentProps) => {
+  const orderedSectionKeys =
+    sectionOrder && sectionOrder.length > 0
+      ? sectionOrder
+      : DEFAULT_SECTION_ORDER;
+
+  const sectionComponents: Record<ReportSectionKey, ReactElement | null> = {
+    personalInfo: selectedSections.personalInfo ? (
+      <PersonalInfoSection
+        clientName={formData.clientName}
+        clientId={formData.clientId}
+        clientPhone={formData.clientPhone}
+        clientEmail={formData.clientEmail}
+        meetingDate={formData.meetingDate}
+        location={formData.meetingLocation}
+        isAnonymous={formData.isAnonymous}
+      />
+    ) : null,
+    executiveSummary: selectedSections.executiveSummary ? (
+      <ExecutiveSummarySection
+        highlightBullets={productStats.highlightBullets}
+        totalCurrentAmount={productStats.totalCurrentAmount}
+        totalRecommendedAmount={productStats.totalRecommendedAmount}
+        currentProducts={productStats.currentProducts}
+        recommendedProducts={productStats.recommendedProducts}
+        includeProductsTable={false}
+      />
+    ) : null,
+    conversationInsights: selectedSections.conversationInsights ? (
+      <AdditionalDetailsSection
+        currentSituation={formData.currentSituation}
+        risks={formData.risks}
+        decisions={
+          formData.includeDecisionsInReport === false
+            ? undefined
+            : formData.decisions
+        }
+        additionalNotes={additionalNotesText}
+        documents={formData.documents}
+        timeframes={
+          formData.includeDecisionsInReport === false
+            ? undefined
+            : formData.timeframes
+        }
+        nextSteps={nextStepsText}
+      />
+    ) : null,
+    portfolioComparison: selectedSections.portfolioComparison ? (
+      <ComparisonTableSection
+        currentProducts={productStats.currentProducts}
+        recommendedProducts={productStats.recommendedProducts}
+        stats={{
+          totalCurrentAmount: productStats.totalCurrentAmount,
+          totalRecommendedAmount: productStats.totalRecommendedAmount,
+          avgCurrentDeposit: productStats.avgCurrentDeposit,
+          avgRecommendedDeposit: productStats.avgRecommendedDeposit,
+          avgCurrentAccumulation: productStats.avgCurrentAccumulation,
+          avgRecommendedAccumulation: productStats.avgRecommendedAccumulation,
+        }}
+      />
+    ) : null,
+    returnsComparison: selectedSections.returnsComparison ? (
+      <ReturnsChartSection
+        currentProducts={productStats.currentProducts}
+        recommendedProducts={productStats.recommendedProducts}
+      />
+    ) : null,
+    productDetails:
+      selectedSections.productDetails && formData.includeProductsTable !== false ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>פירוט מלא - מוצרים</Text>
+
+          {/* Current Products Table */}
+          {productStats.currentProducts.length > 0 && (
+            <View style={{ marginBottom: 20 }}>
+              <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>מוצרים קיימים</Text>
+              <View style={styles.table}>
+                <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                  <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
+                  <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
+                  <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
+                  <Text style={[styles.tableCell, { width: '11%' }]}>סכום צבירה</Text>
+                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל הפק</Text>
+                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל צב</Text>
+                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ מניות</Text>
+                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ אגח</Text>
+                  <Text style={[styles.tableCell, { width: '13%' }]}>הערות</Text>
+                </View>
+                {productStats.currentProducts.map((product, index) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
+                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
+                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
+                    <Text style={[styles.tableCell, { width: '11%' }]}>
+                      {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '10%' }]}>
+                      {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '10%' }]}>
+                      {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '9%' }]}>
+                      {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '9%' }]}>
+                      {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '13%' }]}>{product.notes || '-'}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Recommended Products Table */}
+          {productStats.recommendedProducts.length > 0 && (
+            <View>
+              <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>מוצרים מוצעים</Text>
+              <View style={styles.table}>
+                <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                  <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
+                  <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
+                  <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
+                  <Text style={[styles.tableCell, { width: '11%' }]}>סכום צבירה</Text>
+                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל הפק</Text>
+                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל צב</Text>
+                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ מניות</Text>
+                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ אגח</Text>
+                  <Text style={[styles.tableCell, { width: '13%' }]}>הערות</Text>
+                </View>
+                {productStats.recommendedProducts.map((product, index) => (
+                  <View key={index} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
+                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
+                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
+                    <Text style={[styles.tableCell, { width: '11%' }]}>
+                      {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '10%' }]}>
+                      {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '10%' }]}>
+                      {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '9%' }]}>
+                      {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '9%' }]}>
+                      {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { width: '13%' }]}>{product.notes || '-'}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      ) : null,
+    exposureComparison:
+      selectedSections.exposureComparison && formData.includeExposureReport !== false ? (
+        <ExposureTableSection
+          currentProducts={productStats.currentProducts}
+          recommendedProducts={productStats.recommendedProducts}
+        />
+      ) : null,
+    disclosures: selectedSections.disclosures ? (
+      <DisclosuresSection text={disclosureText} />
+    ) : null,
+  };
+
   return (
     <Document>
       <Page size={{ width: 595.28, height: 5669.29 }} style={styles.page} wrap={false}>
@@ -122,176 +317,18 @@ export const ReportDocument = ({
           logoUrl={agentData.logo_url}
         />
 
-        {/* Personal Info */}
-        {selectedSections.personalInfo && (
-          <PersonalInfoSection
-            clientName={formData.clientName}
-            clientId={formData.clientId}
-            clientPhone={formData.clientPhone}
-            clientEmail={formData.clientEmail}
-            meetingDate={formData.meetingDate}
-            location={formData.meetingLocation}
-            isAnonymous={formData.isAnonymous}
-          />
-        )}
+        {orderedSectionKeys.map((key) => {
+          const section = sectionComponents[key];
+          if (!section) return null;
+          return <Fragment key={key}>{section}</Fragment>;
+        })}
 
-        {/* Executive Summary */}
-        {selectedSections.executiveSummary && (
-          <ExecutiveSummarySection
-            highlightBullets={productStats.highlightBullets}
-            totalCurrentAmount={productStats.totalCurrentAmount}
-            totalRecommendedAmount={productStats.totalRecommendedAmount}
-            currentProducts={productStats.currentProducts}
-            recommendedProducts={productStats.recommendedProducts}
-            includeProductsTable={false}
-          />
-        )}
-
-        {/* Additional Details */}
-        {selectedSections.additionalNotes && (
-          <AdditionalDetailsSection
-            currentSituation={formData.currentSituation}
-            risks={formData.risks}
-            decisions={formData.decisions}
-            additionalNotes={additionalNotesText}
-            documents={formData.documents}
-          />
-        )}
-
-        {/* Comparison Table */}
-        {selectedSections.detailedBreakdown && (
-          <ComparisonTableSection
-            currentProducts={productStats.currentProducts}
-            recommendedProducts={productStats.recommendedProducts}
-            stats={{
-              totalCurrentAmount: productStats.totalCurrentAmount,
-              totalRecommendedAmount: productStats.totalRecommendedAmount,
-              avgCurrentDeposit: productStats.avgCurrentDeposit,
-              avgRecommendedDeposit: productStats.avgRecommendedDeposit,
-              avgCurrentAccumulation: productStats.avgCurrentAccumulation,
-              avgRecommendedAccumulation: productStats.avgRecommendedAccumulation,
-            }}
-          />
-        )}
-
-        {/* Returns Chart - Always shown */}
-        <ReturnsChartSection
-          currentProducts={productStats.currentProducts}
-          recommendedProducts={productStats.recommendedProducts}
-        />
-
-        {/* Next Steps */}
-        {selectedSections.nextSteps && nextStepsText && nextStepsText.trim() && (
+        {/* Custom Text Section */}
+        {customSectionContent && customSectionContent.trim() && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>משימות והמשך טיפול</Text>
-            <Text style={styles.text}>{nextStepsText}</Text>
+            <Text style={styles.sectionTitle}>{customSectionTitle || 'הערה מותאמת אישית'}</Text>
+            <Text style={styles.text}>{customSectionContent}</Text>
           </View>
-        )}
-
-        {/* Disclosures */}
-        {selectedSections.disclosures && (
-          <DisclosuresSection text={disclosureText} />
-        )}
-
-        {/* Detailed Products Tables - At the end */}
-        {selectedSections.executiveSummary && formData.includeProductsTable !== false && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>פירוט מלא - מוצרים</Text>
-            
-            {/* Current Products Table */}
-            {productStats.currentProducts.length > 0 && (
-              <View style={{ marginBottom: 20 }}>
-                <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>מוצרים קיימים</Text>
-                <View style={styles.table}>
-                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                    <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
-                    <Text style={[styles.tableCell, { width: '11%' }]}>סכום צבירה</Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל הפק</Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל צב</Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ מניות</Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ אגח</Text>
-                    <Text style={[styles.tableCell, { width: '13%' }]}>הערות</Text>
-                  </View>
-                  {productStats.currentProducts.map((product, index) => (
-                    <View key={index} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
-                      <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
-                      <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
-                      <Text style={[styles.tableCell, { width: '11%' }]}>
-                        {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '10%' }]}>
-                        {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '10%' }]}>
-                        {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '9%' }]}>
-                        {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '9%' }]}>
-                        {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '13%' }]}>{product.notes || '-'}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* Recommended Products Table */}
-            {productStats.recommendedProducts.length > 0 && (
-              <View>
-                <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>מוצרים מוצעים</Text>
-                <View style={styles.table}>
-                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                    <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
-                    <Text style={[styles.tableCell, { width: '11%' }]}>סכום צבירה</Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל הפק</Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל צב</Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ מניות</Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ אגח</Text>
-                    <Text style={[styles.tableCell, { width: '13%' }]}>הערות</Text>
-                  </View>
-                  {productStats.recommendedProducts.map((product, index) => (
-                    <View key={index} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
-                      <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
-                      <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
-                      <Text style={[styles.tableCell, { width: '11%' }]}>
-                        {product.amount ? `₪${product.amount.toLocaleString()}` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '10%' }]}>
-                        {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '10%' }]}>
-                        {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '9%' }]}>
-                        {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '9%' }]}>
-                        {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: '13%' }]}>{product.notes || '-'}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Exposure Table - At the end */}
-        {selectedSections.detailedBreakdown && formData.includeExposureReport !== false && (
-          <ExposureTableSection
-            currentProducts={productStats.currentProducts}
-            recommendedProducts={productStats.recommendedProducts}
-          />
         )}
 
         {/* Footer - always visible */}
