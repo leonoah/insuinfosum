@@ -11,6 +11,7 @@ import { DollarSign, FileText, Eye, Plus, Loader2, CheckCircle } from "lucide-re
 import { PensionParser } from "@/utils/pensionParser";
 import { PensionFileData, PensionProduct } from "@/types/pension";
 import { SelectedProduct } from "@/types/products";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PensionFileImportProps {
   onProductsSelected: (products: SelectedProduct[]) => void;
@@ -80,30 +81,70 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
     }
   };
 
-  const handleImportSelected = () => {
+  const handleImportSelected = async () => {
     if (!pensionData || selectedProducts.size === 0) return;
 
-    const productsToImport = pensionData.summary.products
-      .filter(product => selectedProducts.has(product.id))
-      .map(product => {
-        const basicProduct = PensionParser.convertPensionProductToInsuranceProduct(product);
-        
-        // כעת נבצע התאמה חכמה עם מספר קופה
-        // (הלוגיקה כבר נמצאת ב-ExcelImport, אבל כאן נדאג שה-productNumber מועבר)
-        return {
-          ...basicProduct,
-          productNumber: product.policyNumber // משתמשים במספר פוליסה כמספר קופה
-        };
+    setIsLoading(true);
+    try {
+      const productsToImport = await Promise.all(
+        pensionData.summary.products
+          .filter(product => selectedProducts.has(product.id))
+          .map(async (product) => {
+            const basicProduct = PensionParser.convertPensionProductToInsuranceProduct(product);
+            
+            // חיפוש מידע מהטבלה לפי קוד הקופה (policyNumber)
+            const { data: productInfo, error } = await supabase
+              .from('products_information')
+              .select('*')
+              .eq('product_code', product.policyNumber)
+              .maybeSingle();
+
+            if (error) {
+              console.error('Error fetching product info:', error);
+            }
+
+            // אם נמצא מידע בטבלה, נעדכן את המוצר
+            if (productInfo) {
+              return {
+                ...basicProduct,
+                productNumber: product.policyNumber,
+                company: productInfo.company,
+                productType: productInfo.product_type,
+                trackName: productInfo.track_name,
+                exposures: {
+                  stocks: productInfo.exposure_stocks || 0,
+                  bonds: (productInfo.exposure_government_bonds || 0) + (productInfo.exposure_corporate_bonds_tradable || 0) + (productInfo.exposure_corporate_bonds_non_tradable || 0),
+                  foreign: productInfo.exposure_foreign || 0,
+                  foreignCurrency: productInfo.exposure_foreign_currency || 0,
+                }
+              };
+            }
+
+            // אם לא נמצא מידע, נשתמש במה שיש לנו מהמסלקה
+            return {
+              ...basicProduct,
+              productNumber: product.policyNumber
+            };
+          })
+      );
+
+      onProductsSelected(productsToImport);
+      
+      toast({
+        title: "המוצרים יובאו בהצלחה",
+        description: `${productsToImport.length} מוצרים נוספו למצב הקיים`,
       });
 
-    onProductsSelected(productsToImport);
-    
-    toast({
-      title: "המוצרים יובאו בהצלחה",
-      description: `${productsToImport.length} מוצרים נוספו למצב הקיים`,
-    });
-
-    onClose();
+      onClose();
+    } catch (error) {
+      toast({
+        title: "שגיאה בייבוא מוצרים",
+        description: error instanceof Error ? error.message : "אירעה שגיאה",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {

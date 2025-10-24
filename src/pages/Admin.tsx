@@ -7,7 +7,7 @@ import { AgentInfo } from "@/components/admin/AgentInfo";
 import { ClientsList } from "@/components/admin/ClientsList";
 import { ClientManagement } from "@/components/admin/ClientManagement";
 import { ReportsLog } from "@/components/admin/ReportsLog";
-import { ProductTaxonomyManagement } from "@/components/admin/ProductTaxonomyManagement";
+import { ProductInformationManagement } from "@/components/admin/ProductInformationManagement";
 import { Shield, Building2, User, Users, FileText, Database, UserPlus } from "lucide-react";
 
 const Admin = () => {
@@ -76,7 +76,7 @@ const Admin = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ProductTaxonomyManagement />
+                <ProductInformationManagement />
               </CardContent>
             </Card>
           </TabsContent>

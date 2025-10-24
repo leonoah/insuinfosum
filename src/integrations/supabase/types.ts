@@ -1234,6 +1234,87 @@ export type Database = {
           },
         ]
       }
+      products_information: {
+        Row: {
+          company: string
+          created_at: string
+          exposure_cash: number | null
+          exposure_corporate_bonds_non_tradable: number | null
+          exposure_corporate_bonds_tradable: number | null
+          exposure_deposits: number | null
+          exposure_foreign: number | null
+          exposure_foreign_and_currency: number | null
+          exposure_foreign_currency: number | null
+          exposure_government_bonds: number | null
+          exposure_israel: number | null
+          exposure_liquid_assets: number | null
+          exposure_loans: number | null
+          exposure_mutual_funds: number | null
+          exposure_non_liquid_assets: number | null
+          exposure_other_assets: number | null
+          exposure_stocks: number | null
+          exposure_stocks_options: number | null
+          id: string
+          product_code: string
+          product_type: string
+          source: string | null
+          track_name: string
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          exposure_cash?: number | null
+          exposure_corporate_bonds_non_tradable?: number | null
+          exposure_corporate_bonds_tradable?: number | null
+          exposure_deposits?: number | null
+          exposure_foreign?: number | null
+          exposure_foreign_and_currency?: number | null
+          exposure_foreign_currency?: number | null
+          exposure_government_bonds?: number | null
+          exposure_israel?: number | null
+          exposure_liquid_assets?: number | null
+          exposure_loans?: number | null
+          exposure_mutual_funds?: number | null
+          exposure_non_liquid_assets?: number | null
+          exposure_other_assets?: number | null
+          exposure_stocks?: number | null
+          exposure_stocks_options?: number | null
+          id?: string
+          product_code: string
+          product_type: string
+          source?: string | null
+          track_name: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          exposure_cash?: number | null
+          exposure_corporate_bonds_non_tradable?: number | null
+          exposure_corporate_bonds_tradable?: number | null
+          exposure_deposits?: number | null
+          exposure_foreign?: number | null
+          exposure_foreign_and_currency?: number | null
+          exposure_foreign_currency?: number | null
+          exposure_government_bonds?: number | null
+          exposure_israel?: number | null
+          exposure_liquid_assets?: number | null
+          exposure_loans?: number | null
+          exposure_mutual_funds?: number | null
+          exposure_non_liquid_assets?: number | null
+          exposure_other_assets?: number | null
+          exposure_stocks?: number | null
+          exposure_stocks_options?: number | null
+          id?: string
+          product_code?: string
+          product_type?: string
+          source?: string | null
+          track_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products_taxonomy: {
         Row: {
           category: string
@@ -2283,7 +2364,7 @@ export type Database = {
     }
     Functions: {
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
       has_role: {
@@ -2293,10 +2374,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      validate_site_content: {
-        Args: { content_input: Json }
-        Returns: boolean
-      }
+      validate_site_content: { Args: { content_input: Json }; Returns: boolean }
       validate_social_link_url: {
         Args: { url_input: string }
         Returns: boolean

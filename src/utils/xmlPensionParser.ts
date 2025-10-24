@@ -272,11 +272,25 @@ export class XMLPensionParser {
       "לא ידוע";
 
     // מספר פוליסה
-    const policyNumber = this.getFirstTextByTags(heshbon, [
+    let policyNumber = this.getFirstTextByTags(heshbon, [
       "MISPAR-POLISA-O-HESHBON",
       "MISPAR-POLISA",
       "MISPAR-HESHBON",
     ]);
+
+    // חילוץ קוד קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
+      "KOD-MASLUL-HASHKA",
+      "KOD-MASLUL",
+    ]);
+    
+    if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
+      // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
+      const productCode = kodMaslulHashka.substring(23, 30).trim();
+      if (productCode) {
+        policyNumber = productCode;
+      }
+    }
 
     // סטטוס
     const statusCode = this.getFirstTextByTags(heshbon, [
@@ -415,7 +429,21 @@ export class XMLPensionParser {
       "לא ידוע";
 
     // מספר פוליסה
-    const policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
+    let policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
+
+    // חילוץ קוד קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
+      "KOD-MASLUL-HASHKA",
+      "KOD-MASLUL",
+    ]);
+    
+    if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
+      // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
+      const productCode = kodMaslulHashka.substring(23, 30).trim();
+      if (productCode) {
+        policyNumber = productCode;
+      }
+    }
 
     // סטטוס
     const statusCode = this.getElementText(heshbon, "STATUS-POLISA-O-CHESHBON");
