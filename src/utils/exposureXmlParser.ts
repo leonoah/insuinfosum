@@ -29,16 +29,8 @@ export interface DetailedExposureData {
   
   // מידע כללי
   productType: 'pension' | 'gemel' | 'insurance';
-  identifier: string;            // ID_MASLUL_RISHUY / ID_KUPA / ID_GUF
-  reportDate: string;            // תאריך הדוח
-}
-
-interface XmlExposureRow {
-  id: string;
-  typeId: string;
-  typeName: string;
-  amount: number;
-  percentage: number;
+  identifier: string;
+  reportDate: string;
 }
 
 export class ExposureXmlParser {
@@ -51,28 +43,29 @@ export class ExposureXmlParser {
    */
   static async loadXmlFiles(): Promise<void> {
     try {
-      const [gemelResponse, pensiaResponse, hevrotResponse] = await Promise.all([
-        fetch('/src/data/gemel.xml'),
-        fetch('/src/data/pensia.xml'),
-        fetch('/src/data/hevrot.xml')
-      ]);
+      // הקבצים נמצאים ב-src/data אז צריך לטעון אותם כמודולים
+      const gemelModule = await import('../data/gemel.xml?raw');
+      const pensiaModule = await import('../data/pensia.xml?raw');
+      const hevrotModule = await import('../data/hevrot.xml?raw');
 
-      this.gemelXmlContent = await gemelResponse.text();
-      this.pensiaXmlContent = await pensiaResponse.text();
-      this.hevrotXmlContent = await hevrotResponse.text();
+      this.gemelXmlContent = gemelModule.default;
+      this.pensiaXmlContent = pensiaModule.default;
+      this.hevrotXmlContent = hevrotModule.default;
+      
+      console.log('XML files loaded successfully');
     } catch (error) {
       console.error('Error loading XML files:', error);
-      throw error;
+      throw new Error('Failed to load exposure XML files');
     }
   }
 
   /**
    * מחפש חשיפות למוצר גמל/השתלמות
    */
-  static findGemelExposure(idKupa: string): DetailedExposureData | null {
+  static findGemelExposure(idKupa: string): DetailedExposureData | undefined {
     if (!this.gemelXmlContent) {
       console.error('Gemel XML not loaded');
-      return null;
+      return undefined;
     }
 
     return this.parseGemelXml(this.gemelXmlContent, idKupa);
@@ -81,10 +74,10 @@ export class ExposureXmlParser {
   /**
    * מחפש חשיפות למוצר פנסיה
    */
-  static findPensiaExposure(idMaslulRishuy: string): DetailedExposureData | null {
+  static findPensiaExposure(idMaslulRishuy: string): DetailedExposureData | undefined {
     if (!this.pensiaXmlContent) {
       console.error('Pensia XML not loaded');
-      return null;
+      return undefined;
     }
 
     return this.pensiaParsiaXml(this.pensiaXmlContent, idMaslulRishuy);
@@ -93,10 +86,10 @@ export class ExposureXmlParser {
   /**
    * מחפש חשיפות למוצר ביטוח
    */
-  static findInsuranceExposure(idGuf: string): DetailedExposureData | null {
+  static findInsuranceExposure(idGuf: string): DetailedExposureData | undefined {
     if (!this.hevrotXmlContent) {
       console.error('Hevrot XML not loaded');
-      return null;
+      return undefined;
     }
 
     return this.parseHevrotXml(this.hevrotXmlContent, idGuf);
@@ -105,14 +98,29 @@ export class ExposureXmlParser {
   /**
    * מנתח XML של גמל
    */
-  private static parseGemelXml(xmlContent: string, idKupa: string): DetailedExposureData | null {
+  private static parseGemelXml(xmlContent: string, idKupa: string): DetailedExposureData | undefined {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
     
     const rows = xmlDoc.getElementsByTagName('Row');
     const exposureData: Partial<DetailedExposureData> = {
       productType: 'gemel',
-      identifier: idKupa
+      identifier: idKupa,
+      exposureStocks: 0,
+      exposureBonds: 0,
+      exposureForeign: 0,
+      exposureForeignCurrency: 0,
+      exposureIsrael: 0,
+      govBondsMarketable: 0,
+      corpBondsMarketable: 0,
+      corpBondsNonMarketable: 0,
+      deposits: 0,
+      loans: 0,
+      cash: 0,
+      mutualFunds: 0,
+      otherAssets: 0,
+      marketableAssets: 0,
+      nonMarketableAssets: 0
     };
 
     for (let i = 0; i < rows.length; i++) {
@@ -132,7 +140,7 @@ export class ExposureXmlParser {
       }
     }
 
-    if (!exposureData.reportDate) return null;
+    if (!exposureData.reportDate) return undefined;
     
     // חישוב אגח כממוצע
     this.calculateBondsAverage(exposureData);
@@ -143,14 +151,29 @@ export class ExposureXmlParser {
   /**
    * מנתח XML של פנסיה
    */
-  private static pensiaParsiaXml(xmlContent: string, idMaslulRishuy: string): DetailedExposureData | null {
+  private static pensiaParsiaXml(xmlContent: string, idMaslulRishuy: string): DetailedExposureData | undefined {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
     
     const rows = xmlDoc.getElementsByTagName('ROW');
     const exposureData: Partial<DetailedExposureData> = {
       productType: 'pension',
-      identifier: idMaslulRishuy
+      identifier: idMaslulRishuy,
+      exposureStocks: 0,
+      exposureBonds: 0,
+      exposureForeign: 0,
+      exposureForeignCurrency: 0,
+      exposureIsrael: 0,
+      govBondsMarketable: 0,
+      corpBondsMarketable: 0,
+      corpBondsNonMarketable: 0,
+      deposits: 0,
+      loans: 0,
+      cash: 0,
+      mutualFunds: 0,
+      otherAssets: 0,
+      marketableAssets: 0,
+      nonMarketableAssets: 0
     };
 
     for (let i = 0; i < rows.length; i++) {
@@ -169,7 +192,7 @@ export class ExposureXmlParser {
       }
     }
 
-    if (!exposureData.reportDate) return null;
+    if (!exposureData.reportDate) return undefined;
     
     this.calculateBondsAverage(exposureData);
     
@@ -179,14 +202,29 @@ export class ExposureXmlParser {
   /**
    * מנתח XML של חברות ביטוח
    */
-  private static parseHevrotXml(xmlContent: string, idGuf: string): DetailedExposureData | null {
+  private static parseHevrotXml(xmlContent: string, idGuf: string): DetailedExposureData | undefined {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
     
     const rows = xmlDoc.getElementsByTagName('ROW');
     const exposureData: Partial<DetailedExposureData> = {
       productType: 'insurance',
-      identifier: idGuf
+      identifier: idGuf,
+      exposureStocks: 0,
+      exposureBonds: 0,
+      exposureForeign: 0,
+      exposureForeignCurrency: 0,
+      exposureIsrael: 0,
+      govBondsMarketable: 0,
+      corpBondsMarketable: 0,
+      corpBondsNonMarketable: 0,
+      deposits: 0,
+      loans: 0,
+      cash: 0,
+      mutualFunds: 0,
+      otherAssets: 0,
+      marketableAssets: 0,
+      nonMarketableAssets: 0
     };
 
     for (let i = 0; i < rows.length; i++) {
@@ -205,7 +243,7 @@ export class ExposureXmlParser {
       }
     }
 
-    if (!exposureData.reportDate) return null;
+    if (!exposureData.reportDate) return undefined;
     
     this.calculateBondsAverage(exposureData);
     

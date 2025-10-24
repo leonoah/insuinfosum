@@ -26,4 +26,5 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
+  assetsInclude: ['**/*.xml'], // תמיכה בקבצי XML
 }));

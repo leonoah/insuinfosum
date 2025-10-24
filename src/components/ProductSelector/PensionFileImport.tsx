@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, FileText, Eye, Plus, Loader2, CheckCircle } from "lucide-react";
+import { DollarSign, FileText, Eye, Plus, Loader2, CheckCircle, Info } from "lucide-react";
 import { PensionParser } from "@/utils/pensionParser";
-import { PensionFileData, PensionProduct } from "@/types/pension";
+import { PensionFileData, PensionProduct, DetailedExposureData } from "@/types/pension";
 import { SelectedProduct } from "@/types/products";
+import { MaslulCodeParser } from "@/utils/maslulCodeParser";
+import { ExposureXmlParser } from "@/utils/exposureXmlParser";
+import { ProductExposureDetail } from "./ProductExposureDetail";
 
 interface PensionFileImportProps {
   onProductsSelected: (products: SelectedProduct[]) => void;
@@ -23,6 +26,27 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
   const [pensionData, setPensionData] = useState<PensionFileData | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showProductDetails, setShowProductDetails] = useState(false);
+  const [xmlLoaded, setXmlLoaded] = useState(false);
+  const [exposureModalOpen, setExposureModalOpen] = useState(false);
+  const [selectedExposure, setSelectedExposure] = useState<{ exposure: DetailedExposureData; productName: string } | null>(null);
+
+  // טעינת קבצי XML בעת טעינת הרכיב
+  useEffect(() => {
+    const loadXml = async () => {
+      try {
+        await ExposureXmlParser.loadXmlFiles();
+        setXmlLoaded(true);
+      } catch (error) {
+        console.error('Error loading XML files:', error);
+        toast({
+          title: "שגיאה בטעינת קבצי חשיפות",
+          description: "לא ניתן לטעון את נתוני החשיפות. הפונקציונליות תהיה מוגבלת.",
+          variant: "destructive",
+        });
+      }
+    };
+    loadXml();
+  }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -31,6 +55,12 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
     setIsLoading(true);
     try {
       const data = await PensionParser.parsePensionFile(file);
+      
+      // חיפוש חשיפות לכל מוצר
+      if (xmlLoaded && data) {
+        await enrichProductsWithExposure(data.summary.products);
+      }
+      
       setPensionData(data);
       setShowProductDetails(true);
       
@@ -119,6 +149,48 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
       'ביטוח משכנתא': 'text-red-600'
     };
     return colors[type as keyof typeof colors] || 'text-gray-600';
+  };
+
+  // העשרת מוצרים בנתוני חשיפה
+  const enrichProductsWithExposure = async (products: PensionProduct[]) => {
+    for (const product of products) {
+      if (!product.maslulCode) continue;
+
+      // פענוח קוד המסלול
+      const parts = MaslulCodeParser.parseMaslulCode(product.maslulCode);
+      if (!parts) continue;
+
+      const taxApprovalNumber = parts.taxApprovalNumber;
+
+      try {
+        let exposure: DetailedExposureData | null = null;
+
+        // חיפוש לפי סוג המוצר
+        if (product.productType === 'קרן פנסיה חדשה') {
+          exposure = ExposureXmlParser.findPensiaExposure(taxApprovalNumber);
+        } else if (product.productType === 'קרן השתלמות' || product.productType === 'קופת גמל') {
+          exposure = ExposureXmlParser.findGemelExposure(taxApprovalNumber);
+        } else if (product.productType === 'חברת ביטוח' || product.productType === 'ביטוח משכנתא') {
+          exposure = ExposureXmlParser.findInsuranceExposure('4731');
+        }
+
+        if (exposure) {
+          product.detailedExposure = exposure;
+        }
+      } catch (error) {
+        console.warn(`Failed to find exposure for product ${product.policyNumber}:`, error);
+      }
+    }
+  };
+
+  const handleShowExposure = (product: PensionProduct) => {
+    if (!product.detailedExposure) return;
+    
+    setSelectedExposure({
+      exposure: product.detailedExposure,
+      productName: `${product.company} - ${product.productType}`
+    });
+    setExposureModalOpen(true);
   };
 
   if (!showProductDetails) {
@@ -288,6 +360,20 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                         {product.lastDeposit.employer > 0 && ` | מעסיק ₪${product.lastDeposit.employer.toLocaleString()}`}
                       </div>
                     )}
+
+                    {product.detailedExposure && (
+                      <div className="mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleShowExposure(product)}
+                          className="w-full"
+                        >
+                          <Info className="w-3 h-3 ml-1" />
+                          צפה במידע חשיפות מפורט
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -309,6 +395,15 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
           </Button>
         </div>
       </CardContent>
+
+      {selectedExposure && (
+        <ProductExposureDetail
+          open={exposureModalOpen}
+          onOpenChange={setExposureModalOpen}
+          exposure={selectedExposure.exposure}
+          productName={selectedExposure.productName}
+        />
+      )}
     </Card>
   );
 };
