@@ -278,14 +278,6 @@ export class XMLPensionParser {
       "MISPAR-HESHBON",
     ]);
 
-    // קוד מסלול השקעה (30 ספרות)
-    const maslulCode = this.getFirstTextByTags(heshbon, [
-      "KOD-MASLUL-HASHKA",
-      "KOD-MASLUL-HASHKAA",
-      "KOD-MASLUL",
-      "MASLUL-CODE"
-    ], "PerutMasluleiHashkaa") || undefined;
-
     // סטטוס
     const statusCode = this.getFirstTextByTags(heshbon, [
       "STATUS-POLISA-O-CHESHBON",
@@ -379,7 +371,6 @@ export class XMLPensionParser {
       annualReturn,
       projectedBalanceAtRetirement: projectedBalance,
       planOpenDate,
-      maslulCode,
     };
 
     // הוספת הפקדות אם קיימות
@@ -425,14 +416,6 @@ export class XMLPensionParser {
 
     // מספר פוליסה
     const policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
-
-    // קוד מסלול השקעה (30 ספרות)
-    const maslulCode = this.getFirstTextByTags(heshbon, [
-      "KOD-MASLUL-HASHKA",
-      "KOD-MASLUL-HASHKAA",
-      "KOD-MASLUL",
-      "MASLUL-CODE"
-    ], "PerutMasluleiHashkaa") || undefined;
 
     // סטטוס
     const statusCode = this.getElementText(heshbon, "STATUS-POLISA-O-CHESHBON");
@@ -517,7 +500,6 @@ export class XMLPensionParser {
       annualReturn,
       projectedBalanceAtRetirement: projectedBalance,
       planOpenDate,
-      maslulCode,
     };
 
     if (employeeDeposit > 0 || employerDeposit > 0) {

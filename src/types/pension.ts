@@ -22,38 +22,6 @@ export interface PensionProduct {
   };
   planOpenDate?: string;
   notes?: string;
-  maslulCode?: string; // קוד מסלול השקעה - 30 ספרות
-  detailedExposure?: DetailedExposureData; // חשיפות מפורטות מקובץ XML
-}
-
-export interface DetailedExposureData {
-  // חשיפות בסיסיות
-  exposureStocks: number;        // מניות
-  exposureBonds: number;         // אגח (ממוצע)
-  exposureForeign: number;       // חו"ל
-  exposureForeignCurrency?: number; // מט"ח
-  exposureIsrael: number;        // ישראל
-  
-  // פירוט אגח
-  govBondsMarketable: number;    // אג"ח ממשלתיות סחירות
-  corpBondsMarketable: number;   // אג"ח קונצרני סחיר
-  corpBondsNonMarketable: number; // אג"ח קונצרניות לא סחירות
-  
-  // נכסים נוספים
-  deposits?: number;              // פיקדונות
-  loans?: number;                 // הלוואות
-  cash?: number;                  // מזומנים
-  mutualFunds?: number;           // קרנות נאמנות
-  otherAssets?: number;           // נכסים אחרים
-  
-  // סיווגים
-  marketableAssets?: number;      // נכסים סחירים
-  nonMarketableAssets?: number;   // נכסים לא סחירים
-  
-  // מידע
-  productType?: 'pension' | 'gemel' | 'insurance';
-  identifier?: string;
-  reportDate?: string;
 }
 
 export interface PensionSummary {
