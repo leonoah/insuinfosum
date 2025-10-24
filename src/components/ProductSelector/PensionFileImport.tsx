@@ -151,31 +151,20 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
     return colors[type as keyof typeof colors] || 'text-gray-600';
   };
 
-  // העשרת מוצרים בנתוני חשיפה
+  // העשרת מוצרים בנתוני חשיפה מהטבלה המרכזית החדשה
   const enrichProductsWithExposure = async (products: PensionProduct[]) => {
+    const { ProductTaxonomyParser } = await import('@/utils/productTaxonomyParser');
+    
     for (const product of products) {
-      if (!product.maslulCode) continue;
-
-      // פענוח קוד המסלול
-      const parts = MaslulCodeParser.parseMaslulCode(product.maslulCode);
-      if (!parts) continue;
-
-      const taxApprovalNumber = parts.taxApprovalNumber;
-
       try {
-        let exposure: DetailedExposureData | null = null;
+        // חיפוש לפי מספר פוליסה וסוג מוצר
+        const foundProduct = await ProductTaxonomyParser.findProduct(
+          product.policyNumber,
+          product.productType
+        );
 
-        // חיפוש לפי סוג המוצר
-        if (product.productType === 'קרן פנסיה חדשה') {
-          exposure = ExposureXmlParser.findPensiaExposure(taxApprovalNumber);
-        } else if (product.productType === 'קרן השתלמות' || product.productType === 'קופת גמל') {
-          exposure = ExposureXmlParser.findGemelExposure(taxApprovalNumber);
-        } else if (product.productType === 'חברת ביטוח' || product.productType === 'ביטוח משכנתא') {
-          exposure = ExposureXmlParser.findInsuranceExposure('4731');
-        }
-
-        if (exposure) {
-          product.detailedExposure = exposure;
+        if (foundProduct?.exposure) {
+          product.detailedExposure = foundProduct.exposure;
         }
       } catch (error) {
         console.warn(`Failed to find exposure for product ${product.policyNumber}:`, error);
