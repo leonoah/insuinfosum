@@ -30,9 +30,9 @@ export const useProductTaxonomy = () => {
     try {
       setLoading(true);
       
-      // Load data from Supabase database
+      // Load data from new products_information table
       const { data, error: fetchError } = await supabase
-        .from('products_taxonomy')
+        .from('products_information')
         .select('*')
         .order('company', { ascending: true });
 
@@ -53,20 +53,22 @@ export const useProductTaxonomy = () => {
 
       // Parse database rows
       data.forEach((row) => {
+        const exposureData = (row.exposure_data || {}) as Record<string, any>;
+        
         const product: ProductTaxonomy = {
           company: row.company || '',
-          category: row.category || '',
-          oldTrackName: row.sub_category || '',
-          newTrackName: row.sub_category || '',
-          productNumber: row.product_number || '', // מספר קופה מה-DB
+          category: row.product_type || '',
+          oldTrackName: row.track_name || '',
+          newTrackName: row.track_name || '',
+          productNumber: row.product_number || '', // מספר קופה/קרן
           policyChange: '',
           trackMerger: '',
-          exposureForeignCurrency: Number(row.exposure_foreign_currency) || 0,
-          exposureForeignInvestments: Number(row.exposure_foreign_investments) || 0,
-          exposureIsrael: 0,
-          exposureStocks: Number(row.exposure_stocks) || 0,
-          exposureBonds: Number(row.exposure_bonds) || 0,
-          exposureIlliquidAssets: 0,
+          exposureForeignCurrency: Number(exposureData.foreign_currency) || 0,
+          exposureForeignInvestments: Number(exposureData.foreign_investments) || 0,
+          exposureIsrael: Number(exposureData.israel) || 0,
+          exposureStocks: Number(exposureData.stocks) || 0,
+          exposureBonds: Number(exposureData.bonds) || 0,
+          exposureIlliquidAssets: Number(exposureData.illiquid_assets) || 0,
           assetComposition: '',
         };
 
@@ -89,16 +91,9 @@ export const useProductTaxonomy = () => {
           productsByNumber.set(product.productNumber, product);
         }
 
-        // Index by company and track name (both new and old)
+        // Index by company and track name
         if (product.newTrackName) {
           const trackKey = `${product.company}:${product.newTrackName}`;
-          if (!productsByCompanyAndTrack.has(trackKey)) {
-            productsByCompanyAndTrack.set(trackKey, []);
-          }
-          productsByCompanyAndTrack.get(trackKey)!.push(product);
-        }
-        if (product.oldTrackName && product.oldTrackName !== product.newTrackName) {
-          const trackKey = `${product.company}:${product.oldTrackName}`;
           if (!productsByCompanyAndTrack.has(trackKey)) {
             productsByCompanyAndTrack.set(trackKey, []);
           }
