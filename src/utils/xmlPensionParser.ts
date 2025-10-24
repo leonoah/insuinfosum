@@ -271,7 +271,24 @@ export class XMLPensionParser {
       this.getFirstTextByTags(mutzar, ["SHEM-YATZRAN", "SHEM-YATZARAN", "SHEM-YATSRAN"], "YeshutYatzran") ||
       "לא ידוע";
 
-    // מספר פוליסה
+    // מספר מסלול/קרן (זה המספר שיש בטבלה products_information!)
+    const productNumber = this.getFirstTextByTags(heshbon, [
+      "ID-MASLUL-RISHUY",
+      "ID-MASLUL",
+      "MISPAR-MASLUL",
+      "ID-KUPA",
+      "ID-GUF",
+      "ID-KRN",
+      "MISPAR-KUPA"
+    ]) || this.getFirstTextByTags(mutzar, [
+      "ID-MASLUL-RISHUY",
+      "ID-MASLUL",
+      "ID-KUPA",
+      "ID-GUF",
+      "ID-KRN"
+    ]);
+
+    // מספר פוליסה (לצורך תצוגה בלבד)
     const policyNumber = this.getFirstTextByTags(heshbon, [
       "MISPAR-POLISA-O-HESHBON",
       "MISPAR-POLISA",
@@ -363,7 +380,7 @@ export class XMLPensionParser {
       id: `xml-${policyNumber}-${index}`,
       company: this.cleanCompanyName(company),
       productType,
-      policyNumber,
+      policyNumber: productNumber || policyNumber, // משתמשים במספר המסלול אם קיים, אחרת במספר פוליסה
       status,
       currentBalance,
       managementFeeFromDeposit,
@@ -414,7 +431,24 @@ export class XMLPensionParser {
       this.getElementText(mutzar, "SHEM-YATZRAN", "YeshutYatzran") ||
       "לא ידוע";
 
-    // מספר פוליסה
+    // מספר מסלול/קרן (זה המספר שיש בטבלה products_information!)
+    const productNumber = this.getFirstTextByTags(heshbon, [
+      "ID-MASLUL-RISHUY",
+      "ID-MASLUL",
+      "MISPAR-MASLUL",
+      "ID-KUPA",
+      "ID-GUF",
+      "ID-KRN",
+      "MISPAR-KUPA"
+    ]) || this.getFirstTextByTags(mutzar, [
+      "ID-MASLUL-RISHUY",
+      "ID-MASLUL",
+      "ID-KUPA",
+      "ID-GUF",
+      "ID-KRN"
+    ]);
+
+    // מספר פוליסה (לצורך תצוגה)
     const policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
 
     // סטטוס
@@ -492,7 +526,7 @@ export class XMLPensionParser {
       id: `xml-${policyNumber}-${index}`,
       company: this.cleanCompanyName(company),
       productType,
-      policyNumber,
+      policyNumber: productNumber || policyNumber, // משתמשים במספר המסלול אם קיים, אחרת במספר פוליסה
       status,
       currentBalance,
       managementFeeFromDeposit,
