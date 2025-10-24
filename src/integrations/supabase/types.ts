@@ -1234,39 +1234,6 @@ export type Database = {
           },
         ]
       }
-      products_information: {
-        Row: {
-          company: string
-          created_at: string
-          exposure_data: Json | null
-          id: string
-          product_number: string
-          product_type: string
-          track_name: string
-          updated_at: string
-        }
-        Insert: {
-          company: string
-          created_at?: string
-          exposure_data?: Json | null
-          id?: string
-          product_number: string
-          product_type: string
-          track_name: string
-          updated_at?: string
-        }
-        Update: {
-          company?: string
-          created_at?: string
-          exposure_data?: Json | null
-          id?: string
-          product_number?: string
-          product_type?: string
-          track_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       products_taxonomy: {
         Row: {
           category: string
@@ -2316,7 +2283,7 @@ export type Database = {
     }
     Functions: {
       get_current_user_role: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
       has_role: {
@@ -2326,7 +2293,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      validate_site_content: { Args: { content_input: Json }; Returns: boolean }
+      validate_site_content: {
+        Args: { content_input: Json }
+        Returns: boolean
+      }
       validate_social_link_url: {
         Args: { url_input: string }
         Returns: boolean

@@ -11,7 +11,6 @@ import { DollarSign, FileText, Eye, Plus, Loader2, CheckCircle } from "lucide-re
 import { PensionParser } from "@/utils/pensionParser";
 import { PensionFileData, PensionProduct } from "@/types/pension";
 import { SelectedProduct } from "@/types/products";
-import { ProductsInfoParser } from "@/utils/productsInfoParser";
 
 interface PensionFileImportProps {
   onProductsSelected: (products: SelectedProduct[]) => void;
@@ -81,43 +80,21 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
     }
   };
 
-  const handleImportSelected = async () => {
+  const handleImportSelected = () => {
     if (!pensionData || selectedProducts.size === 0) return;
 
-    const productsToImport = await Promise.all(
-      pensionData.summary.products
-        .filter(product => selectedProducts.has(product.id))
-        .map(async (product) => {
-          const basicProduct = PensionParser.convertPensionProductToInsuranceProduct(product);
-          
-          // חיפוש מידע מוצר בטבלה החדשה לפי מספר פוליסה (=מספר קרן)
-          const productInfo = await ProductsInfoParser.findProduct(product.policyNumber);
-          
-          if (productInfo) {
-            // אם נמצא מוצר בטבלה, נעדכן את החשיפות ואת שם המסלול
-            return {
-              ...basicProduct,
-              productNumber: product.policyNumber,
-              subCategory: productInfo.track_name,
-              company: productInfo.company,
-              category: productInfo.product_type,
-              exposureStocks: productInfo.exposure_data.stocks || 0,
-              exposureBonds: productInfo.exposure_data.bonds || 0,
-              exposureForeignCurrency: productInfo.exposure_data.foreign_currency || 0,
-              exposureForeignInvestments: productInfo.exposure_data.foreign_investments || 0,
-              exposureIsrael: productInfo.exposure_data.israel || 0,
-              exposureIlliquidAssets: productInfo.exposure_data.illiquid_assets || 0,
-              includeExposureData: true
-            };
-          }
-          
-          // אם לא נמצא מוצר בטבלה, נחזיר את המוצר הבסיסי
-          return {
-            ...basicProduct,
-            productNumber: product.policyNumber
-          };
-        })
-    );
+    const productsToImport = pensionData.summary.products
+      .filter(product => selectedProducts.has(product.id))
+      .map(product => {
+        const basicProduct = PensionParser.convertPensionProductToInsuranceProduct(product);
+        
+        // כעת נבצע התאמה חכמה עם מספר קופה
+        // (הלוגיקה כבר נמצאת ב-ExcelImport, אבל כאן נדאג שה-productNumber מועבר)
+        return {
+          ...basicProduct,
+          productNumber: product.policyNumber // משתמשים במספר פוליסה כמספר קופה
+        };
+      });
 
     onProductsSelected(productsToImport);
     

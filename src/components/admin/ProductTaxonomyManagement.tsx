@@ -20,10 +20,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Coins, Plus, FileSpreadsheet, Database, Loader2 } from "lucide-react";
+import { Pencil, Coins, Plus, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
-import { ProductsInfoParser } from "@/utils/productsInfoParser";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ProductTaxonomyItem {
   id: string;
@@ -43,7 +41,6 @@ export const ProductTaxonomyManagement = () => {
   const [editingProduct, setEditingProduct] = useState<ProductTaxonomyItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isPopulating, setIsPopulating] = useState(false);
   const [formData, setFormData] = useState({
     company: "",
     category: "",
@@ -54,25 +51,6 @@ export const ProductTaxonomyManagement = () => {
     exposure_foreign_currency: 0,
     exposure_foreign_investments: 0,
   });
-
-  const handlePopulateDatabase = async () => {
-    setIsPopulating(true);
-    try {
-      const result = await ProductsInfoParser.populateDatabase();
-      
-      if (result.success) {
-        toast.success(`הטבלה אוכלסה בהצלחה עם ${result.count} מוצרים!`);
-        await loadProducts();
-      } else {
-        toast.error(`שגיאה באיכלוס הטבלה: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Error populating database:', error);
-      toast.error('שגיאה באיכלוס הטבלה');
-    } finally {
-      setIsPopulating(false);
-    }
-  };
 
   // Filter products based on search query
   const filteredProducts = products.filter(product => {
@@ -93,28 +71,13 @@ export const ProductTaxonomyManagement = () => {
 
   const loadProducts = async () => {
     try {
-      // Load from new products_information table
       const { data, error } = await supabase
-        .from('products_information')
+        .from('products_taxonomy')
         .select('*')
         .order('company', { ascending: true });
 
       if (error) throw error;
-      
-      // Transform to match old structure
-      const transformedData = (data || []).map(item => ({
-        id: item.id,
-        company: item.company,
-        category: item.product_type,
-        sub_category: item.track_name,
-        product_number: item.product_number,
-        exposure_stocks: (item.exposure_data as any)?.stocks || 0,
-        exposure_bonds: (item.exposure_data as any)?.bonds || 0,
-        exposure_foreign_currency: (item.exposure_data as any)?.foreign_currency || 0,
-        exposure_foreign_investments: (item.exposure_data as any)?.foreign_investments || 0,
-      }));
-      
-      setProducts(transformedData);
+      setProducts(data || []);
     } catch (error) {
       console.error('Error loading products:', error);
       toast.error('שגיאה בטעינת המוצרים');
@@ -300,16 +263,6 @@ export const ProductTaxonomyManagement = () => {
 
   return (
     <div className="space-y-4">
-      {/* Alert if table is empty */}
-      {products.length === 0 && !loading && (
-        <Alert>
-          <Database className="h-4 w-4" />
-          <AlertDescription>
-            הטבלה ריקה. יש למלא אותה מקבצי ה-XML (pensia, gemel, bituah) על ידי לחיצה על הכפתור למטה.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="mb-4">
         <Input
           type="text"
@@ -321,24 +274,6 @@ export const ProductTaxonomyManagement = () => {
       </div>
       
       <div className="flex gap-2 justify-start">
-        <Button 
-          onClick={handlePopulateDatabase}
-          disabled={isPopulating}
-          variant="default"
-        >
-          {isPopulating ? (
-            <>
-              <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-              מאכלס טבלה...
-            </>
-          ) : (
-            <>
-              <Database className="h-4 w-4 ml-2" />
-              מלא טבלה מקבצי XML
-            </>
-          )}
-        </Button>
-
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
