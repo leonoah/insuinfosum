@@ -52,6 +52,7 @@ export const ProductInformationManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
 
   const filteredProducts = products.filter(product => {
     if (!searchQuery) return true;
@@ -91,25 +92,35 @@ export const ProductInformationManagement = () => {
     return parseFloat(cleaned) || 0;
   };
 
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString('he-IL');
+    setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+  };
+
   const handleAutoImport = async () => {
     try {
+      setLogs([]);
       setLoading(true);
+      addLog("📥 מתחיל ייבוא נתונים אוטומטי...");
       toast.info("מתחיל ייבוא נתונים...");
-      console.log("📥 Starting CSV auto-import...");
 
       // Load CSV file from data directory
-      console.log("📂 Loading CSV file from /src/data/all_funds_exposures_wide.csv");
+      addLog("📂 טוען קובץ CSV מ-/src/data/all_funds_exposures_wide.csv");
       const response = await fetch('/src/data/all_funds_exposures_wide.csv');
       
       if (!response.ok) {
+        addLog(`❌ שגיאה בטעינת הקובץ: ${response.statusText}`);
         throw new Error(`Failed to load CSV file: ${response.statusText}`);
       }
       
       const csvContent = await response.text();
-      console.log(`✅ CSV file loaded, length: ${csvContent.length} characters`);
+      addLog(`✅ קובץ CSV נטען בהצלחה - ${csvContent.length.toLocaleString()} תווים`);
+      
+      const lines = csvContent.split('\n').length;
+      addLog(`📊 מספר שורות בקובץ: ${lines.toLocaleString()}`);
 
       // Call edge function to import
-      console.log("🚀 Calling import edge function...");
+      addLog("🚀 קורא ל-Edge Function לייבוא...");
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvb2RrY2Nqd3l5YndnbWt6YXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNDcyMDUsImV4cCI6MjA2MzkyMzIwNX0.Jpz2_RIyrr2Bvpu6yrX37Z_Kl5lUhhyLerfa6G2MHJc";
       
       const importResponse = await fetch(
@@ -124,20 +135,22 @@ export const ProductInformationManagement = () => {
         }
       );
 
-      console.log(`📡 Edge function response status: ${importResponse.status}`);
+      addLog(`📡 תגובה מה-Edge Function - סטטוס: ${importResponse.status}`);
       const result = await importResponse.json();
-      console.log("📦 Edge function result:", result);
       
       if (!importResponse.ok) {
-        console.error("❌ Edge function error:", result);
+        addLog(`❌ שגיאה מה-Edge Function: ${JSON.stringify(result)}`);
         throw new Error(result.error || result.message || 'Failed to import CSV');
       }
 
-      console.log("✅ Import successful, reloading products...");
+      addLog(`✅ ייבוא הצליח! ${result.message}`);
+      addLog("🔄 טוען מחדש את רשימת המוצרים...");
       await loadProducts();
+      addLog(`✅ רשימת מוצרים עודכנה - סה"כ ${products.length} מוצרים`);
       toast.success(result.message || "הנתונים יובאו בהצלחה!");
       setIsDialogOpen(false);
     } catch (error) {
+      addLog(`❌ שגיאה: ${error.message}`);
       console.error("❌ Error importing CSV:", error);
       toast.error(`שגיאה בייבוא הנתונים: ${error.message}`);
     } finally {
@@ -150,16 +163,20 @@ export const ProductInformationManagement = () => {
     if (!file) return;
 
     try {
+      setLogs([]);
       setLoading(true);
-      console.log("📥 Starting CSV file import...");
-      console.log(`📂 File: ${file.name}, size: ${file.size} bytes`);
+      addLog(`📥 מתחיל ייבוא קובץ: ${file.name}`);
+      addLog(`📂 גודל קובץ: ${(file.size / 1024).toFixed(2)} KB`);
       
       // Read CSV content
       const text = await file.text();
-      console.log(`✅ File read, length: ${text.length} characters`);
+      addLog(`✅ קובץ נקרא בהצלחה - ${text.length.toLocaleString()} תווים`);
+      
+      const lines = text.split('\n').length;
+      addLog(`📊 מספר שורות בקובץ: ${lines.toLocaleString()}`);
       
       // Call edge function to import
-      console.log("🚀 Calling import edge function...");
+      addLog("🚀 קורא ל-Edge Function לייבוא...");
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvb2RrY2Nqd3l5YndnbWt6YXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNDcyMDUsImV4cCI6MjA2MzkyMzIwNX0.Jpz2_RIyrr2Bvpu6yrX37Z_Kl5lUhhyLerfa6G2MHJc";
       
       const response = await fetch(
@@ -174,20 +191,22 @@ export const ProductInformationManagement = () => {
         }
       );
 
-      console.log(`📡 Edge function response status: ${response.status}`);
+      addLog(`📡 תגובה מה-Edge Function - סטטוס: ${response.status}`);
       const result = await response.json();
-      console.log("📦 Edge function result:", result);
       
       if (!response.ok) {
-        console.error("❌ Edge function error:", result);
+        addLog(`❌ שגיאה מה-Edge Function: ${JSON.stringify(result)}`);
         throw new Error(result.error || result.message || 'Failed to import CSV');
       }
 
-      console.log("✅ Import successful, reloading products...");
+      addLog(`✅ ייבוא הצליח! ${result.message}`);
+      addLog("🔄 טוען מחדש את רשימת המוצרים...");
       await loadProducts();
+      addLog(`✅ רשימת מוצרים עודכנה`);
       toast.success(result.message || "הנתונים יובאו בהצלחה!");
       setIsDialogOpen(false);
     } catch (error) {
+      addLog(`❌ שגיאה: ${error.message}`);
       console.error("❌ Error importing CSV:", error);
       toast.error(`שגיאה בייבוא הנתונים: ${error.message}`);
     } finally {
@@ -221,6 +240,28 @@ export const ProductInformationManagement = () => {
 
   return (
     <div className="space-y-4">
+      {logs.length > 0 && (
+        <div className="border rounded-lg p-4 bg-muted/50 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm">לוג ייבוא נתונים</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLogs([])}
+            >
+              נקה לוג
+            </Button>
+          </div>
+          <div className="max-h-48 overflow-y-auto space-y-1 font-mono text-xs">
+            {logs.map((log, index) => (
+              <div key={index} className="text-muted-foreground whitespace-pre-wrap">
+                {log}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       {products.length === 0 && !loading && (
         <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted mb-4">
           <div className="flex-1">
