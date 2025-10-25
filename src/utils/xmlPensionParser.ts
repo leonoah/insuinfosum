@@ -271,26 +271,25 @@ export class XMLPensionParser {
       this.getFirstTextByTags(mutzar, ["SHEM-YATZRAN", "SHEM-YATZARAN", "SHEM-YATSRAN"], "YeshutYatzran") ||
       "לא ידוע";
 
-    // מספר פוליסה
-    let policyNumber = this.getFirstTextByTags(heshbon, [
-      "MISPAR-POLISA-O-HESHBON",
-      "MISPAR-POLISA",
-      "MISPAR-HESHBON",
-    ]);
-
-    // חילוץ קוד קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    // קריאת KOD-MASLUL-HASHKA המלא
     const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
       "KOD-MASLUL-HASHKA",
       "KOD-MASLUL",
     ]);
     
-    let extractedProductCode: string | undefined;
+    // חילוץ קוד קרן/קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    let policyNumber: string;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
       // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
-      extractedProductCode = kodMaslulHashka.substring(23, 30).trim();
-      if (extractedProductCode) {
-        policyNumber = extractedProductCode;
-      }
+      policyNumber = kodMaslulHashka.substring(23, 30).trim();
+    } else {
+      // אם אין KOD-MASLUL-HASHKA, ננסה מספר פוליסה רגיל
+      policyNumber = this.getFirstTextByTags(heshbon, [
+        "MISPAR-POLISA-O-HESHBON",
+        "MISPAR-POLISA",
+        "MISPAR-HESHBON",
+        "ASMACHTA-MEKORIT",
+      ]) || `unknown-${index}`;
     }
 
     // סטטוס
@@ -430,22 +429,22 @@ export class XMLPensionParser {
       this.getElementText(mutzar, "SHEM-YATZRAN", "YeshutYatzran") ||
       "לא ידוע";
 
-    // מספר פוליסה
-    let policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON");
-
-    // חילוץ קוד קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    // קריאת KOD-MASLUL-HASHKA המלא
     const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
       "KOD-MASLUL-HASHKA",
       "KOD-MASLUL",
     ]);
     
-    let extractedProductCode: string | undefined;
+    // חילוץ קוד קרן/קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    let policyNumber: string;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
       // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
-      extractedProductCode = kodMaslulHashka.substring(23, 30).trim();
-      if (extractedProductCode) {
-        policyNumber = extractedProductCode;
-      }
+      policyNumber = kodMaslulHashka.substring(23, 30).trim();
+    } else {
+      // אם אין KOD-MASLUL-HASHKA, ננסה מספר פוליסה רגיל
+      policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON") || 
+                     this.getElementText(heshbon, "ASMACHTA-MEKORIT") ||
+                     `unknown-${index}`;
     }
 
     // סטטוס
