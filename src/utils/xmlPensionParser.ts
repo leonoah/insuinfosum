@@ -271,17 +271,21 @@ export class XMLPensionParser {
       this.getFirstTextByTags(mutzar, ["SHEM-YATZRAN", "SHEM-YATZARAN", "SHEM-YATSRAN"], "YeshutYatzran") ||
       "לא ידוע";
 
-    // קריאת KOD-MASLUL-HASHKA המלא - חיפוש בכל הווריאציות האפשריות
+    // קריאת KOD-MASLUL-HASHKAA המלא - חיפוש בכל הווריאציות האפשריות
     const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
+      "KOD-MASLUL-HASHKAA",
       "KOD-MASLUL-HASHKA",
       "KOD-MASLUL-HASHKA-BE-KUPA",
       "KOD-MASLUL",
       "KOD_MASLUL_HASHKA",
+      "KOD_MASLUL_HASHKAA",
     ]) || this.getFirstTextByTags(mutzar, [
+      "KOD-MASLUL-HASHKAA",
       "KOD-MASLUL-HASHKA",
       "KOD-MASLUL-HASHKA-BE-KUPA",
       "KOD-MASLUL",
       "KOD_MASLUL_HASHKA",
+      "KOD_MASLUL_HASHKAA",
     ]);
     
     // חילוץ קוד מסלול ההשקעה מתוך KOD-MASLUL-HASHKA
@@ -440,17 +444,21 @@ export class XMLPensionParser {
       this.getElementText(mutzar, "SHEM-YATZRAN", "YeshutYatzran") ||
       "לא ידוע";
 
-    // קריאת KOD-MASLUL-HASHKA המלא - חיפוש בכל הווריאציות האפשריות
+    // קריאת KOD-MASLUL-HASHKAA המלא - חיפוש בכל הווריאציות האפשריות
     const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
+      "KOD-MASLUL-HASHKAA",
       "KOD-MASLUL-HASHKA",
       "KOD-MASLUL-HASHKA-BE-KUPA",
       "KOD-MASLUL",
       "KOD_MASLUL_HASHKA",
+      "KOD_MASLUL_HASHKAA",
     ]) || this.getFirstTextByTags(mutzar, [
+      "KOD-MASLUL-HASHKAA",
       "KOD-MASLUL-HASHKA",
       "KOD-MASLUL-HASHKA-BE-KUPA",
       "KOD-MASLUL",
       "KOD_MASLUL_HASHKA",
+      "KOD_MASLUL_HASHKAA",
     ]);
     
     // חילוץ קוד מסלול ההשקעה מתוך KOD-MASLUL-HASHKA
