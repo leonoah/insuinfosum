@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Upload, Search, Trash2 } from "lucide-react";
-import Papa from "papaparse";
 
 interface ProductInfo {
   id: string;
@@ -92,70 +91,80 @@ export const ProductInformationManagement = () => {
     return parseFloat(cleaned) || 0;
   };
 
+  const handleAutoImport = async () => {
+    try {
+      setLoading(true);
+      toast.info("מתחיל ייבוא נתונים...");
+
+      // Load CSV file from data directory
+      const response = await fetch('/src/data/all_funds_exposures_wide.csv');
+      const csvContent = await response.text();
+
+      // Call edge function to import
+      const importResponse = await fetch(
+        'https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/import-products-csv',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ csvContent })
+        }
+      );
+
+      const result = await importResponse.json();
+      
+      if (!importResponse.ok) {
+        throw new Error(result.error || 'Failed to import CSV');
+      }
+
+      await loadProducts();
+      toast.success(result.message || "הנתונים יובאו בהצלחה!");
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      toast.error("שגיאה בייבוא הנתונים");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      Papa.parse(file, {
-        header: true,
-        encoding: 'UTF-8',
-        complete: async (results) => {
-          const productsToInsert = results.data
-            .filter((row: any) => row['קוד קופה']) // רק שורות עם קוד קופה
-            .map((row: any) => ({
-              product_type: row['סוג מוצר'] || '',
-              track_name: row['שם קופה'] || '',
-              company: row['שם חברה'] || '',
-              product_code: String(row['קוד קופה'] || '').trim(),
-              exposure_stocks: parsePercentage(row['חשיפה למניות']),
-              exposure_foreign: parsePercentage(row['חשיפה לחו"ל']),
-              exposure_foreign_currency: parsePercentage(row['חשיפה למט"ח']),
-              exposure_government_bonds: parsePercentage(row['אג"ח ממשלתיות סחירות']),
-              exposure_corporate_bonds_tradable: parsePercentage(row['אג"ח קונצרני סחיר ותעודות סל אג"חיות']),
-              exposure_corporate_bonds_non_tradable: parsePercentage(row['אג"ח קונצרניות לא סחירות']),
-              exposure_stocks_options: parsePercentage(row['מניות, אופציות ותעודות סל מנייתיות']),
-              exposure_deposits: parsePercentage(row['פיקדונות']),
-              exposure_loans: parsePercentage(row['הלוואות']),
-              exposure_cash: parsePercentage(row['מזומנים ושווי מזומנים']),
-              exposure_mutual_funds: parsePercentage(row['קרנות נאמנות']),
-              exposure_other_assets: parsePercentage(row['נכסים אחרים']),
-              exposure_liquid_assets: parsePercentage(row['נכסים סחירים ונזילים']),
-              exposure_non_liquid_assets: parsePercentage(row['נכסים לא סחירים']),
-              exposure_israel: parsePercentage(row['נכסים בארץ']),
-              exposure_foreign_and_currency: parsePercentage(row['נכסים בחו"ל ובמט"ח']),
-              source: row['מקור'] || 'csv',
-            }));
-
-          // מחיקת הטבלה הקיימת וייבוא מחדש
-          const { error: deleteError } = await supabase
-            .from('products_information')
-            .delete()
-            .neq('id', '00000000-0000-0000-0000-000000000000'); // מחק הכל
-
-          if (deleteError) {
-            console.error('Error deleting old products:', deleteError);
-          }
-
-          // הוספת המוצרים החדשים
-          const { error } = await supabase
-            .from('products_information')
-            .insert(productsToInsert);
-
-          if (error) throw error;
-
-          toast.success(`${productsToInsert.length} מוצרים יובאו בהצלחה`);
-          loadProducts();
-          setIsDialogOpen(false);
-        },
-        error: (error) => {
-          console.error('CSV parsing error:', error);
-          toast.error('שגיאה בפענוח הקובץ');
+      setLoading(true);
+      
+      // Read CSV content
+      const text = await file.text();
+      
+      // Call edge function to import
+      const response = await fetch(
+        'https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/import-products-csv',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ csvContent: text })
         }
-      });
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to import CSV');
+      }
+
+      await loadProducts();
+      toast.success(result.message || "הנתונים יובאו בהצלחה!");
+      setIsDialogOpen(false);
     } catch (error) {
-      console.error('Error importing CSV:', error);
-      toast.error('שגיאה בייבוא הקובץ');
+      console.error("Error importing CSV:", error);
+      toast.error("שגיאה בייבוא הנתונים");
+    } finally {
+      setLoading(false);
     }
 
     e.target.value = '';
@@ -185,6 +194,24 @@ export const ProductInformationManagement = () => {
 
   return (
     <div className="space-y-4">
+      {products.length === 0 && !loading && (
+        <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted mb-4">
+          <div className="flex-1">
+            <h3 className="font-semibold">טעינת נתוני מוצרים</h3>
+            <p className="text-sm text-muted-foreground">
+              לחץ לייבוא אוטומטי של נתוני המוצרים מקובץ ה-CSV
+            </p>
+          </div>
+          <Button
+            onClick={handleAutoImport}
+            disabled={loading}
+            variant="default"
+          >
+            <Upload className="h-4 w-4 ml-2" />
+            ייבא נתונים אוטומטית
+          </Button>
+        </div>
+      )}
       <div className="flex items-center gap-4 mb-4">
         <div className="flex-1">
           <div className="relative">

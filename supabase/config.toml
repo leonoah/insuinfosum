@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.search-exposure]
 verify_jwt = false
+
+[functions.import-products-csv]
+verify_jwt = false
