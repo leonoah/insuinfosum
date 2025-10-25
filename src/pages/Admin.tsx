@@ -8,7 +8,8 @@ import { ClientsList } from "@/components/admin/ClientsList";
 import { ClientManagement } from "@/components/admin/ClientManagement";
 import { ReportsLog } from "@/components/admin/ReportsLog";
 import { ProductInformationManagement } from "@/components/admin/ProductInformationManagement";
-import { Shield, Building2, User, Users, FileText, Database, UserPlus } from "lucide-react";
+import PensionParsingLogs from "@/components/admin/PensionParsingLogs";
+import { Shield, Building2, User, Users, FileText, Database, UserPlus, Activity } from "lucide-react";
 
 const Admin = () => {
   return (
@@ -26,7 +27,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="insurance" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8">
+          <TabsList className="grid w-full grid-cols-7 mb-8">
             <TabsTrigger value="insurance" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               חברות ביטוח
@@ -50,6 +51,10 @@ const Admin = () => {
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               לוג דוחות
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              לוגי מסלקה
             </TabsTrigger>
           </TabsList>
 
@@ -133,6 +138,20 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <ReportsLog />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="logs">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  לוגי פירסור מסלקה
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PensionParsingLogs />
               </CardContent>
             </Card>
           </TabsContent>

@@ -1193,6 +1193,48 @@ export type Database = {
           },
         ]
       }
+      pension_parsing_logs: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          error_message: string | null
+          extracted_product_code: string | null
+          file_name: string
+          id: string
+          kod_maslul_hashka: string | null
+          parsing_status: string
+          products_found: number | null
+          products_imported: number | null
+          raw_data: Json | null
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          error_message?: string | null
+          extracted_product_code?: string | null
+          file_name: string
+          id?: string
+          kod_maslul_hashka?: string | null
+          parsing_status: string
+          products_found?: number | null
+          products_imported?: number | null
+          raw_data?: Json | null
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          error_message?: string | null
+          extracted_product_code?: string | null
+          file_name?: string
+          id?: string
+          kod_maslul_hashka?: string | null
+          parsing_status?: string
+          products_found?: number | null
+          products_imported?: number | null
+          raw_data?: Json | null
+        }
+        Relationships: []
+      }
       photos: {
         Row: {
           created_at: string

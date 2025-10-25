@@ -30,10 +30,27 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
     if (!file) return;
 
     setIsLoading(true);
+    let logData: any = {
+      file_name: file.name,
+      parsing_status: 'error',
+      products_found: 0,
+      products_imported: 0
+    };
+
     try {
       const data = await PensionParser.parsePensionFile(file);
       setPensionData(data);
       setShowProductDetails(true);
+      
+      // עדכון נתוני הלוג
+      logData = {
+        ...logData,
+        parsing_status: 'success',
+        client_name: data.summary.clientName,
+        products_found: data.summary.products.length,
+        kod_maslul_hashka: data.summary.products[0]?.policyNumber ? 'multiple' : null,
+        raw_data: { total_by_type: data.summary.totalByType }
+      };
       
       const fileCount = file.name.toLowerCase().endsWith('.zip') ? 'מקבצים מרובים' : 'מהקובץ';
       toast({
@@ -41,12 +58,24 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
         description: `נמצאו ${data?.summary.products.length} מוצרים ${fileCount}`,
       });
     } catch (error) {
+      logData = {
+        ...logData,
+        error_message: error instanceof Error ? error.message : "לא ניתן לפרש את הקובץ"
+      };
+      
       toast({
         title: "שגיאה בקריאת הקובץ",
         description: error instanceof Error ? error.message : "לא ניתן לפרש את הקובץ",
         variant: "destructive",
       });
     } finally {
+      // שמירת הלוג לדאטאבייס
+      try {
+        await supabase.from('pension_parsing_logs').insert([logData]);
+      } catch (logError) {
+        console.error('Failed to save parsing log:', logError);
+      }
+      
       setIsLoading(false);
     }
   };
@@ -85,12 +114,25 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
     if (!pensionData || selectedProducts.size === 0) return;
 
     setIsLoading(true);
+    const importLogs: any[] = [];
+    
     try {
       const productsToImport = await Promise.all(
         pensionData.summary.products
           .filter(product => selectedProducts.has(product.id))
           .map(async (product) => {
             const basicProduct = PensionParser.convertPensionProductToInsuranceProduct(product);
+            
+            // יצירת לוג לכל מוצר
+            const productLog: any = {
+              file_name: `Import: ${product.company} - ${product.productType}`,
+              client_name: pensionData.summary.clientName,
+              kod_maslul_hashka: product.policyNumber || null,
+              extracted_product_code: product.policyNumber ? product.policyNumber.substring(23, 30) : null,
+              parsing_status: 'success',
+              products_found: 1,
+              products_imported: 1
+            };
             
             // חיפוש מידע מהטבלה לפי קוד הקופה (policyNumber)
             const { data: productInfo, error } = await supabase
@@ -101,10 +143,15 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
 
             if (error) {
               console.error('Error fetching product info:', error);
+              productLog.error_message = `Error fetching from DB: ${error.message}`;
+              productLog.parsing_status = 'partial';
             }
 
             // אם נמצא מידע בטבלה, נעדכן את המוצר
             if (productInfo) {
+              productLog.raw_data = { found_in_db: true, product_info: productInfo };
+              importLogs.push(productLog);
+              
               return {
                 ...basicProduct,
                 productNumber: product.policyNumber,
@@ -121,12 +168,26 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
             }
 
             // אם לא נמצא מידע, נשתמש במה שיש לנו מהמסלקה
+            productLog.raw_data = { found_in_db: false, using_maslaka_data: true };
+            productLog.parsing_status = 'partial';
+            productLog.error_message = 'Product code not found in products_information table';
+            importLogs.push(productLog);
+            
             return {
               ...basicProduct,
               productNumber: product.policyNumber
             };
           })
       );
+
+      // שמירת כל הלוגים לדאטאבייס
+      if (importLogs.length > 0) {
+        try {
+          await supabase.from('pension_parsing_logs').insert(importLogs);
+        } catch (logError) {
+          console.error('Failed to save import logs:', logError);
+        }
+      }
 
       onProductsSelected(productsToImport);
       
