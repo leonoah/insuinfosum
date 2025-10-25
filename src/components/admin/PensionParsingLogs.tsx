@@ -138,7 +138,7 @@ const PensionParsingLogs = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-6 text-center">
                 <div className="text-2xl font-bold">{logs.length}</div>
@@ -159,6 +159,14 @@ const PensionParsingLogs = () => {
                   {logs.filter(l => l.parsing_status === 'error').length}
                 </div>
                 <div className="text-sm text-muted-foreground">שגיאות</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <div className="text-2xl font-bold text-blue-500">
+                  {logs.filter(l => l.kod_maslul_hashka && l.kod_maslul_hashka !== 'multiple').length}
+                </div>
+                <div className="text-sm text-muted-foreground">KOD נמצא</div>
               </CardContent>
             </Card>
           </div>
@@ -198,23 +206,51 @@ const PensionParsingLogs = () => {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        {log.kod_maslul_hashka && (
-                          <div>
-                            <span className="text-muted-foreground">KOD-MASLUL-HASHKA: </span>
-                            <code className="text-xs bg-muted px-2 py-1 rounded">
-                              {log.kod_maslul_hashka}
-                            </code>
-                          </div>
-                        )}
-                        {log.extracted_product_code && (
-                          <div>
-                            <span className="text-muted-foreground">קוד קרן שחולץ: </span>
-                            <code className="text-xs bg-muted px-2 py-1 rounded font-bold">
-                              {log.extracted_product_code}
-                            </code>
-                          </div>
-                        )}
+                      <div className="space-y-2">
+                        {/* אינדיקטור האם נמצא KOD-MASLUL-HASHKA */}
+                        <div className="flex items-center gap-2">
+                          {log.kod_maslul_hashka && log.kod_maslul_hashka !== 'multiple' ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                              <span className="text-sm font-medium text-green-600">
+                                KOD-MASLUL-HASHKA נמצא בקובץ
+                              </span>
+                            </>
+                          ) : log.kod_maslul_hashka === 'multiple' ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 text-blue-500" />
+                              <span className="text-sm font-medium text-blue-600">
+                                KOD-MASLUL-HASHKA נמצא במספר מוצרים
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 text-red-500" />
+                              <span className="text-sm font-medium text-red-600">
+                                KOD-MASLUL-HASHKA לא נמצא בקובץ
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          {log.kod_maslul_hashka && log.kod_maslul_hashka !== 'multiple' && (
+                            <div>
+                              <span className="text-muted-foreground">KOD-MASLUL-HASHKA: </span>
+                              <code className="text-xs bg-muted px-2 py-1 rounded">
+                                {log.kod_maslul_hashka}
+                              </code>
+                            </div>
+                          )}
+                          {log.extracted_product_code && log.extracted_product_code !== 'multiple' && (
+                            <div>
+                              <span className="text-muted-foreground">קוד מסלול שחולץ (ספרות 24-30): </span>
+                              <code className="text-xs bg-green-100 dark:bg-green-900 px-2 py-1 rounded font-bold text-green-800 dark:text-green-200">
+                                {log.extracted_product_code}
+                              </code>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex gap-4 text-sm">
