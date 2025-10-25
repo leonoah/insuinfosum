@@ -293,17 +293,20 @@ export class XMLPensionParser {
     let policyNumber: string;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
       // חילוץ 7 הספרות האחרונות (ספרות 24-30 = אינדקס 23-29)
-      policyNumber = kodMaslulHashka.substring(23, 30).trim();
-      console.log(`✓ KOD-MASLUL-HASHKA found: ${kodMaslulHashka}`);
-      console.log(`  → Extracted track code (digits 24-30): ${policyNumber}`);
+      const rawTrackCode = kodMaslulHashka.substring(23, 30).trim();
+      // הסרת אפסים מובילים
+      policyNumber = rawTrackCode.replace(/^0+/, '') || '0';
+      console.log(`✓ KOD-MASLUL-HASHKAA found: ${kodMaslulHashka}`);
+      console.log(`  → Raw track code (digits 24-30): ${rawTrackCode}`);
+      console.log(`  → Track code without leading zeros: ${policyNumber}`);
     } else {
       // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, אין שימוש בפולבקים - לפי הדרישה
       policyNumber = `unknown-${index}`;
       if (kodMaslulHashka) {
-        console.warn(`⚠ KOD-MASLUL-HASHKA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
-        console.warn("Parsing strictly by KOD-MASLUL-HASHKA only. Skipping any fallback fields.");
+        console.warn(`⚠ KOD-MASLUL-HASHKAA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
+        console.warn("Parsing strictly by KOD-MASLUL-HASHKAA only. Skipping any fallback fields.");
       } else {
-        console.warn("⚠ KOD-MASLUL-HASHKA not found. Parsing strictly by KOD-MASLUL-HASHKA only. No fallback will be used.");
+        console.warn("⚠ KOD-MASLUL-HASHKAA not found. Parsing strictly by KOD-MASLUL-HASHKAA only. No fallback will be used.");
       }
     }
 
@@ -466,17 +469,20 @@ export class XMLPensionParser {
     let policyNumber: string;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
       // חילוץ 7 הספרות האחרונות (ספרות 24-30 = אינדקס 23-29)
-      policyNumber = kodMaslulHashka.substring(23, 30).trim();
-      console.log(`✓ KOD-MASLUL-HASHKA found: ${kodMaslulHashka}`);
-      console.log(`  → Extracted track code (digits 24-30): ${policyNumber}`);
+      const rawTrackCode = kodMaslulHashka.substring(23, 30).trim();
+      // הסרת אפסים מובילים
+      policyNumber = rawTrackCode.replace(/^0+/, '') || '0';
+      console.log(`✓ KOD-MASLUL-HASHKAA found: ${kodMaslulHashka}`);
+      console.log(`  → Raw track code (digits 24-30): ${rawTrackCode}`);
+      console.log(`  → Track code without leading zeros: ${policyNumber}`);
     } else {
       // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, אין שימוש בפולבקים - לפי הדרישה
       policyNumber = `unknown-${index}`;
       if (kodMaslulHashka) {
-        console.warn(`⚠ KOD-MASLUL-HASHKA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
-        console.warn("Parsing strictly by KOD-MASLUL-HASHKA only. Skipping any fallback fields.");
+        console.warn(`⚠ KOD-MASLUL-HASHKAA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
+        console.warn("Parsing strictly by KOD-MASLUL-HASHKAA only. Skipping any fallback fields.");
       } else {
-        console.warn("⚠ KOD-MASLUL-HASHKA not found. Parsing strictly by KOD-MASLUL-HASHKA only. No fallback will be used.");
+        console.warn("⚠ KOD-MASLUL-HASHKAA not found. Parsing strictly by KOD-MASLUL-HASHKAA only. No fallback will be used.");
       }
     }
 
