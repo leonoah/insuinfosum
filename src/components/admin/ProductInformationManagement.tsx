@@ -104,9 +104,9 @@ export const ProductInformationManagement = () => {
       addLog("📥 מתחיל ייבוא נתונים אוטומטי...");
       toast.info("מתחיל ייבוא נתונים...");
 
-      // Load CSV file from data directory
-      addLog("📂 טוען קובץ CSV מ-/src/data/all_funds_exposures_wide.csv");
-      const response = await fetch('/src/data/all_funds_exposures_wide.csv');
+      // Load CSV file from public directory
+      addLog("📂 טוען קובץ CSV מ-/all_funds_exposures_wide.csv");
+      const response = await fetch('/all_funds_exposures_wide.csv');
       
       if (!response.ok) {
         addLog(`❌ שגיאה בטעינת הקובץ: ${response.statusText}`);
