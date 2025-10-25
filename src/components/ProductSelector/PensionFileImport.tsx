@@ -48,8 +48,17 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
         parsing_status: 'success',
         client_name: data.summary.clientName,
         products_found: data.summary.products.length,
-        kod_maslul_hashka: data.summary.products[0]?.policyNumber ? 'multiple' : null,
-        raw_data: { total_by_type: data.summary.totalByType }
+        kod_maslul_hashka: data.summary.products.length > 1 ? 'multiple' : (data.summary.products[0]?.kodMaslulHashka || data.summary.products[0]?.policyNumber || null),
+        extracted_product_code: data.summary.products.length > 1 ? 'multiple' : (data.summary.products[0]?.policyNumber || null),
+        raw_data: { 
+          total_by_type: data.summary.totalByType,
+          all_product_codes: data.summary.products.map(p => ({
+            company: p.company,
+            productType: p.productType,
+            kodMaslulHashka: p.kodMaslulHashka,
+            extractedCode: p.policyNumber
+          }))
+        }
       };
       
       const fileCount = file.name.toLowerCase().endsWith('.zip') ? 'מקבצים מרובים' : 'מהקובץ';
@@ -127,8 +136,8 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
             const productLog: any = {
               file_name: `Import: ${product.company} - ${product.productType}`,
               client_name: pensionData.summary.clientName,
-              kod_maslul_hashka: product.policyNumber || null,
-              extracted_product_code: product.policyNumber ? product.policyNumber.substring(23, 30) : null,
+              kod_maslul_hashka: product.kodMaslulHashka || product.policyNumber || null,
+              extracted_product_code: product.policyNumber || null,
               parsing_status: 'success',
               products_found: 1,
               products_imported: 1

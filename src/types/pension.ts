@@ -3,6 +3,7 @@ export interface PensionProduct {
   company: string;
   productType: 'קרן השתלמות' | 'קופת גמל' | 'חברת ביטוח' | 'קרן פנסיה חדשה' | 'ביטוח משכנתא';
   policyNumber: string;
+  kodMaslulHashka?: string;
   status: 'פעיל' | 'לא פעיל';
   currentBalance: number;
   managementFeeFromDeposit: number;

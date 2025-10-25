@@ -284,11 +284,12 @@ export class XMLPensionParser {
       "KOD-MASLUL",
     ]);
     
+    let extractedProductCode: string | undefined;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
       // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
-      const productCode = kodMaslulHashka.substring(23, 30).trim();
-      if (productCode) {
-        policyNumber = productCode;
+      extractedProductCode = kodMaslulHashka.substring(23, 30).trim();
+      if (extractedProductCode) {
+        policyNumber = extractedProductCode;
       }
     }
 
@@ -378,6 +379,7 @@ export class XMLPensionParser {
       company: this.cleanCompanyName(company),
       productType,
       policyNumber,
+      kodMaslulHashka: kodMaslulHashka || undefined,
       status,
       currentBalance,
       managementFeeFromDeposit,
@@ -437,11 +439,12 @@ export class XMLPensionParser {
       "KOD-MASLUL",
     ]);
     
+    let extractedProductCode: string | undefined;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
       // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
-      const productCode = kodMaslulHashka.substring(23, 30).trim();
-      if (productCode) {
-        policyNumber = productCode;
+      extractedProductCode = kodMaslulHashka.substring(23, 30).trim();
+      if (extractedProductCode) {
+        policyNumber = extractedProductCode;
       }
     }
 
@@ -521,6 +524,7 @@ export class XMLPensionParser {
       company: this.cleanCompanyName(company),
       productType,
       policyNumber,
+      kodMaslulHashka: kodMaslulHashka || undefined,
       status,
       currentBalance,
       managementFeeFromDeposit,
