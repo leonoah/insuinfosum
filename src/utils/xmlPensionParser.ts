@@ -271,25 +271,40 @@ export class XMLPensionParser {
       this.getFirstTextByTags(mutzar, ["SHEM-YATZRAN", "SHEM-YATZARAN", "SHEM-YATSRAN"], "YeshutYatzran") ||
       "לא ידוע";
 
-    // קריאת KOD-MASLUL-HASHKA המלא
+    // קריאת KOD-MASLUL-HASHKA המלא - חיפוש בכל הווריאציות האפשריות
     const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
       "KOD-MASLUL-HASHKA",
+      "KOD-MASLUL-HASHKA-BE-KUPA",
       "KOD-MASLUL",
+      "KOD_MASLUL_HASHKA",
+    ]) || this.getFirstTextByTags(mutzar, [
+      "KOD-MASLUL-HASHKA",
+      "KOD-MASLUL-HASHKA-BE-KUPA",
+      "KOD-MASLUL",
+      "KOD_MASLUL_HASHKA",
     ]);
     
-    // חילוץ קוד קרן/קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    // חילוץ קוד מסלול ההשקעה מתוך KOD-MASLUL-HASHKA
+    // מבנה: ספרות 1-9 (ח.פ גוף מוסדי), ספרות 10-23 (אישור מס הכנסה), ספרות 24-30 (מספר מסלול)
     let policyNumber: string;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
-      // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
+      // חילוץ 7 הספרות האחרונות (ספרות 24-30 = אינדקס 23-29)
       policyNumber = kodMaslulHashka.substring(23, 30).trim();
+      console.log(`✓ KOD-MASLUL-HASHKA found: ${kodMaslulHashka}`);
+      console.log(`  → Extracted track code (digits 24-30): ${policyNumber}`);
     } else {
-      // אם אין KOD-MASLUL-HASHKA, ננסה מספר פוליסה רגיל
+      // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, ננסה מספר פוליסה רגיל
       policyNumber = this.getFirstTextByTags(heshbon, [
         "MISPAR-POLISA-O-HESHBON",
         "MISPAR-POLISA",
         "MISPAR-HESHBON",
         "ASMACHTA-MEKORIT",
       ]) || `unknown-${index}`;
+      if (kodMaslulHashka) {
+        console.warn(`⚠ KOD-MASLUL-HASHKA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
+      } else {
+        console.warn(`⚠ KOD-MASLUL-HASHKA not found, using fallback: ${policyNumber}`);
+      }
     }
 
     // סטטוס
@@ -429,22 +444,37 @@ export class XMLPensionParser {
       this.getElementText(mutzar, "SHEM-YATZRAN", "YeshutYatzran") ||
       "לא ידוע";
 
-    // קריאת KOD-MASLUL-HASHKA המלא
+    // קריאת KOD-MASLUL-HASHKA המלא - חיפוש בכל הווריאציות האפשריות
     const kodMaslulHashka = this.getFirstTextByTags(heshbon, [
       "KOD-MASLUL-HASHKA",
+      "KOD-MASLUL-HASHKA-BE-KUPA",
       "KOD-MASLUL",
+      "KOD_MASLUL_HASHKA",
+    ]) || this.getFirstTextByTags(mutzar, [
+      "KOD-MASLUL-HASHKA",
+      "KOD-MASLUL-HASHKA-BE-KUPA",
+      "KOD-MASLUL",
+      "KOD_MASLUL_HASHKA",
     ]);
     
-    // חילוץ קוד קרן/קופה מתוך KOD-MASLUL-HASHKA (ספרות 24-30)
+    // חילוץ קוד מסלול ההשקעה מתוך KOD-MASLUL-HASHKA
+    // מבנה: ספרות 1-9 (ח.פ גוף מוסדי), ספרות 10-23 (אישור מס הכנסה), ספרות 24-30 (מספר מסלול)
     let policyNumber: string;
     if (kodMaslulHashka && kodMaslulHashka.length >= 30) {
-      // חילוץ ספרות 24-30 (אינדקס 23-29 כי אינדקס מתחיל מ-0)
+      // חילוץ 7 הספרות האחרונות (ספרות 24-30 = אינדקס 23-29)
       policyNumber = kodMaslulHashka.substring(23, 30).trim();
+      console.log(`✓ KOD-MASLUL-HASHKA found: ${kodMaslulHashka}`);
+      console.log(`  → Extracted track code (digits 24-30): ${policyNumber}`);
     } else {
-      // אם אין KOD-MASLUL-HASHKA, ננסה מספר פוליסה רגיל
+      // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, ננסה מספר פוליסה רגיל
       policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON") || 
                      this.getElementText(heshbon, "ASMACHTA-MEKORIT") ||
                      `unknown-${index}`;
+      if (kodMaslulHashka) {
+        console.warn(`⚠ KOD-MASLUL-HASHKA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
+      } else {
+        console.warn(`⚠ KOD-MASLUL-HASHKA not found, using fallback: ${policyNumber}`);
+      }
     }
 
     // סטטוס
