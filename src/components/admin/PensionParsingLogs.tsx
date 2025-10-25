@@ -206,7 +206,7 @@ const PensionParsingLogs = () => {
                         </div>
                       )}
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {/* אינדיקטור האם נמצא KOD-MASLUL-HASHKA */}
                         <div className="flex items-center gap-2">
                           {log.kod_maslul_hashka && log.kod_maslul_hashka !== 'multiple' ? (
@@ -233,24 +233,79 @@ const PensionParsingLogs = () => {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                          {log.kod_maslul_hashka && log.kod_maslul_hashka !== 'multiple' && (
-                            <div>
-                              <span className="text-muted-foreground">KOD-MASLUL-HASHKA: </span>
-                              <code className="text-xs bg-muted px-2 py-1 rounded">
-                                {log.kod_maslul_hashka}
-                              </code>
+                        {/* הצגת הערך המלא של KOD-MASLUL-HASHKA */}
+                        {log.kod_maslul_hashka && log.kod_maslul_hashka !== 'multiple' && (
+                          <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
+                            <div className="text-xs font-semibold text-muted-foreground">
+                              KOD-MASLUL-HASHKA המלא (30 ספרות):
                             </div>
-                          )}
-                          {log.extracted_product_code && log.extracted_product_code !== 'multiple' && (
-                            <div>
-                              <span className="text-muted-foreground">קוד מסלול שחולץ (ספרות 24-30): </span>
-                              <code className="text-xs bg-green-100 dark:bg-green-900 px-2 py-1 rounded font-bold text-green-800 dark:text-green-200">
-                                {log.extracted_product_code}
-                              </code>
+                            <code className="block text-xs bg-background px-3 py-2 rounded border font-mono">
+                              {log.kod_maslul_hashka}
+                            </code>
+                            
+                            {/* פירוק הקוד לחלקים */}
+                            {log.kod_maslul_hashka.length >= 30 && (
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs mt-2">
+                                <div className="bg-blue-50 dark:bg-blue-950 p-2 rounded">
+                                  <div className="font-semibold text-blue-700 dark:text-blue-300">ספרות 1-9: ח.פ גוף מוסדי</div>
+                                  <code className="text-blue-900 dark:text-blue-100 font-mono">
+                                    {log.kod_maslul_hashka.substring(0, 9)}
+                                  </code>
+                                </div>
+                                <div className="bg-purple-50 dark:bg-purple-950 p-2 rounded">
+                                  <div className="font-semibold text-purple-700 dark:text-purple-300">ספרות 10-23: אישור מס הכנסה</div>
+                                  <code className="text-purple-900 dark:text-purple-100 font-mono">
+                                    {log.kod_maslul_hashka.substring(9, 23)}
+                                  </code>
+                                </div>
+                                <div className="bg-green-50 dark:bg-green-950 p-2 rounded">
+                                  <div className="font-semibold text-green-700 dark:text-green-300">ספרות 24-30: מספר מסלול</div>
+                                  <code className="text-green-900 dark:text-green-100 font-mono font-bold">
+                                    {log.kod_maslul_hashka.substring(23, 30)}
+                                  </code>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* הצגת קוד המסלול שחולץ */}
+                        {log.extracted_product_code && log.extracted_product_code !== 'multiple' && (
+                          <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg border-2 border-green-200 dark:border-green-800">
+                            <div className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">
+                              קוד מסלול שחולץ (ספרות 24-30):
                             </div>
-                          )}
-                        </div>
+                            <code className="text-lg bg-green-100 dark:bg-green-900 px-3 py-2 rounded font-bold text-green-800 dark:text-green-200 font-mono">
+                              {log.extracted_product_code}
+                            </code>
+                          </div>
+                        )}
+
+                        {/* הצגת כל קודי המוצרים אם יש מספר מוצרים */}
+                        {log.kod_maslul_hashka === 'multiple' && log.raw_data?.all_product_codes && (
+                          <details className="bg-muted/50 p-3 rounded-lg">
+                            <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">
+                              הצג את כל קודי המוצרים ({log.raw_data.all_product_codes.length} מוצרים)
+                            </summary>
+                            <div className="mt-2 space-y-2">
+                              {log.raw_data.all_product_codes.map((product: any, idx: number) => (
+                                <div key={idx} className="bg-background p-2 rounded border text-xs">
+                                  <div className="font-medium">{product.company} - {product.productType}</div>
+                                  {product.kodMaslulHashka && (
+                                    <div className="mt-1">
+                                      <span className="text-muted-foreground">KOD: </span>
+                                      <code className="font-mono">{product.kodMaslulHashka}</code>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="text-muted-foreground">מסלול: </span>
+                                    <code className="font-bold text-green-600">{product.extractedCode}</code>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
                       </div>
 
                       <div className="flex gap-4 text-sm">
