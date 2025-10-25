@@ -95,35 +95,51 @@ export const ProductInformationManagement = () => {
     try {
       setLoading(true);
       toast.info("מתחיל ייבוא נתונים...");
+      console.log("📥 Starting CSV auto-import...");
 
       // Load CSV file from data directory
+      console.log("📂 Loading CSV file from /src/data/all_funds_exposures_wide.csv");
       const response = await fetch('/src/data/all_funds_exposures_wide.csv');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load CSV file: ${response.statusText}`);
+      }
+      
       const csvContent = await response.text();
+      console.log(`✅ CSV file loaded, length: ${csvContent.length} characters`);
 
       // Call edge function to import
+      console.log("🚀 Calling import edge function...");
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvb2RrY2Nqd3l5YndnbWt6YXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNDcyMDUsImV4cCI6MjA2MzkyMzIwNX0.Jpz2_RIyrr2Bvpu6yrX37Z_Kl5lUhhyLerfa6G2MHJc";
+      
       const importResponse = await fetch(
         'https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/import-products-csv',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({ csvContent })
         }
       );
 
+      console.log(`📡 Edge function response status: ${importResponse.status}`);
       const result = await importResponse.json();
+      console.log("📦 Edge function result:", result);
       
       if (!importResponse.ok) {
-        throw new Error(result.error || 'Failed to import CSV');
+        console.error("❌ Edge function error:", result);
+        throw new Error(result.error || result.message || 'Failed to import CSV');
       }
 
+      console.log("✅ Import successful, reloading products...");
       await loadProducts();
       toast.success(result.message || "הנתונים יובאו בהצלחה!");
       setIsDialogOpen(false);
     } catch (error) {
-      console.error("Error importing CSV:", error);
-      toast.error("שגיאה בייבוא הנתונים");
+      console.error("❌ Error importing CSV:", error);
+      toast.error(`שגיאה בייבוא הנתונים: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -135,34 +151,45 @@ export const ProductInformationManagement = () => {
 
     try {
       setLoading(true);
+      console.log("📥 Starting CSV file import...");
+      console.log(`📂 File: ${file.name}, size: ${file.size} bytes`);
       
       // Read CSV content
       const text = await file.text();
+      console.log(`✅ File read, length: ${text.length} characters`);
       
       // Call edge function to import
+      console.log("🚀 Calling import edge function...");
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvb2RrY2Nqd3l5YndnbWt6YXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNDcyMDUsImV4cCI6MjA2MzkyMzIwNX0.Jpz2_RIyrr2Bvpu6yrX37Z_Kl5lUhhyLerfa6G2MHJc";
+      
       const response = await fetch(
         'https://eoodkccjwyybwgmkzarx.supabase.co/functions/v1/import-products-csv',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({ csvContent: text })
         }
       );
 
+      console.log(`📡 Edge function response status: ${response.status}`);
       const result = await response.json();
+      console.log("📦 Edge function result:", result);
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to import CSV');
+        console.error("❌ Edge function error:", result);
+        throw new Error(result.error || result.message || 'Failed to import CSV');
       }
 
+      console.log("✅ Import successful, reloading products...");
       await loadProducts();
       toast.success(result.message || "הנתונים יובאו בהצלחה!");
       setIsDialogOpen(false);
     } catch (error) {
-      console.error("Error importing CSV:", error);
-      toast.error("שגיאה בייבוא הנתונים");
+      console.error("❌ Error importing CSV:", error);
+      toast.error(`שגיאה בייבוא הנתונים: ${error.message}`);
     } finally {
       setLoading(false);
     }
