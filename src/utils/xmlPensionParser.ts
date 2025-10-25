@@ -293,17 +293,13 @@ export class XMLPensionParser {
       console.log(`✓ KOD-MASLUL-HASHKA found: ${kodMaslulHashka}`);
       console.log(`  → Extracted track code (digits 24-30): ${policyNumber}`);
     } else {
-      // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, ננסה מספר פוליסה רגיל
-      policyNumber = this.getFirstTextByTags(heshbon, [
-        "MISPAR-POLISA-O-HESHBON",
-        "MISPAR-POLISA",
-        "MISPAR-HESHBON",
-        "ASMACHTA-MEKORIT",
-      ]) || `unknown-${index}`;
+      // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, אין שימוש בפולבקים - לפי הדרישה
+      policyNumber = `unknown-${index}`;
       if (kodMaslulHashka) {
         console.warn(`⚠ KOD-MASLUL-HASHKA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
+        console.warn("Parsing strictly by KOD-MASLUL-HASHKA only. Skipping any fallback fields.");
       } else {
-        console.warn(`⚠ KOD-MASLUL-HASHKA not found, using fallback: ${policyNumber}`);
+        console.warn("⚠ KOD-MASLUL-HASHKA not found. Parsing strictly by KOD-MASLUL-HASHKA only. No fallback will be used.");
       }
     }
 
@@ -466,14 +462,13 @@ export class XMLPensionParser {
       console.log(`✓ KOD-MASLUL-HASHKA found: ${kodMaslulHashka}`);
       console.log(`  → Extracted track code (digits 24-30): ${policyNumber}`);
     } else {
-      // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, ננסה מספר פוליסה רגיל
-      policyNumber = this.getElementText(heshbon, "MISPAR-POLISA-O-HESHBON") || 
-                     this.getElementText(heshbon, "ASMACHTA-MEKORIT") ||
-                     `unknown-${index}`;
+      // אם אין KOD-MASLUL-HASHKA או שהוא קצר מדי, אין שימוש בפולבקים - לפי הדרישה
+      policyNumber = `unknown-${index}`;
       if (kodMaslulHashka) {
         console.warn(`⚠ KOD-MASLUL-HASHKA too short (${kodMaslulHashka.length} chars): ${kodMaslulHashka}`);
+        console.warn("Parsing strictly by KOD-MASLUL-HASHKA only. Skipping any fallback fields.");
       } else {
-        console.warn(`⚠ KOD-MASLUL-HASHKA not found, using fallback: ${policyNumber}`);
+        console.warn("⚠ KOD-MASLUL-HASHKA not found. Parsing strictly by KOD-MASLUL-HASHKA only. No fallback will be used.");
       }
     }
 
