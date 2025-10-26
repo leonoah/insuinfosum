@@ -13,11 +13,12 @@ interface ProductListProps {
   onDelete: (productId: string) => void;
   onDuplicate: (product: SelectedProduct) => void;
   onCopyToRecommended?: (product: SelectedProduct) => void;
+  onCopyAllToRecommended?: () => void;
   title: string;
   type: 'current' | 'recommended';
   selectedProducts: string[];
   onProductSelect: (productId: string, selected: boolean) => void;
-  onAddProduct: () => void; // חדש
+  onAddProduct: () => void;
 }
 
 const ProductItem: React.FC<{
@@ -154,25 +155,40 @@ const ProductList: React.FC<ProductListProps> = ({
   onDelete,
   onDuplicate,
   onCopyToRecommended,
+  onCopyAllToRecommended,
   title,
   type,
   selectedProducts,
   onProductSelect,
-  onAddProduct // חדש
+  onAddProduct
 }) => {
   const filteredProducts = products.filter(p => p.type === type);
+  const currentProducts = products.filter(p => p.type === 'current');
 
   return (
     <Card className="glass h-full relative">
-      {/* כפתור + בפינה העליונה */}
-      <Button
-        onClick={onAddProduct}
-        className="absolute top-4 left-4 z-10 rounded-full border-2 border-primary bg-background text-primary hover:bg-primary hover:text-primary-foreground w-10 h-10 flex items-center justify-center shadow-lg"
-        title={`הוסף ${type === 'current' ? 'מצב קיים' : 'מצב מוצע'}`}
-        aria-label={`הוסף ${type === 'current' ? 'מצב קיים' : 'מצב מוצע'}`}
-      >
-        <span className="text-2xl font-bold">+</span>
-      </Button>
+      {/* כפתורים בפינה העליונה */}
+      <div className="absolute top-4 left-4 z-10 flex gap-2">
+        <Button
+          onClick={onAddProduct}
+          className="rounded-full border-2 border-primary bg-background text-primary hover:bg-primary hover:text-primary-foreground w-10 h-10 flex items-center justify-center shadow-lg"
+          title={`הוסף ${type === 'current' ? 'מצב קיים' : 'מצב מוצע'}`}
+          aria-label={`הוסף ${type === 'current' ? 'מצב קיים' : 'מצב מוצע'}`}
+        >
+          <span className="text-2xl font-bold">+</span>
+        </Button>
+        {type === 'recommended' && onCopyAllToRecommended && currentProducts.length > 0 && (
+          <Button
+            onClick={onCopyAllToRecommended}
+            variant="outline"
+            size="sm"
+            className="glass-hover whitespace-nowrap text-xs px-2 h-10"
+            title="שכפל את כל המוצרים ממצב קיים"
+          >
+            שכפל הכל
+          </Button>
+        )}
+      </div>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-lg">{title}</span>
