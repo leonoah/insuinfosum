@@ -106,7 +106,9 @@ serve(async (req) => {
       throw deleteError;
     }
 
-    // Insert new data in batches of 100
+    console.log('All existing products deleted successfully');
+
+    // Insert new data in batches of 100 using upsert
     const batchSize = 100;
     let inserted = 0;
     
@@ -114,15 +116,18 @@ serve(async (req) => {
       const batch = products.slice(i, i + batchSize);
       const { error: insertError } = await supabase
         .from('products_information')
-        .insert(batch);
+        .upsert(batch, { 
+          onConflict: 'product_code',
+          ignoreDuplicates: false 
+        });
 
       if (insertError) {
-        console.error(`Error inserting batch ${i / batchSize}:`, insertError);
+        console.error(`Error upserting batch ${i / batchSize}:`, insertError);
         throw insertError;
       }
       
       inserted += batch.length;
-      console.log(`Inserted ${inserted}/${products.length} products`);
+      console.log(`Upserted ${inserted}/${products.length} products`);
     }
 
     return new Response(
@@ -140,8 +145,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error importing products:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
