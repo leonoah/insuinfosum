@@ -40,6 +40,11 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
 
     try {
       const data = await PensionParser.parsePensionFile(file);
+      
+      if (!data || !data.summary || !data.summary.products || data.summary.products.length === 0) {
+        throw new Error("לא נמצאו מוצרים בקובץ");
+      }
+      
       setPensionData(data);
       setShowProductDetails(true);
       
@@ -65,13 +70,20 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
       const fileCount = file.name.toLowerCase().endsWith('.zip') ? 'מקבצים מרובים' : 'מהקובץ';
       toast({
         title: "הקובץ נפרש בהצלחה",
-        description: `נמצאו ${data?.summary.products.length} מוצרים ${fileCount}`,
+        description: `נמצאו ${data.summary.products.length} מוצרים ${fileCount}`,
       });
     } catch (error) {
+      // איפוס המצב במקרה של שגיאה
+      setPensionData(null);
+      setShowProductDetails(false);
+      setSelectedProducts(new Set());
+      
       logData = {
         ...logData,
         error_message: error instanceof Error ? error.message : "לא ניתן לפרש את הקובץ"
       };
+      
+      console.error('Error parsing pension file:', error);
       
       toast({
         title: "שגיאה בקריאת הקובץ",
