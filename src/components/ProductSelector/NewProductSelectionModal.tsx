@@ -115,7 +115,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       setFormData(initialData);
       setInitialFormData(initialData);
     }
-  }, [editingProduct, productType, getExposureData]);
+  }, [isOpen, editingProduct, productType]);
 
   const handleCategorySelect = (category: string) => {
     setStep({ current: 2, selectedCategory: category });
