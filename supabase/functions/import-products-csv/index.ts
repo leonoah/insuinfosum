@@ -29,10 +29,13 @@ serve(async (req) => {
     console.log('Headers:', headers);
 
     const products = [];
+    let totalRows = 0;
+    let skippedRows = 0;
     
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
+      totalRows++;
 
       // Split by comma but handle quotes
       const values: string[] = [];
@@ -52,7 +55,10 @@ serve(async (req) => {
       }
       values.push(currentValue.trim());
 
-      if (values.length < 21) continue; // Skip incomplete rows
+      if (values.length < 21) { 
+        skippedRows++; 
+        continue; // Skip incomplete rows
+      }
 
       const parsePercentage = (value: string): number => {
         if (!value || value === '') return 0;
@@ -122,7 +128,12 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully imported ${products.length} products` 
+        message: `Successfully imported ${products.length} products. Skipped ${skippedRows} invalid rows.`,
+        stats: {
+          total: totalRows,
+          inserted: products.length,
+          skipped: skippedRows
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
