@@ -750,7 +750,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <Input
                     type="number"
                     className="glass"
-                    value={formData.amount || ''}
+                    value={formData.amount ? Math.round(formData.amount) : ''}
                     onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
                     placeholder="0"
                   />
