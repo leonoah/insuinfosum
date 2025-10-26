@@ -71,8 +71,31 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         selectedSubCategory: editingProduct.subCategory,
         selectedCompany: editingProduct.company
       });
-      setFormData(editingProduct);
-      setInitialFormData(editingProduct);
+      
+      // Load fresh exposure data from products_information table
+      const exposureData = getExposureData(
+        editingProduct.company, 
+        editingProduct.category, 
+        editingProduct.subCategory,
+        editingProduct.productNumber
+      );
+      
+      // Merge editing product with fresh exposure data from DB
+      const updatedFormData = {
+        ...editingProduct,
+        ...(exposureData && {
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        })
+      };
+      
+      setFormData(updatedFormData);
+      setInitialFormData(updatedFormData);
     } else {
       setStep({ current: 1 });
       const initialData: Partial<SelectedProduct> = {
@@ -92,7 +115,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       setFormData(initialData);
       setInitialFormData(initialData);
     }
-  }, [editingProduct, productType]);
+  }, [editingProduct, productType, getExposureData]);
 
   const handleCategorySelect = (category: string) => {
     setStep({ current: 2, selectedCategory: category });
