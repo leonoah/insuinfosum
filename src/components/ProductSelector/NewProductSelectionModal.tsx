@@ -135,6 +135,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       if (exposureData) {
         setFormData(prev => ({
           ...prev,
+          productNumber: exposureData.productNumber || prev.productNumber,
           exposureStocks: exposureData.exposureStocks,
           exposureBonds: exposureData.exposureBonds,
           exposureForeignCurrency: exposureData.exposureForeignCurrency,
@@ -182,9 +183,10 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       selectedSubCategory: undefined
     });
     
-    // Clear exposure data
+    // Clear product number and exposure data until a new track is chosen
     setFormData(prev => ({
       ...prev,
+      productNumber: undefined,
       exposureStocks: undefined,
       exposureBonds: undefined,
       exposureForeignCurrency: undefined,
@@ -202,7 +204,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       selectedSubCategory: subCategory
     });
     
-    // Update exposure data
+    // Update product number and exposure data
     if (step.selectedCompany && step.selectedCategory) {
       const trackName = subCategory || '';
       const productNumber = formData.productNumber;
@@ -211,6 +213,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       if (exposureData) {
         setFormData(prev => ({
           ...prev,
+          productNumber: exposureData.productNumber || prev.productNumber,
           exposureStocks: exposureData.exposureStocks,
           exposureBonds: exposureData.exposureBonds,
           exposureForeignCurrency: exposureData.exposureForeignCurrency,
@@ -683,7 +686,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר קטגוריה" />
                         </SelectTrigger>
-                        <SelectContent className="glass z-[100]">
+                          <SelectContent className="z-[9999] bg-popover text-popover-foreground shadow-lg">
                           {availableCategories.map((category) => (
                             <SelectItem key={category} value={category}>
                               {PRODUCT_ICONS[category] || '📄'} {category}
@@ -695,15 +698,16 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
-                      <Select 
-                        value={step.selectedCompany} 
-                        onValueChange={handleCompanyChange}
-                        disabled={!step.selectedCategory}
-                      >
+                        <Select 
+                          key={`company-${step.selectedCategory || 'none'}`}
+                          value={step.selectedCompany}
+                          onValueChange={handleCompanyChange}
+                          disabled={!step.selectedCategory}
+                        >
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר חברה" />
                         </SelectTrigger>
-                        <SelectContent className="glass z-[100]">
+                          <SelectContent className="z-[9999] bg-popover text-popover-foreground shadow-lg">
                           {availableCompaniesWithCurrent.map((company) => (
                             <SelectItem key={company} value={company}>
                               {company}
@@ -715,15 +719,16 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium">מסלול השקעה</label>
-                      <Select 
-                        value={step.selectedSubCategory} 
-                        onValueChange={handleSubCategoryChange}
-                        disabled={!step.selectedCompany}
-                      >
+                        <Select 
+                          key={`sub-${step.selectedCompany || 'none'}`}
+                          value={step.selectedSubCategory}
+                          onValueChange={handleSubCategoryChange}
+                          disabled={!step.selectedCompany}
+                        >
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר מסלול השקעה" />
                         </SelectTrigger>
-                        <SelectContent className="glass z-[100]">
+                        <SelectContent className="z-[9999] bg-popover text-popover-foreground shadow-lg">
                           {availableSubCategoriesWithCurrent.map((subCategory) => (
                             <SelectItem key={subCategory} value={subCategory}>
                               {subCategory}
