@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.import-products-csv]
 verify_jwt = false
+
+[functions.edit-product-with-ai]
+verify_jwt = false

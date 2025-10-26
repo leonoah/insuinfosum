@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
+import { AIProductEditor } from './AIProductEditor';
 
 interface ProductListProps {
   products: SelectedProduct[];
@@ -19,6 +20,7 @@ interface ProductListProps {
   selectedProducts: string[];
   onProductSelect: (productId: string, selected: boolean) => void;
   onAddProduct: () => void;
+  onUpdate: (updatedProducts: SelectedProduct[]) => void;
 }
 
 const ProductItem: React.FC<{
@@ -30,7 +32,9 @@ const ProductItem: React.FC<{
   onCopyToRecommended?: (product: SelectedProduct) => void;
   selectedProducts: string[];
   onProductSelect: (productId: string, selected: boolean) => void;
-}> = ({ product, type, onEdit, onDelete, onDuplicate, onCopyToRecommended, selectedProducts, onProductSelect }) => {
+  onUpdate: (updatedProducts: SelectedProduct[]) => void;
+  allProducts: SelectedProduct[];
+}> = ({ product, type, onEdit, onDelete, onDuplicate, onCopyToRecommended, selectedProducts, onProductSelect, onUpdate, allProducts }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -126,6 +130,15 @@ const ProductItem: React.FC<{
             >
               <Copy className="h-3 w-3" />
             </Button>
+            <AIProductEditor 
+              product={product}
+              onUpdate={(updatedProduct) => {
+                const updatedProducts = allProducts.map(p => 
+                  p.id === product.id ? updatedProduct : p
+                );
+                onUpdate(updatedProducts);
+              }}
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -160,7 +173,8 @@ const ProductList: React.FC<ProductListProps> = ({
   type,
   selectedProducts,
   onProductSelect,
-  onAddProduct
+  onAddProduct,
+  onUpdate
 }) => {
   const filteredProducts = products.filter(p => p.type === type);
   const currentProducts = products.filter(p => p.type === 'current');
@@ -216,6 +230,8 @@ const ProductList: React.FC<ProductListProps> = ({
               onCopyToRecommended={onCopyToRecommended}
               selectedProducts={selectedProducts}
               onProductSelect={onProductSelect}
+              onUpdate={onUpdate}
+              allProducts={products}
             />
           ))
         )}
