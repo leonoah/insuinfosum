@@ -169,6 +169,103 @@ export const ProductInformationManagement = () => {
     }
   };
 
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLogs([]);
+      setLoading(true);
+      addLog(`📥 מתחיל ייבוא קובץ Excel: ${file.name}`);
+      addLog(`📂 גודל קובץ: ${(file.size / 1024).toFixed(2)} KB`);
+      
+      // Read Excel file
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+      addLog(`✅ קובץ Excel נקרא בהצלחה - ${jsonData.length} שורות`);
+      
+      // Transform Excel data to database format
+      const products = jsonData.map((row: any) => ({
+        product_code: row['קוד קופה']?.toString() || '',
+        company: row['חברה'] || '',
+        product_type: row['סוג מוצר'] || '',
+        track_name: row['שם קופה'] || '',
+        exposure_stocks: parseFloat(row['חשיפה מניות']) || 0,
+        exposure_foreign: parseFloat(row['חשיפה חו"ל']) || 0,
+        exposure_foreign_currency: parseFloat(row['חשיפה מט"ח']) || 0,
+        exposure_government_bonds: parseFloat(row['חשיפה אג"ח ממשלתי']) || 0,
+        exposure_corporate_bonds_tradable: parseFloat(row['חשיפה אג"ח קונצרני סחיר']) || 0,
+        exposure_corporate_bonds_non_tradable: parseFloat(row['חשיפה אג"ח קונצרני לא סחיר']) || 0,
+        exposure_stocks_options: parseFloat(row['חשיפה אופציות מניות']) || 0,
+        exposure_deposits: parseFloat(row['חשיפה פיקדונות']) || 0,
+        exposure_loans: parseFloat(row['חשיפה הלוואות']) || 0,
+        exposure_cash: parseFloat(row['חשיפה מזומנים']) || 0,
+        exposure_mutual_funds: parseFloat(row['חשיפה קרנות נאמנות']) || 0,
+        exposure_other_assets: parseFloat(row['חשיפה נכסים אחרים']) || 0,
+        exposure_liquid_assets: parseFloat(row['חשיפה נכסים נוזלים']) || 0,
+        exposure_non_liquid_assets: parseFloat(row['חשיפה נכסים לא נוזלים']) || 0,
+        exposure_israel: parseFloat(row['חשיפה ישראל']) || 0,
+        exposure_foreign_and_currency: parseFloat(row['חשיפה חו"ל ומט"ח']) || 0,
+        source: row['מקור'] || 'Excel Import'
+      }));
+
+      addLog(`🔄 מעלה ${products.length} מוצרים למסד הנתונים...`);
+
+      // Delete existing data
+      const { error: deleteError } = await supabase
+        .from('products_information')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (deleteError) {
+        addLog(`❌ שגיאה במחיקת נתונים קיימים: ${deleteError.message}`);
+        throw deleteError;
+      }
+      addLog('✅ נתונים קיימים נמחקו');
+
+      // Insert new data in batches
+      const batchSize = 100;
+      let inserted = 0;
+      
+      for (let i = 0; i < products.length; i += batchSize) {
+        const batch = products.slice(i, i + batchSize);
+        const { error: insertError } = await supabase
+          .from('products_information')
+          .upsert(batch, { 
+            onConflict: 'product_code',
+            ignoreDuplicates: false 
+          });
+
+        if (insertError) {
+          addLog(`❌ שגיאה בהכנסת באץ' ${i / batchSize}: ${insertError.message}`);
+          throw insertError;
+        }
+        
+        inserted += batch.length;
+        addLog(`📤 הוכנסו ${inserted}/${products.length} מוצרים`);
+      }
+
+      addLog(`✅ ייבוא הצליח! ${products.length} מוצרים הוכנסו`);
+      addLog("🔄 טוען מחדש את רשימת המוצרים...");
+      await loadProducts();
+      addLog(`✅ רשימת מוצרים עודכנה`);
+      toast.success(`${products.length} מוצרים יובאו בהצלחה מקובץ Excel!`);
+      setIsDialogOpen(false);
+    } catch (error) {
+      addLog(`❌ שגיאה: ${error.message}`);
+      console.error("❌ Error importing Excel:", error);
+      toast.error(`שגיאה בייבוא הנתונים: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+
+    e.target.value = '';
+  };
+
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -381,24 +478,46 @@ export const ProductInformationManagement = () => {
           <DialogTrigger asChild>
             <Button>
               <Upload className="h-4 w-4 ml-2" />
-              ייבא מ-CSV
+              ייבא מקובץ
             </Button>
           </DialogTrigger>
           <DialogContent dir="rtl">
             <DialogHeader>
-              <DialogTitle>ייבוא מוצרים מקובץ CSV</DialogTitle>
+              <DialogTitle>ייבוא מוצרים מקובץ</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                העלה את קובץ ה-CSV עם כל המוצרים והחשיפות. הקובץ צריך להכיל את העמודות הבאות:
-                סוג מוצר, שם קופה, שם חברה, קוד קופה, וכל נתוני החשיפה.
-              </p>
-              <Input
-                type="file"
-                accept=".csv"
-                onChange={handleCSVImport}
-                id="csv-import"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="excel-import">ייבוא מקובץ Excel (.xlsx)</Label>
+                <p className="text-sm text-muted-foreground">
+                  העלה קובץ Excel באותו פורמט כמו קובץ הייצוא (עם כותרות בעברית)
+                </p>
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelImport}
+                  id="excel-import"
+                />
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">או</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="csv-import">ייבוא מקובץ CSV</Label>
+                <p className="text-sm text-muted-foreground">
+                  העלה קובץ CSV עם כל המוצרים והחשיפות
+                </p>
+                <Input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCSVImport}
+                  id="csv-import"
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
