@@ -220,6 +220,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                 ...basicProduct,
                 productNumber: product.policyNumber,
                 company: matched.company,
+                subCategory: matched.track_name || basicProduct.subCategory, // עדכון שם המסלול מהטבלה
                 productType: matched.product_type,
                 trackName: matched.track_name,
                 exposures: {
