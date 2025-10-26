@@ -126,6 +126,9 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   };
 
   const handleSubCategorySelect = (subCategory: string) => {
+    // Update step first
+    setStep({ ...step, selectedSubCategory: subCategory });
+    
     // Get exposure data and populate form - pass productNumber if available
     if (step.selectedCategory && step.selectedCompany) {
       const trackName = subCategory || '';
@@ -146,7 +149,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         }));
       }
     }
-    setStep({ ...step, selectedSubCategory: subCategory });
   };
 
   // Handle category change in edit mode
