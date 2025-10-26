@@ -30,9 +30,9 @@ export const useProductTaxonomy = () => {
     try {
       setLoading(true);
       
-      // Load data from Supabase database
+      // Load data from products_information table
       const { data, error: fetchError } = await supabase
-        .from('products_taxonomy')
+        .from('products_information')
         .select('*')
         .order('company', { ascending: true });
 
@@ -51,22 +51,28 @@ export const useProductTaxonomy = () => {
       const productsByNumber = new Map<string, ProductTaxonomy>();
       const productsByCompanyAndTrack = new Map<string, ProductTaxonomy[]>();
 
-      // Parse database rows
+      // Parse database rows from products_information
       data.forEach((row) => {
+        // Calculate total bonds exposure
+        const totalBonds = 
+          (Number(row.exposure_government_bonds) || 0) +
+          (Number(row.exposure_corporate_bonds_tradable) || 0) +
+          (Number(row.exposure_corporate_bonds_non_tradable) || 0);
+
         const product: ProductTaxonomy = {
           company: row.company || '',
-          category: row.category || '',
-          oldTrackName: row.sub_category || '',
-          newTrackName: row.sub_category || '',
-          productNumber: row.product_number || '', // מספר קופה מה-DB
+          category: row.product_type || '', // product_type → category
+          oldTrackName: row.track_name || '', // track_name → sub_category
+          newTrackName: row.track_name || '',
+          productNumber: row.product_code || '', // product_code → product_number
           policyChange: '',
           trackMerger: '',
           exposureForeignCurrency: Number(row.exposure_foreign_currency) || 0,
-          exposureForeignInvestments: Number(row.exposure_foreign_investments) || 0,
-          exposureIsrael: 0,
+          exposureForeignInvestments: Number(row.exposure_foreign) || 0, // exposure_foreign → exposureForeignInvestments
+          exposureIsrael: Number(row.exposure_israel) || 0,
           exposureStocks: Number(row.exposure_stocks) || 0,
-          exposureBonds: Number(row.exposure_bonds) || 0,
-          exposureIlliquidAssets: 0,
+          exposureBonds: totalBonds,
+          exposureIlliquidAssets: Number(row.exposure_non_liquid_assets) || 0,
           assetComposition: '',
         };
 
@@ -115,7 +121,7 @@ export const useProductTaxonomy = () => {
         productsByCompanyAndTrack,
       });
 
-      console.log('✅ טעינת טקסונומיית מוצרים מ-database הושלמה:', {
+      console.log('✅ טעינת מוצרים מטבלת products_information הושלמה:', {
         categories: categoriesSet.size,
         companies: companiesSet.size,
         products: products.length,
