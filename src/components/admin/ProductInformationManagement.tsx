@@ -68,14 +68,22 @@ export const ProductInformationManagement = () => {
 
   const loadProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products_information')
-        .select('*', { count: 'exact' })
-        .order('company', { ascending: true })
-        .range(0, 10000);
-
-      if (error) throw error;
-      setProducts(data || []);
+      const pageSize = 1000;
+      let allProducts: ProductInfo[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('products_information')
+          .select('*')
+          .order('company', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = (data || []) as ProductInfo[];
+        allProducts = allProducts.concat(batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+      setProducts(allProducts);
     } catch (error) {
       console.error('Error loading products:', error);
       toast.error('שגיאה בטעינת המוצרים');
@@ -220,10 +228,28 @@ export const ProductInformationManagement = () => {
     e.target.value = '';
   };
 
-  const handleExportToExcel = () => {
+  const handleExportToExcel = async () => {
     try {
+      setLoading(true);
+      // Fetch all products in batches to bypass 1000-row limit
+      const pageSize = 1000;
+      let allProducts: ProductInfo[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('products_information')
+          .select('*')
+          .order('company', { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = (data || []) as ProductInfo[];
+        allProducts = allProducts.concat(batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+
       // Prepare data for export with all fields including all exposures
-      const exportData = products.map(product => ({
+      const exportData = allProducts.map(product => ({
         'קוד קופה': product.product_code,
         'חברה': product.company,
         'סוג מוצר': product.product_type,
@@ -262,6 +288,8 @@ export const ProductInformationManagement = () => {
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       toast.error('שגיאה בייצוא הקובץ');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -345,7 +373,6 @@ export const ProductInformationManagement = () => {
         <Button 
           onClick={handleExportToExcel}
           variant="outline"
-          disabled={products.length === 0}
         >
           <Download className="h-4 w-4 ml-2" />
           ייצא לאקסל
