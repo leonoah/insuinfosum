@@ -26,6 +26,18 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showProductDetails, setShowProductDetails] = useState(false);
 
+  // חישוב כפילויות לפי מספר פוליסה - MUST be before any conditional returns
+  const duplicateCounts = useMemo(() => {
+    if (!pensionData?.summary?.products) return {};
+    const counts: Record<string, number> = {};
+    pensionData.summary.products.forEach(p => {
+      const key = p.policyNumber || '';
+      if (!key) return;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return counts;
+  }, [pensionData?.summary?.products]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -351,17 +363,6 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
   if (!pensionData) return null;
 
   const { summary } = pensionData;
-
-  // חישוב כפילויות לפי מספר פוליסה
-  const duplicateCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    summary.products.forEach(p => {
-      const key = p.policyNumber || '';
-      if (!key) return;
-      counts[key] = (counts[key] || 0) + 1;
-    });
-    return counts;
-  }, [summary.products]);
 
   // צבע טבעת לפי חברת מוצר
   const getCompanyRingClass = (companyName: string) => {
