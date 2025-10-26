@@ -20,7 +20,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Upload, Search, Trash2 } from "lucide-react";
+import { Upload, Search, Trash2, Download } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 interface ProductInfo {
   id: string;
@@ -218,6 +219,51 @@ export const ProductInformationManagement = () => {
     e.target.value = '';
   };
 
+  const handleExportToExcel = () => {
+    try {
+      // Prepare data for export with all fields including all exposures
+      const exportData = products.map(product => ({
+        'קוד קופה': product.product_code,
+        'חברה': product.company,
+        'סוג מוצר': product.product_type,
+        'שם קופה': product.track_name,
+        'חשיפה מניות': product.exposure_stocks,
+        'חשיפה חו"ל': product.exposure_foreign,
+        'חשיפה מט"ח': product.exposure_foreign_currency,
+        'חשיפה אג"ח ממשלתי': product.exposure_government_bonds,
+        'חשיפה אג"ח קונצרני סחיר': product.exposure_corporate_bonds_tradable,
+        'חשיפה אג"ח קונצרני לא סחיר': product.exposure_corporate_bonds_non_tradable,
+        'חשיפה אופציות מניות': product.exposure_stocks_options,
+        'חשיפה פיקדונות': product.exposure_deposits,
+        'חשיפה הלוואות': product.exposure_loans,
+        'חשיפה מזומנים': product.exposure_cash,
+        'חשיפה קרנות נאמנות': product.exposure_mutual_funds,
+        'חשיפה נכסים אחרים': product.exposure_other_assets,
+        'חשיפה נכסים נוזלים': product.exposure_liquid_assets,
+        'חשיפה נכסים לא נוזלים': product.exposure_non_liquid_assets,
+        'חשיפה ישראל': product.exposure_israel,
+        'חשיפה חו"ל ומט"ח': product.exposure_foreign_and_currency,
+        'מקור': product.source
+      }));
+
+      // Create worksheet and workbook
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'מוצרים');
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `products_information_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(wb, filename);
+      toast.success(`הקובץ יוצא בהצלחה: ${filename}`);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('שגיאה בייצוא הקובץ');
+    }
+  };
+
   const handleClearAll = async () => {
     if (!confirm('האם אתה בטוח שברצונך למחוק את כל המוצרים?')) return;
 
@@ -295,6 +341,14 @@ export const ProductInformationManagement = () => {
             />
           </div>
         </div>
+        <Button 
+          onClick={handleExportToExcel}
+          variant="outline"
+          disabled={products.length === 0}
+        >
+          <Download className="h-4 w-4 ml-2" />
+          ייצא לאקסל
+        </Button>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
