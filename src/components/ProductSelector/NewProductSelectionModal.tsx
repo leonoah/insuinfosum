@@ -65,7 +65,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   useEffect(() => {
     if (editingProduct) {
-      // When editing, show everything including company and subcategory
       setStep({ 
         current: 3, 
         selectedCategory: editingProduct.category,
@@ -85,7 +84,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       const updatedFormData = {
         ...editingProduct,
         ...(exposureData && {
-          productNumber: exposureData.productNumber,
           exposureStocks: exposureData.exposureStocks,
           exposureBonds: exposureData.exposureBonds,
           exposureForeignCurrency: exposureData.exposureForeignCurrency,
@@ -175,19 +173,18 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     }));
   };
 
-  // Handle company change in edit mode - only reset subcategory
+  // Handle company change in edit mode
   const handleCompanyChange = (company: string) => {
-    // When company changes, reset subcategory and clear exposure data
+    // Reset subcategory when company changes
     setStep({ 
       ...step,
       selectedCompany: company,
-      selectedSubCategory: undefined  // Clear subcategory when company changes
+      selectedSubCategory: undefined
     });
     
-    // Clear exposure data and product number - they'll be filled after selecting subcategory
+    // Clear exposure data
     setFormData(prev => ({
       ...prev,
-      productNumber: undefined,
       exposureStocks: undefined,
       exposureBonds: undefined,
       exposureForeignCurrency: undefined,
@@ -205,15 +202,15 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       selectedSubCategory: subCategory
     });
     
-    // Update exposure data and product number when subcategory is selected
+    // Update exposure data
     if (step.selectedCompany && step.selectedCategory) {
       const trackName = subCategory || '';
-      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName);
+      const productNumber = formData.productNumber;
+      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName, productNumber);
       
       if (exposureData) {
         setFormData(prev => ({
           ...prev,
-          productNumber: exposureData.productNumber,
           exposureStocks: exposureData.exposureStocks,
           exposureBonds: exposureData.exposureBonds,
           exposureForeignCurrency: exposureData.exposureForeignCurrency,
@@ -673,8 +670,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
             </div>
           )}
 
-          {/* Step 3: Details Form */}
-          {step.current === 3 && (
+          {/* Step 3: Details Form (after subcategory selected) */}
+          {step.current === 3 && step.selectedSubCategory && (
             <div className="space-y-4">
               {editingProduct ? (
                 <div className="space-y-4 mb-4">
@@ -682,11 +679,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 glass p-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">קטגוריה</label>
-                      <Select 
-                        key={`category-${step.selectedCategory}`}
-                        value={step.selectedCategory} 
-                        onValueChange={handleCategoryChange}
-                      >
+                      <Select value={step.selectedCategory} onValueChange={handleCategoryChange}>
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר קטגוריה" />
                         </SelectTrigger>
@@ -703,8 +696,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
                       <Select 
-                        key={`company-${step.selectedCompany}-${step.selectedCategory}`}
-                        value={step.selectedCompany || undefined} 
+                        value={step.selectedCompany} 
                         onValueChange={handleCompanyChange}
                         disabled={!step.selectedCategory}
                       >
@@ -724,8 +716,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">מסלול השקעה</label>
                       <Select 
-                        key={`subcategory-${step.selectedSubCategory}-${step.selectedCompany}`}
-                        value={step.selectedSubCategory || undefined} 
+                        value={step.selectedSubCategory} 
                         onValueChange={handleSubCategoryChange}
                         disabled={!step.selectedCompany}
                       >
@@ -754,7 +745,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 </div>
               )}
 
-              {/* Always show form fields in step 3 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">סכום צבירה</label>
@@ -1022,10 +1012,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 <Button variant="outline" onClick={handleCloseRequest}>
                   ביטול
                 </Button>
-                <Button 
-                  onClick={handleSubmit}
-                  disabled={!step.selectedCompany || !step.selectedSubCategory}
-                >
+                <Button onClick={handleSubmit}>
                   {editingProduct ? 'עדכן' : 'הוסף'} מוצר
                 </Button>
               </div>
