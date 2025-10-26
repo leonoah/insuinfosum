@@ -143,11 +143,12 @@ export const ProductInformationManagement = () => {
         throw new Error(result.error || result.message || 'Failed to import CSV');
       }
 
-      addLog(`✅ ייבוא הצליח! ${result.message}`);
+      const statsMsg = result?.stats ? ` (סה"כ: ${result.stats.total}, הוכנסו: ${result.stats.inserted}, דולגו: ${result.stats.skipped})` : '';
+      addLog(`✅ ייבוא הצליח! ${result.message}${statsMsg}`);
       addLog("🔄 טוען מחדש את רשימת המוצרים...");
       await loadProducts();
       addLog(`✅ רשימת מוצרים עודכנה - סה"כ ${products.length} מוצרים`);
-      toast.success(result.message || "הנתונים יובאו בהצלחה!");
+      toast.success(`${result.message || "הנתונים יובאו בהצלחה!"}${statsMsg}`);
       setIsDialogOpen(false);
     } catch (error) {
       addLog(`❌ שגיאה: ${error.message}`);
@@ -199,11 +200,12 @@ export const ProductInformationManagement = () => {
         throw new Error(result.error || result.message || 'Failed to import CSV');
       }
 
-      addLog(`✅ ייבוא הצליח! ${result.message}`);
+      const statsMsg2 = result?.stats ? ` (סה"כ: ${result.stats.total}, הוכנסו: ${result.stats.inserted}, דולגו: ${result.stats.skipped})` : '';
+      addLog(`✅ ייבוא הצליח! ${result.message}${statsMsg2}`);
       addLog("🔄 טוען מחדש את רשימת המוצרים...");
       await loadProducts();
       addLog(`✅ רשימת מוצרים עודכנה`);
-      toast.success(result.message || "הנתונים יובאו בהצלחה!");
+      toast.success(`${result.message || "הנתונים יובאו בהצלחה!"}${statsMsg2}`);
       setIsDialogOpen(false);
     } catch (error) {
       addLog(`❌ שגיאה: ${error.message}`);

@@ -31,7 +31,7 @@ export function CSVAutoImport() {
       toast.info("מתחיל ייבוא נתונים...");
 
       // Load CSV file from public directory
-      const response = await fetch('/src/data/all_funds_exposures_wide.csv');
+      const response = await fetch('/all_funds_exposures_wide.csv');
       const csvContent = await response.text();
 
       // Call edge function to import
@@ -53,7 +53,8 @@ export function CSVAutoImport() {
       }
 
       setHasData(true);
-      toast.success(result.message || "הנתונים יובאו בהצלחה!");
+      const statsMsg = result?.stats ? ` (סה"כ: ${result.stats.total}, הוכנסו: ${result.stats.inserted}, דולגו: ${result.stats.skipped})` : '';
+      toast.success(`${result.message || "הנתונים יובאו בהצלחה!"}${statsMsg}`);
     } catch (error) {
       console.error("Error importing CSV:", error);
       toast.error("שגיאה בייבוא הנתונים");
