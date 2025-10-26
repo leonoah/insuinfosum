@@ -171,12 +171,6 @@ export const useProductTaxonomy = () => {
         (p.newTrackName === trackName || p.oldTrackName === trackName)
     );
 
-    if (found) {
-      console.log(`✅ מצאנו מוצר בחיפוש ידני: ${company} - ${trackName}`);
-    } else {
-      console.log(`⚠️ לא נמצא מוצר עבור: ${company} - ${category} - ${trackName}`);
-    }
-
     return found;
   };
 

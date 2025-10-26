@@ -243,11 +243,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   const handleSubmit = () => {
     if (!step.selectedCompany || !step.selectedCategory || !step.selectedSubCategory) {
-      console.log('Missing required fields:', { 
-        category: step.selectedCategory, 
-        subCategory: step.selectedSubCategory,
-        company: step.selectedCompany 
-      });
       return;
     }
 
@@ -279,14 +274,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       includeForeignInvestmentsInSummary: formData.includeForeignInvestmentsInSummary ?? true
     };
 
-    console.log('Submitting product:', product);
     onAddProduct(product);
     handleClose();
   };
 
   const handleVoiceProductAnalyzed = (voiceData: any) => {
-    console.log('Voice product analyzed:', voiceData);
-    
     // Find matching category
     const matchedCategory = hierarchy.categories.find(cat => 
       voiceData.productName?.includes(cat) || voiceData.category?.includes(cat)
