@@ -65,33 +65,26 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   useEffect(() => {
     if (editingProduct) {
+      // When editing, start with category selected but company and subcategory empty
+      // This forces user to select company and investment track again
       setStep({ 
         current: 3, 
         selectedCategory: editingProduct.category,
-        selectedSubCategory: editingProduct.subCategory,
-        selectedCompany: editingProduct.company
+        selectedSubCategory: undefined,
+        selectedCompany: undefined
       });
       
-      // Load fresh exposure data from products_information table
-      const exposureData = getExposureData(
-        editingProduct.company, 
-        editingProduct.category, 
-        editingProduct.subCategory,
-        editingProduct.productNumber
-      );
-      
-      // Merge editing product with fresh exposure data from DB
+      // Keep form data but clear exposure data - it will be loaded after selecting company and subcategory
       const updatedFormData = {
         ...editingProduct,
-        ...(exposureData && {
-          exposureStocks: exposureData.exposureStocks,
-          exposureBonds: exposureData.exposureBonds,
-          exposureForeignCurrency: exposureData.exposureForeignCurrency,
-          exposureForeignInvestments: exposureData.exposureForeignInvestments,
-          exposureIsrael: exposureData.exposureIsrael,
-          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
-          assetComposition: exposureData.assetComposition
-        })
+        exposureStocks: undefined,
+        exposureBonds: undefined,
+        exposureForeignCurrency: undefined,
+        exposureForeignInvestments: undefined,
+        exposureIsrael: undefined,
+        exposureIlliquidAssets: undefined,
+        assetComposition: undefined,
+        productNumber: undefined
       };
       
       setFormData(updatedFormData);
@@ -175,16 +168,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   // Handle company change in edit mode
   const handleCompanyChange = (company: string) => {
-    // Reset subcategory when company changes
+    // Reset subcategory when company changes and clear exposure data
     setStep({ 
       ...step,
       selectedCompany: company,
       selectedSubCategory: undefined
     });
     
-    // Clear exposure data
+    // Clear exposure data and product number - they'll be filled after selecting subcategory
     setFormData(prev => ({
       ...prev,
+      productNumber: undefined,
       exposureStocks: undefined,
       exposureBonds: undefined,
       exposureForeignCurrency: undefined,
@@ -202,15 +196,15 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
       selectedSubCategory: subCategory
     });
     
-    // Update exposure data
+    // Update exposure data and product number when subcategory is selected
     if (step.selectedCompany && step.selectedCategory) {
       const trackName = subCategory || '';
-      const productNumber = formData.productNumber;
-      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName, productNumber);
+      const exposureData = getExposureData(step.selectedCompany, step.selectedCategory, trackName);
       
       if (exposureData) {
         setFormData(prev => ({
           ...prev,
+          productNumber: exposureData.productNumber,
           exposureStocks: exposureData.exposureStocks,
           exposureBonds: exposureData.exposureBonds,
           exposureForeignCurrency: exposureData.exposureForeignCurrency,
@@ -670,8 +664,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
             </div>
           )}
 
-          {/* Step 3: Details Form (after subcategory selected) */}
-          {step.current === 3 && step.selectedSubCategory && (
+          {/* Step 3: Details Form */}
+          {step.current === 3 && (
             <div className="space-y-4">
               {editingProduct ? (
                 <div className="space-y-4 mb-4">
@@ -696,7 +690,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
                       <Select 
-                        value={step.selectedCompany} 
+                        value={step.selectedCompany || ''} 
                         onValueChange={handleCompanyChange}
                         disabled={!step.selectedCategory}
                       >
@@ -716,7 +710,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">מסלול השקעה</label>
                       <Select 
-                        value={step.selectedSubCategory} 
+                        value={step.selectedSubCategory || ''} 
                         onValueChange={handleSubCategoryChange}
                         disabled={!step.selectedCompany}
                       >
@@ -745,7 +739,10 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Show form fields only after subcategory is selected */}
+              {step.selectedSubCategory && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">סכום צבירה</label>
                   <Input
@@ -1012,10 +1009,15 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 <Button variant="outline" onClick={handleCloseRequest}>
                   ביטול
                 </Button>
-                <Button onClick={handleSubmit}>
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={!step.selectedCompany || !step.selectedSubCategory}
+                >
                   {editingProduct ? 'עדכן' : 'הוסף'} מוצר
                 </Button>
               </div>
+                </>
+              )}
             </div>
           )}
         </div>
