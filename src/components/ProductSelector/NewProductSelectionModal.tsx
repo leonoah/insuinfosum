@@ -714,14 +714,14 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">תת קטגוריה</label>
+                      <label className="text-sm font-medium">מסלול השקעה</label>
                       <Select 
                         value={step.selectedSubCategory} 
                         onValueChange={handleSubCategoryChange}
                         disabled={!step.selectedCompany}
                       >
                         <SelectTrigger className="glass">
-                          <SelectValue placeholder="בחר תת קטגוריה" />
+                          <SelectValue placeholder="בחר מסלול השקעה" />
                         </SelectTrigger>
                         <SelectContent className="glass z-[100]">
                           {availableSubCategoriesWithCurrent.map((subCategory) => (
@@ -790,17 +790,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     value={formData.returns || ''}
                     onChange={(e) => setFormData({ ...formData, returns: parseFloat(e.target.value) || undefined })}
                     placeholder="0"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">מסלול השקעה</label>
-                  <Input
-                    type="text"
-                    className="glass"
-                    value={formData.investmentTrack || ''}
-                    onChange={(e) => setFormData({ ...formData, investmentTrack: e.target.value })}
-                    placeholder="כללי"
                   />
                 </div>
 
