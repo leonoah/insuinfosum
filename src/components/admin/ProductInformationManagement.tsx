@@ -70,8 +70,9 @@ export const ProductInformationManagement = () => {
     try {
       const { data, error } = await supabase
         .from('products_information')
-        .select('*')
-        .order('company', { ascending: true });
+        .select('*', { count: 'exact' })
+        .order('company', { ascending: true })
+        .range(0, 10000);
 
       if (error) throw error;
       setProducts(data || []);
