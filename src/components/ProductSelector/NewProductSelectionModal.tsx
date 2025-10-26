@@ -682,7 +682,11 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 glass p-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">קטגוריה</label>
-                      <Select value={step.selectedCategory} onValueChange={handleCategoryChange}>
+                      <Select 
+                        key={`category-${step.selectedCategory}`}
+                        value={step.selectedCategory} 
+                        onValueChange={handleCategoryChange}
+                      >
                         <SelectTrigger className="glass">
                           <SelectValue placeholder="בחר קטגוריה" />
                         </SelectTrigger>
@@ -699,7 +703,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">חברה</label>
                       <Select 
-                        value={step.selectedCompany || ''} 
+                        key={`company-${step.selectedCompany}-${step.selectedCategory}`}
+                        value={step.selectedCompany || undefined} 
                         onValueChange={handleCompanyChange}
                         disabled={!step.selectedCategory}
                       >
@@ -719,7 +724,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                     <div className="space-y-2">
                       <label className="text-sm font-medium">מסלול השקעה</label>
                       <Select 
-                        value={step.selectedSubCategory || ''} 
+                        key={`subcategory-${step.selectedSubCategory}-${step.selectedCompany}`}
+                        value={step.selectedSubCategory || undefined} 
                         onValueChange={handleSubCategoryChange}
                         disabled={!step.selectedCompany}
                       >
