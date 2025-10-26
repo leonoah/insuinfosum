@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { PensionParser } from "@/utils/pensionParser";
 import { PensionFileData, PensionProduct } from "@/types/pension";
 import { SelectedProduct } from "@/types/products";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface PensionFileImportProps {
   onProductsSelected: (products: SelectedProduct[]) => void;
@@ -144,34 +145,64 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
             };
             
             // חיפוש מידע מהטבלה לפי קוד הקופה (policyNumber)
-            const { data: productInfo, error } = await supabase
+            const { data: productInfos, error: dbError } = await supabase
               .from('products_information')
               .select('*')
-              .eq('product_code', product.policyNumber)
-              .maybeSingle();
-
-            if (error) {
-              console.error('Error fetching product info:', error);
-              productLog.error_message = `Error fetching from DB: ${error.message}`;
+              .eq('product_code', product.policyNumber);
+            if (dbError) {
+              console.error('Error fetching product info:', dbError);
+              productLog.error_message = `Error fetching from DB: ${dbError.message}`;
               productLog.parsing_status = 'partial';
             }
 
+            // פונקציה מקומית לנרמול שם חברה כדי להתאים בין מקורות
+            const normalizeCompany = (companyName: string) => {
+              const normalized = (companyName || '')
+                .replace(/בע"מ|בע'מ|בע״מ/g, '')
+                .replace(/ניהול קופות גמל/g, '')
+                .replace(/קרן השתלמות/g, '')
+                .replace(/-/g, ' ')
+                .trim();
+              const mapping: Record<string, string> = {
+                'לאומי מקפת': 'מגדל',
+                'לאומי': 'מגדל',
+                'שחם': 'מגדל',
+                'לפידות': 'מגדל',
+                'מנורה': 'מנורה מבטחים',
+                'כלל': 'כלל',
+                'הפניקס': 'הפניקס',
+                'איילון': 'איילון',
+                'הראל': 'הראל',
+                'אלטשולר שחם': 'אלטשולר שחם',
+                'אלטשולר': 'אלטשולר שחם'
+              };
+              for (const [key, value] of Object.entries(mapping)) {
+                if (normalized.toLowerCase().includes(key.toLowerCase())) {
+                  return value;
+                }
+              }
+              return normalized || 'מגדל';
+            };
+
             // אם נמצא מידע בטבלה, נעדכן את המוצר
-            if (productInfo) {
-              productLog.raw_data = { found_in_db: true, product_info: productInfo };
+            if (productInfos && productInfos.length > 0) {
+              const normalizedWanted = normalizeCompany(product.company);
+              const matched = productInfos.find(pi => normalizeCompany(pi.company) === normalizedWanted) || productInfos[0];
+
+              productLog.raw_data = { found_in_db: true, product_info: matched, total_matches: productInfos.length };
               importLogs.push(productLog);
               
               return {
                 ...basicProduct,
                 productNumber: product.policyNumber,
-                company: productInfo.company,
-                productType: productInfo.product_type,
-                trackName: productInfo.track_name,
+                company: matched.company,
+                productType: matched.product_type,
+                trackName: matched.track_name,
                 exposures: {
-                  stocks: productInfo.exposure_stocks || 0,
-                  bonds: (productInfo.exposure_government_bonds || 0) + (productInfo.exposure_corporate_bonds_tradable || 0) + (productInfo.exposure_corporate_bonds_non_tradable || 0),
-                  foreign: productInfo.exposure_foreign || 0,
-                  foreignCurrency: productInfo.exposure_foreign_currency || 0,
+                  stocks: matched.exposure_stocks || 0,
+                  bonds: (matched.exposure_government_bonds || 0) + (matched.exposure_corporate_bonds_tradable || 0) + (matched.exposure_corporate_bonds_non_tradable || 0),
+                  foreign: matched.exposure_foreign || 0,
+                  foreignCurrency: matched.exposure_foreign_currency || 0,
                 }
               };
             }
@@ -309,6 +340,38 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
 
   const { summary } = pensionData;
 
+  // חישוב כפילויות לפי מספר פוליסה
+  const duplicateCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    summary.products.forEach(p => {
+      const key = p.policyNumber || '';
+      if (!key) return;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return counts;
+  }, [summary.products]);
+
+  // צבע טבעת לפי חברת מוצר
+  const getCompanyRingClass = (companyName: string) => {
+    const normalize = (name: string) => name
+      .replace(/בע"מ|בע'מ|בע״מ/g, '')
+      .replace(/ניהול קופות גמל/g, '')
+      .replace(/קרן השתלמות/g, '')
+      .replace(/-/g, ' ')
+      .trim();
+    const normalized = normalize(companyName);
+    const mapping: Record<string, string> = {
+      'מגדל': 'ring-sky-500',
+      'הראל': 'ring-emerald-500',
+      'כלל': 'ring-amber-500',
+      'הפניקס': 'ring-orange-500',
+      'איילון': 'ring-indigo-500',
+      'מנורה מבטחים': 'ring-rose-500',
+      'אלטשולר שחם': 'ring-purple-500',
+    };
+    return mapping[normalized] || 'ring-gray-400';
+  };
+
   return (
     <Card className="glass border-glass-border max-w-4xl w-full">
       <CardHeader>
@@ -352,10 +415,16 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
 
           <ScrollArea className="h-80 w-full rounded-md border border-glass-border p-4">
             <div className="space-y-3">
-              {summary.products.map((product) => (
+              {summary.products.map((product) => {
+                const isDuplicate = (duplicateCounts[product.policyNumber] || 0) > 1;
+                const ringClass = isDuplicate ? `${getCompanyRingClass(product.company)} ring-2 ring-offset-1` : '';
+                return (
                 <div
                   key={product.id}
-                  className="flex items-start space-x-3 space-x-reverse p-3 rounded-lg border border-glass-border/50 hover:bg-muted/20 transition-colors"
+                  className={cn(
+                    "flex items-start space-x-3 space-x-reverse p-3 rounded-lg border border-glass-border/50 hover:bg-muted/20 transition-colors",
+                    ringClass
+                  )}
                 >
                   <Checkbox
                     id={product.id}
@@ -381,7 +450,9 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
-                      <div>פוליסה: {product.policyNumber}</div>
+                      <div>
+                        פוליסה: {product.policyNumber}
+                      </div>
                       {product.managementFeeFromBalance > 0 && (
                         <div>דמי ניהול: {product.managementFeeFromBalance}%</div>
                       )}
@@ -401,7 +472,7 @@ const PensionFileImport = ({ onProductsSelected, onClose }: PensionFileImportPro
                     )}
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           </ScrollArea>
         </div>
