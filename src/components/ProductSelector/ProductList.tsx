@@ -180,12 +180,12 @@ const ProductList: React.FC<ProductListProps> = ({
         {type === 'recommended' && onCopyAllToRecommended && currentProducts.length > 0 && (
           <Button
             onClick={onCopyAllToRecommended}
-            variant="outline"
+            variant="default"
             size="sm"
-            className="glass-hover whitespace-nowrap text-xs px-2 h-10"
+            className="whitespace-nowrap text-sm px-3 h-10 bg-primary text-primary-foreground hover:bg-primary-hover shadow-lg"
             title="שכפל את כל המוצרים ממצב קיים"
           >
-            שכפל הכל
+            📋 שכפל הכל
           </Button>
         )}
       </div>
