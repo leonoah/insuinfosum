@@ -181,10 +181,19 @@ export const ProductInformationManagement = () => {
       
       // Read Excel file
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const workbook = XLSX.read(arrayBuffer, { type: 'array', sheetRows: 0 });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      // Log used rows in the sheet for debugging
+      try {
+        const ref = (worksheet as any)['!ref'];
+        if (ref) {
+          const range = XLSX.utils.decode_range(ref as string);
+          const usedRows = range.e.r - range.s.r + 1;
+          addLog(`ℹ️ שורות בשימוש בגליון: ${usedRows.toLocaleString()}`);
+        }
+      } catch {}
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '', blankrows: true, raw: true });
       
       addLog(`✅ קובץ Excel נקרא בהצלחה - ${jsonData.length} שורות`);
       
