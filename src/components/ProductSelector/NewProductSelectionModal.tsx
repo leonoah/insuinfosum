@@ -65,26 +65,35 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
 
   useEffect(() => {
     if (editingProduct) {
-      // When editing, start with category selected but company and subcategory empty
-      // This forces user to select company and investment track again
+      // When editing, show everything including company and subcategory
       setStep({ 
         current: 3, 
         selectedCategory: editingProduct.category,
-        selectedSubCategory: undefined,
-        selectedCompany: undefined
+        selectedSubCategory: editingProduct.subCategory,
+        selectedCompany: editingProduct.company
       });
       
-      // Keep form data but clear exposure data - it will be loaded after selecting company and subcategory
+      // Load fresh exposure data from products_information table
+      const exposureData = getExposureData(
+        editingProduct.company, 
+        editingProduct.category, 
+        editingProduct.subCategory,
+        editingProduct.productNumber
+      );
+      
+      // Merge editing product with fresh exposure data from DB
       const updatedFormData = {
         ...editingProduct,
-        exposureStocks: undefined,
-        exposureBonds: undefined,
-        exposureForeignCurrency: undefined,
-        exposureForeignInvestments: undefined,
-        exposureIsrael: undefined,
-        exposureIlliquidAssets: undefined,
-        assetComposition: undefined,
-        productNumber: undefined
+        ...(exposureData && {
+          productNumber: exposureData.productNumber,
+          exposureStocks: exposureData.exposureStocks,
+          exposureBonds: exposureData.exposureBonds,
+          exposureForeignCurrency: exposureData.exposureForeignCurrency,
+          exposureForeignInvestments: exposureData.exposureForeignInvestments,
+          exposureIsrael: exposureData.exposureIsrael,
+          exposureIlliquidAssets: exposureData.exposureIlliquidAssets,
+          assetComposition: exposureData.assetComposition
+        })
       };
       
       setFormData(updatedFormData);
@@ -166,13 +175,13 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     }));
   };
 
-  // Handle company change in edit mode
+  // Handle company change in edit mode - only reset subcategory
   const handleCompanyChange = (company: string) => {
-    // Reset subcategory when company changes and clear exposure data
+    // When company changes, reset subcategory and clear exposure data
     setStep({ 
       ...step,
       selectedCompany: company,
-      selectedSubCategory: undefined
+      selectedSubCategory: undefined  // Clear subcategory when company changes
     });
     
     // Clear exposure data and product number - they'll be filled after selecting subcategory
@@ -739,10 +748,8 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 </div>
               )}
 
-              {/* Show form fields only after subcategory is selected */}
-              {step.selectedSubCategory && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Always show form fields in step 3 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">סכום צבירה</label>
                   <Input
@@ -1016,8 +1023,6 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   {editingProduct ? 'עדכן' : 'הוסף'} מוצר
                 </Button>
               </div>
-                </>
-              )}
             </div>
           )}
         </div>
