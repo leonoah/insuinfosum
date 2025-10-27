@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Copy, Mic, Search, Sparkles } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Copy, Mic, Search, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -768,7 +768,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   variant="outline"
                   className="w-full mb-4 h-12 border-primary/30 hover:border-primary hover:bg-primary/5"
                 >
-                  <Sparkles className="w-5 h-5 ml-2 text-primary" />
+                  <Building2 className="w-5 h-5 ml-2 text-primary" />
                   <span className="text-base">עריכה מהירה עם AI</span>
                 </Button>
               )}

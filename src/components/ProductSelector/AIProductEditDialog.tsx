@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wand2, Check, X, Sparkles } from 'lucide-react';
+import { Wand2, Check, X, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,7 +106,7 @@ export const AIProductEditDialog: React.FC<AIProductEditDialogProps> = ({
       <DialogContent className="sm:max-w-[600px] bg-background/95 backdrop-blur-xl border-primary/20">
         <DialogHeader className="space-y-3 pb-4 border-b border-primary/20">
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="w-6 h-6 text-primary" />
+            <Building2 className="w-6 h-6 text-primary" />
             <span>עריכה מהירה עם AI</span>
           </DialogTitle>
           <p className="text-sm text-muted-foreground text-right">
