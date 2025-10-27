@@ -17,8 +17,8 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
     header: {
       flexDirection: 'column',
       alignItems: 'center',
-      marginBottom: 20,
-      paddingBottom: 15,
+      marginBottom: 10,
+      paddingBottom: 8,
       borderBottom: isDark ? '2px solid #1e293b' : '2px solid #e2e8f0',
     },
     headerTitle: {
@@ -33,8 +33,8 @@ export const createStyles = (theme: 'light' | 'dark' = 'dark') => {
       textAlign: 'center',
     },
     logo: {
-      width: 80,
-      height: 80,
+      width: 120,
+      height: 120,
       objectFit: 'contain',
     },
     

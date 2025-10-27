@@ -29,7 +29,7 @@ export const ReportHeader = ({ title, date, agentName, logoUrl, styles }: Report
         {logoUrl && logoUrl.trim() && (
           <Image 
             src={logoUrl} 
-            style={{ ...styles.logo, marginTop: 15 }}
+            style={{ ...styles.logo, marginTop: 8 }}
           />
         )}
       </View>
