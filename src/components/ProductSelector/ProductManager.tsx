@@ -260,7 +260,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
             selectedProducts={selectedProducts}
             onProductSelect={handleProductSelect}
             onAddProduct={() => openModal('current')}
-            onUpdate={onUpdateProducts}
           />
         </div>
         {/* Recommended second on mobile, left on desktop */}
@@ -276,7 +275,6 @@ const ProductManager: React.FC<ProductManagerProps> = ({
             onProductSelect={handleProductSelect}
             onAddProduct={() => openModal('recommended')}
             onCopyAllToRecommended={handleCopyAllToRecommended}
-            onUpdate={onUpdateProducts}
           />
         </div>
       </div>
