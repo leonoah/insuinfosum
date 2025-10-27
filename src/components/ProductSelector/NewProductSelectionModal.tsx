@@ -762,16 +762,14 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
               )}
 
               {/* AI Edit Button */}
-              {!editingProduct && (
-                <Button
-                  onClick={() => setIsAIEditDialogOpen(true)}
-                  variant="outline"
-                  className="w-full mb-4 h-12 border-primary/30 hover:border-primary hover:bg-primary/5"
-                >
-                  <Building2 className="w-5 h-5 ml-2 text-primary" />
-                  <span className="text-base">עריכה מהירה עם AI</span>
-                </Button>
-              )}
+              <Button
+                onClick={() => setIsAIEditDialogOpen(true)}
+                variant="outline"
+                className="w-full mb-4 h-12 border-primary/30 hover:border-primary hover:bg-primary/5"
+              >
+                <Building2 className="w-5 h-5 ml-2 text-primary" />
+                <span className="text-base">עריכה מהירה עם AI</span>
+              </Button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

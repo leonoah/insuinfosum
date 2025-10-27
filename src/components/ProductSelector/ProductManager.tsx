@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, BarChart3, FileSpreadsheet, GitCompare, Phone, DollarSign } from 'lucide-react';
+import { Plus, BarChart3, FileSpreadsheet, GitCompare, Phone, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -230,7 +230,7 @@ const ProductManager: React.FC<ProductManagerProps> = ({
           <FileSpreadsheet className="h-4 w-4" />
         </Button>
         <Button onClick={() => setShowPensionImport(true)} variant="outline" size="sm" className="glass-hover shrink-0" title="יבוא ממסלקה פנסיונית" aria-label="יבוא ממסלקה פנסיונית">
-          <DollarSign className="h-4 w-4" />
+          <Building2 className="h-4 w-4" />
         </Button>
         <Button 
           variant="outline" 
