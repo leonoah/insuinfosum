@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Copy, Mic, Search, Wand2, Check } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Copy, Mic, Search, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import VoiceProductInput from './VoiceProductInput';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AIProductEditDialog } from './AIProductEditDialog';
 
 interface NewProductSelectionModalProps {
   isOpen: boolean;
@@ -43,9 +44,7 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   const [initialFormData, setInitialFormData] = useState<Partial<SelectedProduct> | null>(null);
   const [searchingExposure, setSearchingExposure] = useState(false);
   const [exposureSearchResults, setExposureSearchResults] = useState<string | null>(null);
-  const [aiCommand, setAiCommand] = useState("");
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
-  const [previewProduct, setPreviewProduct] = useState<SelectedProduct | null>(null);
+  const [isAIEditDialogOpen, setIsAIEditDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<SelectedProduct>>(() => {
     if (editingProduct) {
       return editingProduct;
@@ -317,101 +316,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
     }
   };
 
-  const handleAIEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aiCommand.trim()) return;
-
-    setIsProcessingAI(true);
-    try {
-      // Build current product object from form data
-      const currentProduct: SelectedProduct = {
-        id: editingProduct?.id || `${Date.now()}`,
-        category: step.selectedCategory || '',
-        subCategory: step.selectedSubCategory || '',
-        company: step.selectedCompany || '',
-        amount: formData.amount || 0,
-        managementFeeOnDeposit: formData.managementFeeOnDeposit || 0,
-        managementFeeOnAccumulation: formData.managementFeeOnAccumulation || 0,
-        investmentTrack: formData.investmentTrack || '',
-        riskLevelChange: formData.riskLevelChange || '',
-        notes: formData.notes || '',
-        type: productType,
-        returns: formData.returns,
-        includeExposureData: formData.exposureStocks !== undefined,
-        exposureStocks: formData.exposureStocks,
-        exposureBonds: formData.exposureBonds,
-        exposureForeignCurrency: formData.exposureForeignCurrency,
-        exposureForeignInvestments: formData.exposureForeignInvestments,
-        exposureIsrael: formData.exposureIsrael,
-        exposureIlliquidAssets: formData.exposureIlliquidAssets,
-        assetComposition: formData.assetComposition,
-        productNumber: formData.productNumber,
-        includeStocksInSummary: formData.includeStocksInSummary ?? true,
-        includeBondsInSummary: formData.includeBondsInSummary ?? true,
-        includeForeignCurrencyInSummary: formData.includeForeignCurrencyInSummary ?? true,
-        includeForeignInvestmentsInSummary: formData.includeForeignInvestmentsInSummary ?? true
-      };
-
-      const { data, error } = await supabase.functions.invoke('edit-product-with-ai', {
-        body: { product: currentProduct, command: aiCommand }
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        toast({
-          title: "שגיאה",
-          description: data.error,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setPreviewProduct(data.updatedProduct);
-      toast({
-        title: "הצעה לשינוי",
-        description: "בדוק את השינויים ואשר או בטל"
-      });
-    } catch (error) {
-      console.error('Error editing product:', error);
-      toast({
-        title: "שגיאה",
-        description: "שגיאה בעריכת המוצר עם AI",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessingAI(false);
-    }
-  };
-
-  const handleApproveAIChanges = () => {
-    if (previewProduct) {
-      // Update form data and step with the AI changes
-      setFormData({
-        ...previewProduct,
-        type: productType
-      });
-      setStep({
-        current: 3,
-        selectedCategory: previewProduct.category,
-        selectedCompany: previewProduct.company,
-        selectedSubCategory: previewProduct.subCategory
-      });
-      setPreviewProduct(null);
-      setAiCommand("");
-      toast({
-        title: "השינויים אושרו",
-        description: "הטופס עודכן בהצלחה"
-      });
-    }
-  };
-
-  const handleRejectAIChanges = () => {
-    setPreviewProduct(null);
-    setAiCommand("");
-    toast({
-      title: "השינויים נדחו",
-      description: "הטופס נשאר ללא שינוי"
+  const handleApplyAIChanges = (updatedProduct: SelectedProduct) => {
+    // Update form data and step with the AI changes
+    setFormData({
+      ...updatedProduct,
+      type: productType
+    });
+    setStep({
+      current: 3,
+      selectedCategory: updatedProduct.category,
+      selectedCompany: updatedProduct.company,
+      selectedSubCategory: updatedProduct.subCategory
     });
   };
 
@@ -846,103 +761,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                 </div>
               )}
 
-              {/* AI Edit Section */}
-              <div className="glass p-4 mb-4 space-y-3 border-2 border-primary/20">
-                <div className="flex items-center gap-2">
-                  <Wand2 className="w-5 h-5 text-primary" />
-                  <h4 className="font-semibold">עריכה מהירה עם AI</h4>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  תאר מה תרצה לשנות במוצר בשפה טבעית
-                </p>
-                
-                <form onSubmit={handleAIEdit} className="space-y-3">
-                  <Input
-                    value={aiCommand}
-                    onChange={(e) => setAiCommand(e.target.value)}
-                    placeholder='למשל: "תשנה לי הראל במסלול מניות" או "תשנה דמי ניהול ל-0.3"'
-                    disabled={isProcessingAI || !!previewProduct}
-                    className="text-right"
-                  />
-                  {!previewProduct && (
-                    <Button 
-                      type="submit" 
-                      disabled={isProcessingAI || !aiCommand.trim()} 
-                      size="sm"
-                    >
-                      {isProcessingAI ? (
-                        <>מעבד...</>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 ml-2" />
-                          עדכן מוצר
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </form>
-
-                {previewProduct && (
-                  <div className="space-y-3 mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                    <h5 className="font-semibold text-sm">שינויים מוצעים:</h5>
-                    {(() => {
-                      const changes: Array<{ label: string; old: any; new: any }> = [];
-                      const fields = [
-                        { key: 'category', label: 'סוג מוצר' },
-                        { key: 'subCategory', label: 'תת-קטגוריה' },
-                        { key: 'company', label: 'חברה' },
-                        { key: 'amount', label: 'סכום' },
-                        { key: 'investmentTrack', label: 'מסלול השקעה' },
-                        { key: 'managementFeeOnDeposit', label: 'דמי ניהול הפקדה' },
-                        { key: 'managementFeeOnAccumulation', label: 'דמי ניהול צבירה' },
-                        { key: 'returns', label: 'תשואה' },
-                      ];
-
-                      fields.forEach(({ key, label }) => {
-                        const oldVal = (formData as any)[key];
-                        const newVal = (previewProduct as any)[key];
-                        if (oldVal !== newVal && newVal !== undefined) {
-                          changes.push({ label, old: oldVal, new: newVal });
-                        }
-                      });
-
-                      return changes.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">לא נמצאו שינויים</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {changes.map((change, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-sm border-b pb-2">
-                              <span className="font-medium min-w-[120px]">{change.label}:</span>
-                              <span className="text-muted-foreground line-through">{change.old || "ריק"}</span>
-                              <span className="text-primary font-medium">→ {change.new}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                    <div className="flex gap-2 mt-4">
-                      <Button onClick={handleApproveAIChanges} size="sm" className="flex-1">
-                        <Check className="w-4 h-4 ml-2" />
-                        אשר שינויים
-                      </Button>
-                      <Button onClick={handleRejectAIChanges} variant="outline" size="sm" className="flex-1">
-                        <X className="w-4 h-4 ml-2" />
-                        בטל
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
-                  <p className="font-medium">דוגמאות לפקודות:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>תשנה לי הראל במסלול מניות</li>
-                    <li>תשנה את דמי הניהול ל-0.3</li>
-                    <li>תעדכן צבירה ל-500000</li>
-                    <li>תשנה למגדל</li>
-                  </ul>
-                </div>
-              </div>
+              {/* AI Edit Button */}
+              {!editingProduct && (
+                <Button
+                  onClick={() => setIsAIEditDialogOpen(true)}
+                  variant="outline"
+                  className="w-full mb-4 h-12 border-primary/30 hover:border-primary hover:bg-primary/5"
+                >
+                  <Sparkles className="w-5 h-5 ml-2 text-primary" />
+                  <span className="text-base">עריכה מהירה עם AI</span>
+                </Button>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1235,6 +1064,14 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AIProductEditDialog
+        isOpen={isAIEditDialogOpen}
+        onClose={() => setIsAIEditDialogOpen(false)}
+        currentProduct={formData}
+        onApplyChanges={handleApplyAIChanges}
+        allProducts={existingProducts}
+      />
     </>
   );
 };
