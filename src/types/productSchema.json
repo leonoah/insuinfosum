@@ -1,0 +1,232 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SelectedProduct",
+  "description": "סכמת נתונים של מוצר פיננסי במערכת InMinds",
+  "type": "object",
+  "required": [
+    "id",
+    "category",
+    "subCategory",
+    "company",
+    "amount",
+    "managementFeeOnDeposit",
+    "managementFeeOnAccumulation",
+    "investmentTrack",
+    "notes",
+    "type"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "מזהה ייחודי של המוצר",
+      "example": "1234567890"
+    },
+    "category": {
+      "type": "string",
+      "description": "סוג המוצר הפיננסי",
+      "enum": [
+        "קרן פנסיה",
+        "קרן השתלמות",
+        "קופת גמל",
+        "ביטוח מנהלים"
+      ],
+      "example": "קרן פנסיה"
+    },
+    "subCategory": {
+      "type": "string",
+      "description": "תת-קטגוריה או מסלול השקעה",
+      "example": "כללי"
+    },
+    "company": {
+      "type": "string",
+      "description": "שם החברה או הגוף המנהל",
+      "example": "הראל"
+    },
+    "amount": {
+      "type": "number",
+      "description": "סכום הצבירה בשקלים",
+      "minimum": 0,
+      "example": 500000
+    },
+    "managementFeeOnDeposit": {
+      "type": "number",
+      "description": "דמי ניהול מהפקדה באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 0.5
+    },
+    "managementFeeOnAccumulation": {
+      "type": "number",
+      "description": "דמי ניהול מצבירה באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 0.3
+    },
+    "investmentTrack": {
+      "type": "string",
+      "description": "מסלול השקעה",
+      "enum": [
+        "כללי",
+        "מניות",
+        "אג\"ח",
+        "סולידי",
+        "מניות חו\"ל",
+        "הלכתי/שרעי",
+        "סקטוריאלי/אלטרנטיבי"
+      ],
+      "example": "כללי"
+    },
+    "riskLevelChange": {
+      "type": "string",
+      "description": "שינוי ברמת הסיכון",
+      "enum": [
+        "ירידה",
+        "העלאה",
+        "פיזור מחדש",
+        "no-change",
+        ""
+      ],
+      "example": "no-change"
+    },
+    "notes": {
+      "type": "string",
+      "description": "הערות נוספות על המוצר",
+      "example": "מוצר מומלץ ללקוח עם פרופיל סיכון בינוני"
+    },
+    "type": {
+      "type": "string",
+      "description": "סוג המוצר - מצב קיים או מומלץ",
+      "enum": [
+        "current",
+        "recommended"
+      ],
+      "example": "recommended"
+    },
+    "status": {
+      "type": "string",
+      "description": "סטטוס המוצר",
+      "enum": [
+        "פעיל",
+        "לא פעיל"
+      ],
+      "example": "פעיל"
+    },
+    "productNumber": {
+      "type": "string",
+      "description": "מספר מוצר לזיהוי במאגר",
+      "example": "1234567"
+    },
+    "includeExposureData": {
+      "type": "boolean",
+      "description": "האם לכלול מידע חשיפה בדוח",
+      "default": false,
+      "example": true
+    },
+    "returns": {
+      "type": "number",
+      "description": "תשואה באחוזים",
+      "example": 5.5
+    },
+    "exposureStocks": {
+      "type": "number",
+      "description": "חשיפה מנייתית באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 30
+    },
+    "exposureBonds": {
+      "type": "number",
+      "description": "חשיפה לאג\"ח באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 50
+    },
+    "exposureForeignCurrency": {
+      "type": "number",
+      "description": "חשיפה למט\"ח באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 20
+    },
+    "exposureForeignInvestments": {
+      "type": "number",
+      "description": "חשיפה לחו\"ל באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 15
+    },
+    "exposureIsrael": {
+      "type": "number",
+      "description": "חשיפה לישראל באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 85
+    },
+    "exposureIlliquidAssets": {
+      "type": "number",
+      "description": "חשיפה לנכסים לא סחירים באחוזים",
+      "minimum": 0,
+      "maximum": 100,
+      "example": 5
+    },
+    "assetComposition": {
+      "type": "string",
+      "description": "הרכב נכסים מפורט",
+      "example": "מניות 30%, אג\"ח 50%, מזומנים 20%"
+    },
+    "includeStocksInSummary": {
+      "type": "boolean",
+      "description": "האם לכלול חשיפה מנייתית בסיכום",
+      "default": true,
+      "example": true
+    },
+    "includeBondsInSummary": {
+      "type": "boolean",
+      "description": "האם לכלול חשיפה לאג\"ח בסיכום",
+      "default": true,
+      "example": true
+    },
+    "includeForeignCurrencyInSummary": {
+      "type": "boolean",
+      "description": "האם לכלול חשיפה למט\"ח בסיכום",
+      "default": true,
+      "example": true
+    },
+    "includeForeignInvestmentsInSummary": {
+      "type": "boolean",
+      "description": "האם לכלול חשיפה לחו\"ל בסיכום",
+      "default": true,
+      "example": true
+    }
+  },
+  "examples": [
+    {
+      "id": "1234567890",
+      "category": "קרן פנסיה",
+      "subCategory": "כללי",
+      "company": "הראל",
+      "amount": 500000,
+      "managementFeeOnDeposit": 0.5,
+      "managementFeeOnAccumulation": 0.3,
+      "investmentTrack": "כללי",
+      "riskLevelChange": "no-change",
+      "notes": "מוצר מומלץ",
+      "type": "recommended",
+      "status": "פעיל",
+      "productNumber": "1234567",
+      "includeExposureData": true,
+      "returns": 5.5,
+      "exposureStocks": 30,
+      "exposureBonds": 50,
+      "exposureForeignCurrency": 20,
+      "exposureForeignInvestments": 15,
+      "exposureIsrael": 85,
+      "exposureIlliquidAssets": 5,
+      "assetComposition": "מניות 30%, אג\"ח 50%, מזומנים 20%",
+      "includeStocksInSummary": true,
+      "includeBondsInSummary": true,
+      "includeForeignCurrencyInSummary": true,
+      "includeForeignInvestmentsInSummary": true
+    }
+  ]
+}
