@@ -106,12 +106,26 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     return diff > 0 ? 'text-success' : 'text-destructive';
   };
 
-  // Helper: render exposure value as text
-  const renderExposureValue = (value: number | undefined) => {
+  // Helper: render exposure value with progress bar
+  const renderExposureValue = (value: number | undefined, color: string) => {
     if (value === undefined || isNaN(Number(value))) {
       return <span className="text-muted-foreground">-</span>;
     }
-    return <span className="font-medium">{Number(value).toFixed(1)}%</span>;
+    const numValue = Number(value);
+    return (
+      <div className="space-y-1">
+        <span className="text-xs font-medium">{numValue.toFixed(1)}%</span>
+        <div className="relative h-2 bg-muted rounded-full overflow-hidden w-20">
+          <div 
+            className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+            style={{ 
+              width: `${numValue}%`,
+              backgroundColor: color
+            }}
+          />
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -174,10 +188,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                             <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                           </div>
                         </TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureStocks)}</TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureBonds)}</TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignCurrency)}</TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignInvestments)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureStocks, 'hsl(var(--chart-1))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureBonds, 'hsl(var(--chart-2))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignCurrency, 'hsl(var(--chart-3))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignInvestments, 'hsl(var(--chart-4))')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -210,10 +224,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                             <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                           </div>
                         </TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureStocks)}</TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureBonds)}</TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignCurrency)}</TableCell>
-                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignInvestments)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureStocks, 'hsl(var(--chart-1))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureBonds, 'hsl(var(--chart-2))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignCurrency, 'hsl(var(--chart-3))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignInvestments, 'hsl(var(--chart-4))')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
