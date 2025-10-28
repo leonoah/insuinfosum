@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
 interface CircularProgressProps {
   value: number;
@@ -16,37 +17,41 @@ interface CircularProgressProps {
   size?: number;
 }
 
-const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size = 80 }) => {
-  const radius = (size - 6) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
+const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size = 100 }) => {
+  const data = [
+    {
+      name: 'progress',
+      value: value,
+      fill: color,
+    },
+  ];
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
-        {/* Gray background full circle - always 100% visible */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="hsl(var(--muted))"
-          strokeWidth="3"
-          fill="none"
+      <RadialBarChart
+        width={size}
+        height={size}
+        cx={size / 2}
+        cy={size / 2}
+        innerRadius="70%"
+        outerRadius="100%"
+        barSize={10}
+        data={data}
+        startAngle={90}
+        endAngle={-270}
+      >
+        <PolarAngleAxis
+          type="number"
+          domain={[0, 100]}
+          angleAxisId={0}
+          tick={false}
         />
-        {/* Colored progress arc - shows the actual percentage */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth="3"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-500"
+        <RadialBar
+          background={{ fill: 'hsl(var(--muted))' }}
+          dataKey="value"
+          cornerRadius={10}
         />
-      </svg>
+      </RadialBarChart>
       <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-sm font-bold">{value.toFixed(1)}%</span>
       </div>
