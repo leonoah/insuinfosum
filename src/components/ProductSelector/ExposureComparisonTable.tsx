@@ -126,7 +126,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     if (value === undefined || isNaN(Number(value))) {
       return <span className="text-muted-foreground">-</span>;
     }
-    return <CircularProgress value={Number(value)} color={color} size={40} />;
+    return <CircularProgress value={Number(value)} color={color} size={50} />;
   };
 
   return (
@@ -152,7 +152,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                         <CircularProgress 
                           value={value}
                           color="hsl(var(--chart-1))"
-                          size={80}
+                          size={100}
                         />
                       );
                     })()}
@@ -168,7 +168,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                         <CircularProgress 
                           value={value}
                           color="hsl(var(--chart-2))"
-                          size={80}
+                          size={100}
                         />
                       );
                     })()}
@@ -180,7 +180,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     <CircularProgress 
                       value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
                       color="hsl(var(--chart-3))"
-                      size={80}
+                      size={100}
                     />
                     <div className="text-xs text-center text-muted-foreground">חשיפה למט"ח</div>
                   </div>
@@ -190,7 +190,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     <CircularProgress 
                       value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
                       color="hsl(var(--chart-4))"
-                      size={80}
+                      size={100}
                     />
                     <div className="text-xs text-center text-muted-foreground">חשיפה להשקעות בחו"ל</div>
                   </div>
