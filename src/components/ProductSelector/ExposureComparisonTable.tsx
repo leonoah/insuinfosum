@@ -121,6 +121,14 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     return diff > 0 ? 'text-success' : 'text-destructive';
   };
 
+  // Helper: render small circular indicator per value
+  const renderExposureCircle = (value: number | undefined, color: string) => {
+    if (value === undefined || isNaN(Number(value))) {
+      return <span className="text-muted-foreground">-</span>;
+    }
+    return <CircularProgress value={Number(value)} color={color} size={40} />;
+  };
+
   return (
     <Card className="glass">
       <CardHeader>
@@ -215,10 +223,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                             <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{formatExposure(product.exposureStocks)}</TableCell>
-                        <TableCell>{formatExposure(product.exposureBonds)}</TableCell>
-                        <TableCell>{formatExposure(product.exposureForeignCurrency)}</TableCell>
-                        <TableCell>{formatExposure(product.exposureForeignInvestments)}</TableCell>
+                        <TableCell className="text-right">{renderExposureCircle(product.exposureStocks, 'hsl(var(--chart-1))')}</TableCell>
+                        <TableCell className="text-right">{renderExposureCircle(product.exposureBonds, 'hsl(var(--chart-2))')}</TableCell>
+                        <TableCell className="text-right">{renderExposureCircle(product.exposureForeignCurrency, 'hsl(var(--chart-3))')}</TableCell>
+                        <TableCell className="text-right">{renderExposureCircle(product.exposureForeignInvestments, 'hsl(var(--chart-4))')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -251,10 +259,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                             <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{formatExposure(product.exposureStocks)}</TableCell>
-                        <TableCell>{formatExposure(product.exposureBonds)}</TableCell>
-                        <TableCell>{formatExposure(product.exposureForeignCurrency)}</TableCell>
-                        <TableCell>{formatExposure(product.exposureForeignInvestments)}</TableCell>
+                         <TableCell className="text-right">{renderExposureCircle(product.exposureStocks, 'hsl(var(--chart-1))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureCircle(product.exposureBonds, 'hsl(var(--chart-2))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureCircle(product.exposureForeignCurrency, 'hsl(var(--chart-3))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureCircle(product.exposureForeignInvestments, 'hsl(var(--chart-4))')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
