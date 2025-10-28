@@ -129,52 +129,67 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
       <CardContent>
         <div className="space-y-6">
           {/* Circular Progress - Show if we have recommended products */}
-          {recommendedWithExposure.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">חשיפות ממוצעות - מצב מוצע</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Stocks */}
-                <div className="flex flex-col items-center gap-2">
-                  <CircularProgress 
-                    value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureStocks || 0), 0) / recommendedWithExposure.length}
-                    color="hsl(var(--chart-1))"
-                    size={80}
-                  />
-                  <div className="text-xs text-center text-muted-foreground">חשיפה למניות</div>
-                </div>
+          {recommendedWithExposure.length > 0 && (() => {
+            console.log('🎯 Rendering circular progress for', recommendedWithExposure.length, 'products');
+            return (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">חשיפות ממוצעות - מצב מוצע</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Stocks */}
+                  <div className="flex flex-col items-center gap-2">
+                    {(() => {
+                      const value = recommendedWithExposure.reduce((sum, p) => sum + (p.exposureStocks || 0), 0) / recommendedWithExposure.length;
+                      console.log('📈 Stocks value:', value);
+                      return (
+                        <CircularProgress 
+                          value={value}
+                          color="hsl(var(--chart-1))"
+                          size={80}
+                        />
+                      );
+                    })()}
+                    <div className="text-xs text-center text-muted-foreground">חשיפה למניות</div>
+                  </div>
 
-                {/* Bonds */}
-                <div className="flex flex-col items-center gap-2">
-                  <CircularProgress 
-                    value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length}
-                    color="hsl(var(--chart-2))"
-                    size={80}
-                  />
-                  <div className="text-xs text-center text-muted-foreground">חשיפה לאג"ח</div>
-                </div>
+                  {/* Bonds */}
+                  <div className="flex flex-col items-center gap-2">
+                    {(() => {
+                      const value = recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length;
+                      console.log('📊 Bonds value:', value);
+                      return (
+                        <CircularProgress 
+                          value={value}
+                          color="hsl(var(--chart-2))"
+                          size={80}
+                        />
+                      );
+                    })()}
+                    <div className="text-xs text-center text-muted-foreground">חשיפה לאג"ח</div>
+                  </div>
 
-                {/* Foreign Currency */}
-                <div className="flex flex-col items-center gap-2">
-                  <CircularProgress 
-                    value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
-                    color="hsl(var(--chart-3))"
-                    size={80}
-                  />
-                  <div className="text-xs text-center text-muted-foreground">חשיפה למט"ח</div>
-                </div>
+                  {/* Foreign Currency */}
+                  <div className="flex flex-col items-center gap-2">
+                    <CircularProgress 
+                      value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
+                      color="hsl(var(--chart-3))"
+                      size={80}
+                    />
+                    <div className="text-xs text-center text-muted-foreground">חשיפה למט"ח</div>
+                  </div>
 
-                {/* Foreign Investments */}
-                <div className="flex flex-col items-center gap-2">
-                  <CircularProgress 
-                    value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
-                    color="hsl(var(--chart-4))"
-                    size={80}
-                  />
-                  <div className="text-xs text-center text-muted-foreground">חשיפה להשקעות בחו"ל</div>
+                  {/* Foreign Investments */}
+                  <div className="flex flex-col items-center gap-2">
+                    <CircularProgress 
+                      value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
+                      color="hsl(var(--chart-4))"
+                      size={80}
+                    />
+                    <div className="text-xs text-center text-muted-foreground">חשיפה להשקעות בחו"ל</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Current Products Table */}
           {currentWithExposure.length > 0 && (
