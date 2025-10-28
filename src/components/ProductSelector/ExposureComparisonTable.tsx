@@ -24,16 +24,16 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Gray background full circle */}
+        {/* Gray background full circle - always 100% visible */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="hsl(var(--muted) / 0.3)"
+          stroke="hsl(var(--muted))"
           strokeWidth="3"
           fill="none"
         />
-        {/* Colored progress arc */}
+        {/* Colored progress arc - shows the actual percentage */}
         <circle
           cx={size / 2}
           cy={size / 2}
