@@ -61,9 +61,9 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   currentProducts,
   recommendedProducts
 }) => {
-  // Only show products that are marked to be included in exposure summary
+  // Only show products that have exposure data (includeExposureData is true by default)
   const currentWithExposure = currentProducts.filter(p => 
-    p.includeExposureData === true &&
+    p.includeExposureData !== false &&
     (p.exposureStocks !== undefined || 
     p.exposureBonds !== undefined ||
     p.exposureForeignCurrency !== undefined ||
@@ -71,7 +71,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
   );
 
   const recommendedWithExposure = recommendedProducts.filter(p => 
-    p.includeExposureData === true &&
+    p.includeExposureData !== false &&
     (p.exposureStocks !== undefined || 
     p.exposureBonds !== undefined ||
     p.exposureForeignCurrency !== undefined ||
