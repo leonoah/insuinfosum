@@ -9,51 +9,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { Progress } from '@/components/ui/progress';
 
-interface CircularProgressProps {
+interface ExposureBarProps {
   value: number;
   color: string;
-  size?: number;
+  label: string;
 }
 
-const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size = 100 }) => {
-  const data = [
-    {
-      name: 'progress',
-      value: value,
-      fill: color,
-    },
-  ];
-
+const ExposureBar: React.FC<ExposureBarProps> = ({ value, color, label }) => {
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <RadialBarChart
-        width={size}
-        height={size}
-        cx={size / 2}
-        cy={size / 2}
-        innerRadius="70%"
-        outerRadius="100%"
-        barSize={10}
-        data={data}
-        startAngle={90}
-        endAngle={-270}
-      >
-        <PolarAngleAxis
-          type="number"
-          domain={[0, 100]}
-          angleAxisId={0}
-          tick={false}
-        />
-        <RadialBar
-          background={{ fill: 'hsl(var(--muted))' }}
-          dataKey="value"
-          cornerRadius={10}
-        />
-      </RadialBarChart>
-      <div className="absolute inset-0 flex items-center justify-center">
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium">{label}</span>
         <span className="text-sm font-bold">{value.toFixed(1)}%</span>
+      </div>
+      <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+        <div 
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+          style={{ 
+            width: `${value}%`,
+            backgroundColor: color
+          }}
+        />
       </div>
     </div>
   );
@@ -128,12 +106,12 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     return diff > 0 ? 'text-success' : 'text-destructive';
   };
 
-  // Helper: render small circular indicator per value
-  const renderExposureCircle = (value: number | undefined, color: string) => {
+  // Helper: render exposure value as text
+  const renderExposureValue = (value: number | undefined) => {
     if (value === undefined || isNaN(Number(value))) {
       return <span className="text-muted-foreground">-</span>;
     }
-    return <CircularProgress value={Number(value)} color={color} size={50} />;
+    return <span className="font-medium">{Number(value).toFixed(1)}%</span>;
   };
 
   return (
@@ -143,68 +121,34 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Circular Progress - Show if we have recommended products */}
-          {recommendedWithExposure.length > 0 && (() => {
-            console.log('🎯 Rendering circular progress for', recommendedWithExposure.length, 'products');
-            return (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">חשיפות ממוצעות - מצב מוצע</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Stocks */}
-                  <div className="flex flex-col items-center gap-2">
-                    {(() => {
-                      const value = recommendedWithExposure.reduce((sum, p) => sum + (p.exposureStocks || 0), 0) / recommendedWithExposure.length;
-                      console.log('📈 Stocks value:', value);
-                      return (
-                        <CircularProgress 
-                          value={value}
-                          color="hsl(var(--chart-1))"
-                          size={100}
-                        />
-                      );
-                    })()}
-                    <div className="text-xs text-center text-muted-foreground">חשיפה למניות</div>
-                  </div>
-
-                  {/* Bonds */}
-                  <div className="flex flex-col items-center gap-2">
-                    {(() => {
-                      const value = recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length;
-                      console.log('📊 Bonds value:', value);
-                      return (
-                        <CircularProgress 
-                          value={value}
-                          color="hsl(var(--chart-2))"
-                          size={100}
-                        />
-                      );
-                    })()}
-                    <div className="text-xs text-center text-muted-foreground">חשיפה לאג"ח</div>
-                  </div>
-
-                  {/* Foreign Currency */}
-                  <div className="flex flex-col items-center gap-2">
-                    <CircularProgress 
-                      value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
-                      color="hsl(var(--chart-3))"
-                      size={100}
-                    />
-                    <div className="text-xs text-center text-muted-foreground">חשיפה למט"ח</div>
-                  </div>
-
-                  {/* Foreign Investments */}
-                  <div className="flex flex-col items-center gap-2">
-                    <CircularProgress 
-                      value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
-                      color="hsl(var(--chart-4))"
-                      size={100}
-                    />
-                    <div className="text-xs text-center text-muted-foreground">חשיפה להשקעות בחו"ל</div>
-                  </div>
-                </div>
+          {/* Progress Bars - Show if we have recommended products */}
+          {recommendedWithExposure.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">חשיפות ממוצעות - מצב מוצע</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ExposureBar
+                  value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureStocks || 0), 0) / recommendedWithExposure.length}
+                  color="hsl(var(--chart-1))"
+                  label="חשיפה למניות"
+                />
+                <ExposureBar
+                  value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length}
+                  color="hsl(var(--chart-2))"
+                  label="חשיפה לאג״ח"
+                />
+                <ExposureBar
+                  value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
+                  color="hsl(var(--chart-3))"
+                  label="חשיפה למט״ח"
+                />
+                <ExposureBar
+                  value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
+                  color="hsl(var(--chart-4))"
+                  label="חשיפה להשקעות בחו״ל"
+                />
               </div>
-            );
-          })()}
+            </div>
+          )}
 
           {/* Current Products Table */}
           {currentWithExposure.length > 0 && (
@@ -230,10 +174,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                             <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{renderExposureCircle(product.exposureStocks, 'hsl(var(--chart-1))')}</TableCell>
-                        <TableCell className="text-right">{renderExposureCircle(product.exposureBonds, 'hsl(var(--chart-2))')}</TableCell>
-                        <TableCell className="text-right">{renderExposureCircle(product.exposureForeignCurrency, 'hsl(var(--chart-3))')}</TableCell>
-                        <TableCell className="text-right">{renderExposureCircle(product.exposureForeignInvestments, 'hsl(var(--chart-4))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureStocks)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureBonds)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignCurrency)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignInvestments)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -266,10 +210,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                             <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                           </div>
                         </TableCell>
-                         <TableCell className="text-right">{renderExposureCircle(product.exposureStocks, 'hsl(var(--chart-1))')}</TableCell>
-                         <TableCell className="text-right">{renderExposureCircle(product.exposureBonds, 'hsl(var(--chart-2))')}</TableCell>
-                         <TableCell className="text-right">{renderExposureCircle(product.exposureForeignCurrency, 'hsl(var(--chart-3))')}</TableCell>
-                         <TableCell className="text-right">{renderExposureCircle(product.exposureForeignInvestments, 'hsl(var(--chart-4))')}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureStocks)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureBonds)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignCurrency)}</TableCell>
+                         <TableCell className="text-right">{renderExposureValue(product.exposureForeignInvestments)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
