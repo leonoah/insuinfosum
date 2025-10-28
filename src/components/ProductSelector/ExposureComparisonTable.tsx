@@ -30,7 +30,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
           cy={size / 2}
           r={radius}
           stroke="hsl(var(--muted))"
-          strokeWidth="3"
+          strokeWidth="8"
           fill="none"
         />
         {/* Colored progress arc - shows the actual percentage */}
@@ -39,7 +39,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
           cy={size / 2}
           r={radius}
           stroke={color}
-          strokeWidth="3"
+          strokeWidth="8"
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
