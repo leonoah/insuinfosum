@@ -29,7 +29,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
           cy={size / 2}
           r={radius}
           stroke="hsl(var(--muted))"
-          strokeWidth="6"
+          strokeWidth="1.5"
           fill="none"
         />
         <circle
@@ -37,7 +37,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
           cy={size / 2}
           r={radius}
           stroke={color}
-          strokeWidth="6"
+          strokeWidth="1.5"
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
