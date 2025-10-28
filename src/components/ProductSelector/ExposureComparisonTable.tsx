@@ -17,8 +17,7 @@ interface CircularProgressProps {
 }
 
 const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size = 80 }) => {
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2;
+  const radius = (size - 6) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
 
@@ -30,8 +29,8 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="hsl(var(--muted))"
-          strokeWidth={strokeWidth}
+          stroke="hsl(var(--muted) / 0.3)"
+          strokeWidth="3"
           fill="none"
         />
         {/* Colored progress arc */}
@@ -40,7 +39,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size 
           cy={size / 2}
           r={radius}
           stroke={color}
-          strokeWidth={strokeWidth}
+          strokeWidth="3"
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
