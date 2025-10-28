@@ -17,27 +17,28 @@ interface CircularProgressProps {
 }
 
 const CircularProgress: React.FC<CircularProgressProps> = ({ value, color, size = 80 }) => {
-  const radius = (size - 8) / 2;
+  const radius = (size - 6) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
+        {/* Gray background circle - filled */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="hsl(var(--muted))"
-          strokeWidth="1.5"
-          fill="none"
+          fill="hsl(var(--muted) / 0.2)"
+          stroke="none"
         />
+        {/* Colored progress arc */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           stroke={color}
-          strokeWidth="1.5"
+          strokeWidth="3"
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
