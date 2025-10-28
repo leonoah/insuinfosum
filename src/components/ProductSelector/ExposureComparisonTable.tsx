@@ -80,12 +80,19 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
 
   console.log('ExposureComparisonTable - Current with exposure:', currentWithExposure.length);
   console.log('ExposureComparisonTable - Recommended with exposure:', recommendedWithExposure.length);
-  console.log('ExposureComparisonTable - Recommended products:', recommendedWithExposure.map(p => ({
-    name: p.company,
-    stocks: p.exposureStocks,
-    bonds: p.exposureBonds,
-    includeExposureData: p.includeExposureData
-  })));
+  
+  if (recommendedWithExposure.length > 0) {
+    const avgStocks = recommendedWithExposure.reduce((sum, p) => sum + (p.exposureStocks || 0), 0) / recommendedWithExposure.length;
+    const avgBonds = recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length;
+    console.log('📊 Average exposure - Stocks:', avgStocks, 'Bonds:', avgBonds);
+    console.log('📊 Sample product exposures:', recommendedWithExposure.slice(0, 2).map(p => ({
+      company: p.company,
+      stocks: p.exposureStocks,
+      bonds: p.exposureBonds,
+      currency: p.exposureForeignCurrency,
+      foreign: p.exposureForeignInvestments
+    })));
+  }
 
   if (currentWithExposure.length === 0 && recommendedWithExposure.length === 0) {
     console.log('ExposureComparisonTable - Returning null, no products with exposure');
