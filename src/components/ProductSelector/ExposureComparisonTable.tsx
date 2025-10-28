@@ -78,7 +78,17 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     p.exposureForeignInvestments !== undefined)
   );
 
+  console.log('ExposureComparisonTable - Current with exposure:', currentWithExposure.length);
+  console.log('ExposureComparisonTable - Recommended with exposure:', recommendedWithExposure.length);
+  console.log('ExposureComparisonTable - Recommended products:', recommendedWithExposure.map(p => ({
+    name: p.company,
+    stocks: p.exposureStocks,
+    bonds: p.exposureBonds,
+    includeExposureData: p.includeExposureData
+  })));
+
   if (currentWithExposure.length === 0 && recommendedWithExposure.length === 0) {
+    console.log('ExposureComparisonTable - Returning null, no products with exposure');
     return null;
   }
 
