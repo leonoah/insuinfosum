@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.voice-to-enhanced-text]
 verify_jwt = false
 
+[functions.enhance-text-with-ai]
+verify_jwt = false
+
 [functions.send-report-email]
 verify_jwt = false
 

@@ -97,6 +97,7 @@ const AppForm = () => {
   const [activeTab, setActiveTab] = useState("client");
   const [showSummary, setShowSummary] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchValue, setClientSearchValue] = useState("");
@@ -1271,13 +1272,52 @@ const AppForm = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="meetingContext">רקע ועיקרי הפגישה *</Label>
-                    <VoiceTextInput
-                      onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, meetingContext: enhancedText }));
-                      }}
-                      textType="meetingContext"
-                      buttonText="הקלטה קולית"
-                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (!formData.meetingContext.trim()) {
+                            toast({ title: "אין טקסט לשיפור", description: "נא להזין טקסט תחילה", variant: "destructive" });
+                            return;
+                          }
+                          try {
+                            setIsGenerating(true);
+                            const { data, error } = await supabase.functions.invoke('enhance-text-with-ai', {
+                              body: { 
+                                text: formData.meetingContext,
+                                fieldType: 'meetingContext',
+                                context: {
+                                  currentProducts: formData.products.filter(p => p.type === 'current'),
+                                  recommendedProducts: formData.products.filter(p => p.type === 'recommended')
+                                }
+                              }
+                            });
+                            if (error) throw error;
+                            setFormData(prev => ({ ...prev, meetingContext: data.enhancedText }));
+                            toast({ title: "הטקסט שופר בהצלחה", description: "הטקסט עודכן עם שיפורים מ-AI" });
+                          } catch (error) {
+                            console.error('Error enhancing text:', error);
+                            toast({ title: "שגיאה בשיפור הטקסט", variant: "destructive" });
+                          } finally {
+                            setIsGenerating(false);
+                          }
+                        }}
+                        disabled={isGenerating || !formData.meetingContext.trim()}
+                        className="gap-2"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {isGenerating ? 'משפר...' : 'שפר עם AI'}
+                      </Button>
+                      <VoiceTextInput
+                        onTextProcessed={(enhancedText, transcribedText) => {
+                          setFormData(prev => ({ ...prev, meetingContext: enhancedText }));
+                        }}
+                        textType="meetingContext"
+                        buttonText="הקלטה קולית"
+                      />
+                    </div>
                   </div>
                   <Textarea
                     id="meetingContext"
@@ -1292,13 +1332,52 @@ const AppForm = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="currentSituation">מצב קיים בקצרה *</Label>
-                    <VoiceTextInput
-                      onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
-                      }}
-                      textType="currentSituation"
-                      buttonText="הקלטה קולית"
-                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (!formData.currentSituation.trim()) {
+                            toast({ title: "אין טקסט לשיפור", description: "נא להזין טקסט תחילה", variant: "destructive" });
+                            return;
+                          }
+                          try {
+                            setIsGenerating(true);
+                            const { data, error } = await supabase.functions.invoke('enhance-text-with-ai', {
+                              body: { 
+                                text: formData.currentSituation,
+                                fieldType: 'currentSituation',
+                                context: {
+                                  currentProducts: formData.products.filter(p => p.type === 'current'),
+                                  recommendedProducts: formData.products.filter(p => p.type === 'recommended')
+                                }
+                              }
+                            });
+                            if (error) throw error;
+                            setFormData(prev => ({ ...prev, currentSituation: data.enhancedText }));
+                            toast({ title: "הטקסט שופר בהצלחה", description: "הטקסט עודכן עם שיפורים מ-AI" });
+                          } catch (error) {
+                            console.error('Error enhancing text:', error);
+                            toast({ title: "שגיאה בשיפור הטקסט", variant: "destructive" });
+                          } finally {
+                            setIsGenerating(false);
+                          }
+                        }}
+                        disabled={isGenerating || !formData.currentSituation.trim()}
+                        className="gap-2"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {isGenerating ? 'משפר...' : 'שפר עם AI'}
+                      </Button>
+                      <VoiceTextInput
+                        onTextProcessed={(enhancedText, transcribedText) => {
+                          setFormData(prev => ({ ...prev, currentSituation: enhancedText }));
+                        }}
+                        textType="currentSituation"
+                        buttonText="הקלטה קולית"
+                      />
+                    </div>
                   </div>
                   <Textarea
                     id="currentSituation"
@@ -1312,13 +1391,52 @@ const AppForm = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="decisions">מה הוחלט לבצע *</Label>
-                    <VoiceTextInput
-                      onTextProcessed={(enhancedText, transcribedText) => {
-                        setFormData(prev => ({ ...prev, decisions: enhancedText }));
-                      }}
-                      textType="decisions"
-                      buttonText="הקלטה קולית"
-                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (!formData.decisions.trim()) {
+                            toast({ title: "אין טקסט לשיפור", description: "נא להזין טקסט תחילה", variant: "destructive" });
+                            return;
+                          }
+                          try {
+                            setIsGenerating(true);
+                            const { data, error } = await supabase.functions.invoke('enhance-text-with-ai', {
+                              body: { 
+                                text: formData.decisions,
+                                fieldType: 'decisions',
+                                context: {
+                                  currentProducts: formData.products.filter(p => p.type === 'current'),
+                                  recommendedProducts: formData.products.filter(p => p.type === 'recommended')
+                                }
+                              }
+                            });
+                            if (error) throw error;
+                            setFormData(prev => ({ ...prev, decisions: data.enhancedText }));
+                            toast({ title: "הטקסט שופר בהצלחה", description: "הטקסט עודכן עם שיפורים מ-AI" });
+                          } catch (error) {
+                            console.error('Error enhancing text:', error);
+                            toast({ title: "שגיאה בשיפור הטקסט", variant: "destructive" });
+                          } finally {
+                            setIsGenerating(false);
+                          }
+                        }}
+                        disabled={isGenerating || !formData.decisions.trim()}
+                        className="gap-2"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {isGenerating ? 'משפר...' : 'שפר עם AI'}
+                      </Button>
+                      <VoiceTextInput
+                        onTextProcessed={(enhancedText, transcribedText) => {
+                          setFormData(prev => ({ ...prev, decisions: enhancedText }));
+                        }}
+                        textType="decisions"
+                        buttonText="הקלטה קולית"
+                      />
+                    </div>
                   </div>
                   <Textarea
                     id="decisions"
