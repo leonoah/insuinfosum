@@ -35,14 +35,14 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
 
   // Helper to render a single exposure as a semicircular gauge
 
-  const ExposureGauge: React.FC<{ value: number | undefined; label: string; color: string }> = ({ value, label, color }) => {
+  const ExposureGauge: React.FC<{ value: number | undefined; label: string; color: string; size?: number }> = ({ value, label, color, size = 90 }) => {
     const numericValue = typeof value === 'number' ? value : 0;
     return (
       <div className="flex flex-col items-center gap-2 bg-background/50 rounded-lg p-3">
         <Gauge
           value={numericValue}
-          width={90}
-          height={90}
+          width={size}
+          height={size}
           startAngle={0}
           endAngle={360}
           min={0}
@@ -115,10 +115,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     </div>
                     <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
-                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
-                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
-                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
+                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" size={70} />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" size={70} />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" size={70} />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" size={70} />
                     </div>
                   </div>
                 ))}
@@ -138,10 +138,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     </div>
                     <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
-                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
-                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
-                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
+                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" size={70} />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" size={70} />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" size={70} />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" size={70} />
                     </div>
                   </div>
                 ))}
