@@ -35,10 +35,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
 
   // Helper to render a single exposure as a semicircular gauge
 
-  const ExposureGauge: React.FC<{ value: number | undefined; label: string }> = ({ value, label }) => {
+  const ExposureGauge: React.FC<{ value: number | undefined; label: string; color: string }> = ({ value, label, color }) => {
     const numericValue = typeof value === 'number' ? value : 0;
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2 bg-background/50 rounded-lg p-3">
         <Gauge
           value={numericValue}
           width={100}
@@ -47,8 +47,20 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
           endAngle={90}
           min={0}
           max={100}
+          sx={{
+            '& .MuiGauge-valueArc': {
+              fill: color,
+            },
+            '& .MuiGauge-referenceArc': {
+              fill: 'hsl(var(--muted))',
+            },
+            '& text': {
+              fill: 'hsl(var(--foreground))',
+              fontWeight: 600,
+            }
+          }}
         />
-        <div className="text-xs text-center text-muted-foreground">{label}</div>
+        <div className="text-xs text-center font-medium text-foreground">{label}</div>
       </div>
     );
   };
@@ -72,10 +84,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     </div>
                     <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" />
-                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' />
-                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' />
-                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' />
+                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
                     </div>
                   </div>
                 ))}
@@ -95,10 +107,10 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     </div>
                     <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" />
-                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' />
-                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' />
-                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' />
+                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
                     </div>
                   </div>
                 ))}
@@ -114,18 +126,22 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureStocks || 0), 0) / recommendedWithExposure.length}
                   label="חשיפה למניות"
+                  color="#3b82f6"
                 />
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length}
                   label='חשיפה לאג"ח'
+                  color="#10b981"
                 />
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
                   label='חשיפה למט"ח'
+                  color="#f59e0b"
                 />
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
                   label='חשיפה להשקעות בחו"ל'
+                  color="#8b5cf6"
                 />
               </div>
             </div>
