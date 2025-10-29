@@ -127,23 +127,25 @@ const VoiceProductInput: React.FC<VoiceProductInputProps> = ({ onProductAnalyzed
 
       console.log('🎯 Product match result:', matchResult);
 
-      const { matchResult: match, fullProduct } = matchResult;
+      const { matchResult: match, fullProduct, availableTracks } = matchResult;
 
       if (!match || match.confidence < 0.5) {
         throw new Error('לא נמצא מוצר מתאים ברמת ביטחון מספקת');
       }
 
+      console.log('📋 Available tracks for this company:', availableTracks);
+
       // Build product data from matched product
       const productData = {
-        productName: match.matchedProduct.trackName,
-        category: match.matchedProduct.category,
-        subCategory: match.matchedProduct.trackName,
-        company: match.matchedProduct.company,
+        productName: match.trackName,
+        category: match.productType,
+        subCategory: match.trackName,
+        company: match.companyMatched,
         amount: match.extractedInfo.amount || 0,
         managementFeeOnDeposit: match.extractedInfo.managementFeeOnDeposit || 0,
         managementFeeOnAccumulation: match.extractedInfo.managementFeeOnAccumulation || 0,
         notes: match.extractedInfo.notes || '',
-        productNumber: match.matchedProduct.productCode,
+        productNumber: fullProduct?.product_code || '',
         // Include full product details if available
         ...(fullProduct && {
           exposureStocks: fullProduct.exposure_stocks,

@@ -43,53 +43,50 @@ serve(async (req) => {
 
     console.log(`✅ Loaded ${products.length} products from database`);
 
-    // Build a concise product list for the AI
-    const productSummary = products.map(p => ({
-      company: p.company,
-      category: p.product_type,
-      trackName: p.track_name,
-      productCode: p.product_code,
-    }));
+    // Get unique companies list for better AI matching
+    const uniqueCompanies = [...new Set(products.map(p => p.company))].sort();
+    
+    // Get unique product types
+    const uniqueProductTypes = [...new Set(products.map(p => p.product_type))].sort();
 
-    // Limit to first 200 for token efficiency
-    const limitedProducts = productSummary.slice(0, 200);
+    console.log(`📋 Unique companies: ${uniqueCompanies.length}, Product types: ${uniqueProductTypes.length}`);
 
-    const systemPrompt = `אתה עוזר שמנתח טקסט של פרטי מוצר פיננסי ומוצא את המוצר המתאים ביותר מרשימה קיימת.
+    const systemPrompt = `אתה עוזר שמנתח טקסט של פרטי מוצר פיננסי ומזהה את החברה, סוג המוצר והמסלול.
 
-רשימת המוצרים הזמינים (חלקית):
-${JSON.stringify(limitedProducts, null, 2)}
+רשימת כל החברות הזמינות במערכת (${uniqueCompanies.length} חברות):
+${uniqueCompanies.join(', ')}
+
+סוגי המוצרים הזמינים:
+${uniqueProductTypes.join(', ')}
 
 המשימה שלך:
 1. לנתח את הטקסט ולזהות:
-   - סוג המוצר (קופת גמל, קרן השתלמות, פנסיה, ביטוח וכו')
-   - שם החברה (מגדל, הפניקס, מנורה, הראל, מיטב, אלטשולר שחם, מור וכו')
+   - שם החברה - חייב להתאים בדיוק לאחת מהחברות ברשימה למעלה (לא להמציא שם חדש!)
+   - סוג המוצר - חייב להתאים בדיוק לאחד מסוגי המוצרים למעלה
    - מסלול ההשקעה (מניות, אג"ח, כללי, משולב וכו')
    - סכום (אם מוזכר)
    - דמי ניהול (אם מוזכרים)
 
-2. למצוא את המוצר הכי מתאים מהרשימה לפי:
-   - התאמה מדויקת של סוג המוצר (product_type)
-   - התאמה מדויקת של החברה
-   - התאמה הכי קרובה של מסלול ההשקעה (track_name)
-
+2. חשוב מאוד:
+   - אם מוזכר שם חברה בטקסט, חפש את ההתאמה הכי קרובה ברשימת החברות
+   - לדוגמה: "אנליסט" מתאים ל"אנליסט" מהרשימה
+   - אם לא בטוח מה החברה, השתמש ב"אחר"
+   
 3. להחזיר JSON בפורמט:
 {
-  "matchedProduct": {
-    "company": "שם החברה המדויק מהרשימה",
-    "category": "סוג המוצר המדויק מהרשימה",
-    "trackName": "שם המסלול המדויק מהרשימה",
-    "productCode": "קוד המוצר מהרשימה"
-  },
+  "companyIdentified": "שם החברה המזוהה מהטקסט",
+  "companyMatched": "שם החברה המדויק מהרשימה",
+  "productType": "סוג המוצר המדויק מהרשימה",
+  "trackName": "שם המסלול שזוהה",
   "extractedInfo": {
     "amount": סכום אם מוזכר או 0,
     "managementFeeOnDeposit": דמי ניהול מהפקדה או 0,
     "managementFeeOnAccumulation": דמי ניהול מצבירה או 0,
     "notes": "הערות נוספות"
   },
-  "confidence": מספר בין 0 ל-1 המציין רמת הוודאות בהתאמה
+  "confidence": מספר בין 0 ל-1
 }
 
-חשוב: אם אין התאמה ברורה, החזר confidence נמוך (מתחת ל-0.5).
 תמיד החזר JSON תקין בלבד, ללא טקסט נוסף.`;
 
     // Send to OpenAI for analysis
@@ -132,25 +129,50 @@ ${JSON.stringify(limitedProducts, null, 2)}
 
     console.log('✅ Match result:', matchResult);
 
-    // Fetch the full product details from database
-    const { data: fullProduct, error: productError } = await supabase
+    // Now fetch all products for the matched company and product type to find the best track match
+    const { data: companyProducts, error: companyError } = await supabase
       .from('products_information')
       .select('*')
-      .eq('company', matchResult.matchedProduct.company)
-      .eq('product_type', matchResult.matchedProduct.category)
-      .eq('track_name', matchResult.matchedProduct.trackName)
-      .maybeSingle();
+      .eq('company', matchResult.companyMatched)
+      .eq('product_type', matchResult.productType);
 
-    if (productError) {
-      console.error('⚠️ Error fetching full product:', productError);
+    if (companyError) {
+      console.error('⚠️ Error fetching company products:', companyError);
+      throw new Error('Failed to fetch company products');
     }
 
-    console.log('📦 Full product details:', fullProduct);
+    console.log(`📦 Found ${companyProducts?.length || 0} products for ${matchResult.companyMatched} - ${matchResult.productType}`);
+
+    // Find the best matching track
+    let fullProduct = null;
+    if (companyProducts && companyProducts.length > 0) {
+      // Try exact match first
+      fullProduct = companyProducts.find(p => 
+        p.track_name.toLowerCase() === matchResult.trackName.toLowerCase()
+      );
+
+      // If no exact match, try partial match
+      if (!fullProduct) {
+        fullProduct = companyProducts.find(p => 
+          p.track_name.toLowerCase().includes(matchResult.trackName.toLowerCase()) ||
+          matchResult.trackName.toLowerCase().includes(p.track_name.toLowerCase())
+        );
+      }
+
+      // If still no match, take the first one
+      if (!fullProduct && companyProducts.length > 0) {
+        fullProduct = companyProducts[0];
+        console.log('⚠️ No track match found, using first product');
+      }
+    }
+
+    console.log('✅ Selected product:', fullProduct ? `${fullProduct.company} - ${fullProduct.track_name}` : 'null');
 
     return new Response(
       JSON.stringify({ 
         matchResult,
-        fullProduct: fullProduct || null
+        fullProduct: fullProduct || null,
+        availableTracks: companyProducts?.map(p => p.track_name) || []
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
