@@ -284,20 +284,45 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
   };
 
   const handleVoiceProductAnalyzed = (voiceData: any) => {
-    // Find matching category
-    const matchedCategory = hierarchy.categories.find(cat => 
-      voiceData.productName?.includes(cat) || voiceData.category?.includes(cat)
-    );
+    // Prefer exact category match from AI, then fallback to includes
+    const categoriesList = Array.from(hierarchy.categories as any);
+    const matchedCategory =
+      categoriesList.find((cat: string) => cat === voiceData.category) ||
+      categoriesList.find((cat: string) => voiceData.productName?.includes(cat) || voiceData.category?.includes(cat));
     
-    // If we found a matching category, set up the step and form data
     if (matchedCategory) {
-      const subCats = hierarchy.subCategories.get(matchedCategory) || [];
-      const defaultSubCat = subCats[0] || 'מסלול כללי';
+      const key = matchedCategory as string;
+      const subCatsRaw = (hierarchy.subCategories.get(key) || []) as unknown;
+      const subCats: string[] = Array.isArray(subCatsRaw)
+        ? (subCatsRaw as string[])
+        : Array.from((subCatsRaw as Set<string>) || []);
+
+      // Try to match sub-category/track from voice data (fullProduct.track_name already passed as subCategory)
+      const norm = (s?: string) => (s || '').toString().trim().toLowerCase();
+      const target = norm(voiceData.subCategory || voiceData.productName);
+
+      const pickSubCat = (): string => {
+        const exact = subCats.find((sc) => norm(sc) === target);
+        if (exact) return exact;
+        const contains = subCats.find((sc) => norm(sc).includes(target) || (target && target.includes(norm(sc))));
+        if (contains) return contains;
+        if (target.includes('מניות')) {
+          const mn = subCats.find((sc) => norm(sc).includes('מניות'));
+          if (mn) return mn;
+        }
+        if (target.includes('אג"ח')) {
+          const ag = subCats.find((sc) => norm(sc).includes('אג"ח'));
+          if (ag) return ag;
+        }
+        return subCats[0] || 'מסלול כללי';
+      };
+
+      const matchedSubCat = pickSubCat();
       
       setStep({
         current: 3,
-        selectedCategory: matchedCategory,
-        selectedSubCategory: defaultSubCat,
+        selectedCategory: key,
+        selectedSubCategory: matchedSubCat,
         selectedCompany: voiceData.company || ''
       });
       
@@ -306,9 +331,15 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
         amount: voiceData.amount || 0,
         managementFeeOnDeposit: voiceData.managementFeeOnDeposit || 0,
         managementFeeOnAccumulation: voiceData.managementFeeOnAccumulation || 0,
-        investmentTrack: voiceData.investmentTrack || '',
+        investmentTrack: matchedSubCat,
         riskLevelChange: 'no-change',
-        notes: voiceData.transcribedText || ''
+        notes: voiceData.transcribedText || '',
+        productNumber: voiceData.productNumber || '',
+        // Exposures (if provided from DB match)
+        exposureStocks: voiceData.exposureStocks,
+        exposureBonds: voiceData.exposureBonds,
+        exposureForeignCurrency: voiceData.exposureForeignCurrency,
+        exposureForeignInvestments: voiceData.exposureForeignInvestments,
       });
       
       // Switch to manual mode to show the form
