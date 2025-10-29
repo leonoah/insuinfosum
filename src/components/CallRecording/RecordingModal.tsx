@@ -441,17 +441,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
         
         toast({
           title: "ניתוח הושלם בהצלחה",
-          description: "נתוני הביטוח חולצו מהשיחה - יוצר מוצרים אוטומטית",
+          description: "נתוני הביטוח חולצו מהשיחה",
         });
-        
-        // Automatically create products after successful analysis
-        if (extractionData?.currentProducts || extractionData?.suggestedProducts) {
-          setTimeout(() => {
-            onApprove(extractionData.currentProducts || [], extractionData.suggestedProducts || []);
-            onClose();
-            resetModal();
-          }, 1500); // Short delay to let user see the success message
-        }
         
       } catch (error) {
         console.error('Error processing recording:', error);
@@ -541,17 +532,8 @@ const RecordingModal = ({ isOpen, onClose, onApprove, initialClientId, initialCl
 
       toast({
         title: "העלאה הושלמה בהצלחה",
-        description: "נתוני הביטוח חולצו מקובץ האודיו - יוצר מוצרים אוטומטית",
+        description: "נתוני הביטוח חולצו מקובץ האודיו",
       });
-      
-      // Automatically create products after successful analysis
-      if (extractionData?.currentProducts || extractionData?.suggestedProducts) {
-        setTimeout(() => {
-          onApprove(extractionData.currentProducts || [], extractionData.suggestedProducts || []);
-          onClose();
-          resetModal();
-        }, 1500); // Short delay to let user see the success message
-      }
 
     } catch (error) {
       console.error('Error processing uploaded file:', error);
