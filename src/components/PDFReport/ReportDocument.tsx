@@ -12,6 +12,7 @@ import { ReportFooter } from './sections/ReportFooter';
 import { SelectedProduct } from '@/types/products';
 import { ExposureTableSection } from './sections/ExposureTableSection';
 import { ReturnsChartSection } from './sections/ReturnsChartSection';
+import ProductDetailsSection from './sections/ProductDetailsSection';
 import { formatCurrency } from '@/utils/numberFormat';
 
 // Disable hyphenation entirely to avoid RTL letter reordering
@@ -214,95 +215,11 @@ export const ReportDocument = ({
     ) : null,
     productDetails:
       selectedSections.productDetails && formData.includeProductsTable !== false ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>פירוט מלא - מוצרים</Text>
-
-          {/* Current Products Table */}
-          {productStats.currentProducts.length > 0 && (
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>מוצרים קיימים</Text>
-              <View style={styles.table}>
-                <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                  <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
-                  <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
-                  <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
-                  <Text style={[styles.tableCell, { width: '11%' }]}>סכום צבירה</Text>
-                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל הפק</Text>
-                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל צב</Text>
-                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ מניות</Text>
-                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ אגח</Text>
-                  <Text style={[styles.tableCell, { width: '13%' }]}>הערות</Text>
-                </View>
-                {productStats.currentProducts.map((product, index) => (
-                  <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
-                    <Text style={[styles.tableCell, { width: '11%' }]}>
-                      {product.amount ? formatCurrency(product.amount) : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>
-                      {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>
-                      {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>
-                      {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>
-                      {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '13%' }]}>{product.notes || '-'}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Recommended Products Table */}
-          {productStats.recommendedProducts.length > 0 && (
-            <View>
-              <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>מוצרים מוצעים</Text>
-              <View style={styles.table}>
-                <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                  <Text style={[styles.tableCell, { width: '14%' }]}>חברה</Text>
-                  <Text style={[styles.tableCell, { width: '12%' }]}>קטגוריה</Text>
-                  <Text style={[styles.tableCell, { width: '12%' }]}>מסלול</Text>
-                  <Text style={[styles.tableCell, { width: '11%' }]}>סכום צבירה</Text>
-                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל הפק</Text>
-                  <Text style={[styles.tableCell, { width: '10%' }]}>דמי נהל צב</Text>
-                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ מניות</Text>
-                  <Text style={[styles.tableCell, { width: '9%' }]}>חש׳ אגח</Text>
-                  <Text style={[styles.tableCell, { width: '13%' }]}>הערות</Text>
-                </View>
-                {productStats.recommendedProducts.map((product, index) => (
-                  <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { width: '14%' }]}>{product.company}</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.category}</Text>
-                    <Text style={[styles.tableCell, { width: '12%' }]}>{product.investmentTrack}</Text>
-                    <Text style={[styles.tableCell, { width: '11%' }]}>
-                      {product.amount ? formatCurrency(product.amount) : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>
-                      {product.managementFeeOnDeposit ? `${product.managementFeeOnDeposit}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '10%' }]}>
-                      {product.managementFeeOnAccumulation ? `${product.managementFeeOnAccumulation}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>
-                      {product.exposureStocks !== undefined ? `${product.exposureStocks}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '9%' }]}>
-                      {product.exposureBonds !== undefined ? `${product.exposureBonds}%` : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '13%' }]}>{product.notes || '-'}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
+        <ProductDetailsSection
+          currentProducts={productStats.currentProducts}
+          recommendedProducts={productStats.recommendedProducts}
+          styles={styles}
+        />
       ) : null,
     exposureComparison:
       selectedSections.exposureComparison && formData.includeExposureReport !== false ? (

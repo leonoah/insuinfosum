@@ -20,6 +20,7 @@ import agentLogo from "@/assets/agent-logo.png";
 import { SelectedProduct } from "@/types/products";
 import { ReportDocument } from "@/components/PDFReport/ReportDocument";
 import { Gauge } from "@mui/x-charts/Gauge";
+import ProductDetailsView from "@/components/ProductSelector/ProductDetailsView";
 
 const REPORT_SECTION_KEYS = [
   "personalInfo",
@@ -1336,39 +1337,10 @@ ${agentData.name}`;
     ) : null,
     productDetails: selectedSections.productDetails ? (
       <ReportSection sectionKey="productDetails">
-        {productStats.recommendedProducts.length > 0 ? (
-          <div className="space-y-3">
-            {productStats.recommendedProducts.map((product, index) => (
-              <div key={index} className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
-                <div className="space-y-2">
-                  <div className="font-medium text-cyan-400">
-                    {product.category}{product.company ? ` (${product.company})` : ''}
-                  </div>
-                  <div className="text-sm text-gray-300 space-y-1">
-                    <div>מסלול: {product.subCategory}</div>
-                    <div>סכום צבירה: ₪{product.amount.toLocaleString()}</div>
-                    <div>
-                      דמי ניהול: {product.managementFeeOnDeposit}% מהפקדה | {product.managementFeeOnAccumulation}% מצבירה
-                    </div>
-                    {product.investmentTrack && (
-                      <div>מסלול השקעה: {product.investmentTrack}</div>
-                    )}
-                    {product.riskLevelChange && product.riskLevelChange !== 'no-change' && (
-                      <div className="text-orange-400">שינוי רמת סיכון: {product.riskLevelChange}</div>
-                    )}
-                  </div>
-                  {product.notes && (
-                    <div className="text-sm bg-gray-800/50 p-2 rounded text-gray-300">
-                      הערות: {product.notes}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-sm text-gray-400">לא נבחרו מוצרים להצגה.</div>
-        )}
+        <ProductDetailsView 
+          products={productStats.recommendedProducts}
+          title="מוצרים מוצעים"
+        />
       </ReportSection>
     ) : null,
     exposureComparison: selectedSections.exposureComparison ? (
