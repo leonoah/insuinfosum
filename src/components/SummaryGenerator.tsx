@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import agentLogo from "@/assets/agent-logo.png";
 import { SelectedProduct } from "@/types/products";
 import { ReportDocument } from "@/components/PDFReport/ReportDocument";
+import { Gauge } from "@mui/x-charts/Gauge";
 
 const REPORT_SECTION_KEYS = [
   "personalInfo",
@@ -1394,14 +1395,40 @@ ${agentData.name}`;
                     <tr key={key} className="border-t border-gray-800">
                       <td className="px-4 py-2 text-gray-200">{label}</td>
                       <td className="px-4 py-2 text-gray-300">
-                        {typeof productStats.exposureSummary.current[key] === 'number'
-                          ? `${productStats.exposureSummary.current[key]?.toFixed(1)}%`
-                          : '—'}
+                        {typeof productStats.exposureSummary.current[key] === 'number' ? (
+                          <div className="flex justify-end">
+                            <Gauge
+                              value={Number(productStats.exposureSummary.current[key]?.toFixed(1))}
+                              width={48}
+                              height={48}
+                              startAngle={0}
+                              endAngle={360}
+                              min={0}
+                              max={100}
+                              sx={{ '& text': { display: 'none' } }}
+                            />
+                          </div>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-4 py-2 text-gray-300">
-                        {typeof productStats.exposureSummary.recommended[key] === 'number'
-                          ? `${productStats.exposureSummary.recommended[key]?.toFixed(1)}%`
-                          : '—'}
+                        {typeof productStats.exposureSummary.recommended[key] === 'number' ? (
+                          <div className="flex justify-end">
+                            <Gauge
+                              value={Number(productStats.exposureSummary.recommended[key]?.toFixed(1))}
+                              width={48}
+                              height={48}
+                              startAngle={0}
+                              endAngle={360}
+                              min={0}
+                              max={100}
+                              sx={{ '& text': { display: 'none' } }}
+                            />
+                          </div>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))}
