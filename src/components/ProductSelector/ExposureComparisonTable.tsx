@@ -41,8 +41,8 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
       <div className="flex flex-col items-center gap-2 bg-background/50 rounded-lg p-3">
         <Gauge
           value={numericValue}
-          width={120}
-          height={120}
+          width={90}
+          height={90}
           startAngle={0}
           endAngle={360}
           min={0}
@@ -58,10 +58,11 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
             '& text': {
               fill: 'hsl(var(--foreground))',
               fontWeight: 600,
+              fontSize: '0.875rem',
             }
           }}
         />
-        <div className="text-xs text-center font-medium text-foreground">{label}</div>
+        <div className="text-sm text-center font-semibold text-foreground">{label}</div>
       </div>
     );
   };
