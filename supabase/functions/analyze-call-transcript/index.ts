@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,44 +20,54 @@ serve(async (req) => {
       throw new Error('No transcript provided');
     }
 
-    console.log('Analyzing call transcript...');
+    console.log('🎙️ Analyzing call transcript...');
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch all products from database
+    const { data: products, error: dbError } = await supabase
+      .from('products_information')
+      .select('*')
+      .order('company', { ascending: true });
+
+    if (dbError) {
+      console.error('❌ Database error:', dbError);
+      throw new Error('Failed to fetch products from database');
+    }
+
+    if (!products || products.length === 0) {
+      throw new Error('No products found in database');
+    }
+
+    console.log(`✅ Loaded ${products.length} products from database`);
+
+    // Build a concise product list for the AI (limit to avoid token overflow)
+    const productSummary = products.slice(0, 150).map(p => ({
+      company: p.company,
+      category: p.product_type,
+      trackName: p.track_name,
+      productCode: p.product_code,
+    }));
 
     const systemPrompt = `אתה מומחה לניתוח שיחות ביטוח פנסיוני ולהפקת מידע מובנה. 
     מתפקידך לנתח תמליל של שיחה בין סוכן ביטוח ללקוח ולחלץ את המידע הבא:
     
-    חברות ביטוח וקרנות פנסיה מוכרות בישראל:
-    - מגדל, כלל, הפניקס, מנורה מבטחים, הראל, אלטשולר שחם, מיטב, מור
-    - ילין לפידות, אנליסט, אינפיניטי, עמי
+    **רשימת מוצרים זמינים (חלקית):**
+    ${JSON.stringify(productSummary, null, 2)}
     
-    קטגוריות מוצרים:
-    - קרן פנסיה
-    - קרן השתלמות
-    - קופת גמל
-    - ביטוח מנהלים
-    
-    תתי קטגוריות נפוצות:
-    - מסלול יעד גיל עד 50
-    - מסלול יעד גיל 50-60
-    - מסלול יעד גיל 60+
-    - מסלול כללי
-    - מסלול מניות
-    - מסלול אג"ח
-    - מסלול אג"ח ממשלות
-    - מסלול כספי (שקלי)
-    - מסלול מחקה מדד
-    - מסלול הלכה
+    **חשוב מאוד:** כל מוצר שתזהה חייב להיות מהרשימה הזמינה למעלה!
+    עבור כל מוצר:
+    - מצא את החברה המדויקת מהרשימה
+    - מצא את הקטגוריה המדויקת (product_type)
+    - מצא את המסלול המדויק (track_name) שהכי קרוב למה שהלקוח אמר
     
     1. מצב הלקוח הנוכחי - תיאור קצר של מצבו הכלכלי והביטוחי
-    2. מוצרי ביטוח קיימים של הלקוח (השתמש רק בחברות מהרשימה)
-    3. מוצרי ביטוח מומלצים על בסיס השיחה (השתמש רק בחברות מהרשימה)
+    2. מוצרי ביטוח קיימים של הלקוח (רק מהרשימה!)
+    3. מוצרי ביטוח מומלצים על בסיס השיחה (רק מהרשימה!)
     4. סיכום השיחה עם הדגשות צבעוניות
-    
-    **חשוב מאוד:** המבנה החדש של מוצרים הוא:
-    - category (קטגוריה): קרן פנסיה / קרן השתלמות / קופת גמל / ביטוח מנהלים
-    - subCategory (תת קטגוריה): מסלול יעד גיל עד 50 / מסלול כללי וכו'
-    - company (חברה): מגדל / הראל / מנורה מבטחים וכו'
-    
-    אם לא ניתן לזהות תת קטגוריה - השתמש ב"מסלול כללי" כברירת מחדל.
     
     החזר תשובה בפורמט JSON בלבד עם המבנה הבא:
     {
@@ -65,35 +76,31 @@ serve(async (req) => {
       "highlightedTranscript": "תמליל עם הדגשות HTML - שם מוצר ב-<span class='product-name'>שם מוצר</span>, חברה ב-<span class='company-name'>שם חברה</span>, מספרים ב-<span class='numbers'>מספר</span>",
       "currentProducts": [
         {
-          "id": "unique-id",
-          "category": "קרן פנסיה",
-          "subCategory": "מסלול כללי",
-          "company": "שם חברת הביטוח מהרשימה בלבד",
+          "company": "שם החברה המדויק מהרשימה",
+          "category": "סוג המוצר המדויק מהרשימה",
+          "trackName": "שם המסלול המדויק מהרשימה",
+          "productCode": "קוד המוצר אם מוזכר",
           "amount": מספר,
           "managementFeeOnDeposit": מספר,
           "managementFeeOnAccumulation": מספר,
-          "investmentTrack": "כללי",
-          "notes": "הערות",
-          "type": "current"
+          "notes": "הערות"
         }
       ],
       "suggestedProducts": [
         {
-          "id": "unique-id",
-          "category": "קרן פנסיה",
-          "subCategory": "מסלול מניות",
-          "company": "שם חברת הביטוח מהרשימה בלבד",
+          "company": "שם החברה המדויק מהרשימה",
+          "category": "סוג המוצר המדויק מהרשימה",
+          "trackName": "שם המסלול המדויק מהרשימה",
+          "productCode": "קוד המוצר אם מוזכר",
           "amount": מספר,
           "managementFeeOnDeposit": מספר,
           "managementFeeOnAccumulation": מספר,
-          "investmentTrack": "מניות",
-          "notes": "הערות",
-          "type": "recommended"
+          "notes": "הערות"
         }
       ]
     }
     
-    חשוב: השתמש אך ורק בחברות ביטוח מהרשימה שלמעלה. אם מוזכרת חברה שלא ברשימה, מצא את החברה הקרובה ביותר או השתמש ב"מגדל" כברירת מחדל.`;
+    אם אין מוצר מתאים ברשימה, דלג על המוצר!`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -120,14 +127,14 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
+      console.error('❌ OpenAI API error:', errorText);
       throw new Error(`OpenAI API error: ${errorText}`);
     }
 
     const result = await response.json();
     const analysisText = result.choices[0].message.content;
     
-    console.log('Raw AI response:', analysisText);
+    console.log('📄 Raw AI response:', analysisText);
 
     // Parse the JSON response
     let analysisData;
@@ -136,7 +143,7 @@ serve(async (req) => {
       const cleanedText = analysisText.replace(/```json\n?|\n?```/g, '').trim();
       analysisData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
+      console.error('❌ Error parsing AI response:', parseError);
       // Fallback response
       analysisData = {
         customerStatus: "לא ניתן היה לזהות את מצב הלקוח מהתמליל",
@@ -147,31 +154,62 @@ serve(async (req) => {
       };
     }
 
-    // Ensure products have required fields and unique IDs
-    const processProducts = (products: any[], type: 'current' | 'recommended') => {
-      return products.map((product, index) => ({
-        id: `${type}-${Date.now()}-${index}`,
-        category: product.category || "קרן פנסיה",
-        subCategory: product.subCategory || "מסלול כללי",
-        company: product.company || "חברה לא מזוהה",
-        amount: product.amount || 0,
-        managementFeeOnDeposit: product.managementFeeOnDeposit || 0,
-        managementFeeOnAccumulation: product.managementFeeOnAccumulation || 0,
-        investmentTrack: product.investmentTrack || "כללי",
-        notes: product.notes || "",
-        type: type
-      }));
+    // Process products and enrich with full data from database
+    const processProducts = async (productsList: any[], type: 'current' | 'recommended') => {
+      const enrichedProducts = [];
+      
+      for (const product of productsList) {
+        // Fetch full product details
+        const { data: fullProduct } = await supabase
+          .from('products_information')
+          .select('*')
+          .eq('company', product.company)
+          .eq('product_type', product.category)
+          .eq('track_name', product.trackName)
+          .maybeSingle();
+
+        if (fullProduct) {
+          // Calculate total bonds
+          const totalBonds = 
+            (Number(fullProduct.exposure_government_bonds) || 0) +
+            (Number(fullProduct.exposure_corporate_bonds_tradable) || 0) +
+            (Number(fullProduct.exposure_corporate_bonds_non_tradable) || 0);
+
+          enrichedProducts.push({
+            id: `${type}-${Date.now()}-${Math.random()}`,
+            category: product.category,
+            subCategory: product.trackName,
+            company: product.company,
+            amount: product.amount || 0,
+            managementFeeOnDeposit: product.managementFeeOnDeposit || 0,
+            managementFeeOnAccumulation: product.managementFeeOnAccumulation || 0,
+            productNumber: product.productCode || fullProduct.product_code,
+            notes: product.notes || "",
+            type: type,
+            // Add exposure data
+            exposureStocks: Number(fullProduct.exposure_stocks) || 0,
+            exposureBonds: totalBonds,
+            exposureForeignCurrency: Number(fullProduct.exposure_foreign_currency) || 0,
+            exposureForeignInvestments: Number(fullProduct.exposure_foreign) || 0,
+          });
+          console.log(`✅ Enriched ${type} product:`, product.company, product.trackName);
+        } else {
+          console.log(`⚠️ No matching product found for: ${product.company} - ${product.trackName}`);
+        }
+      }
+      
+      return enrichedProducts;
     };
 
     const finalData = {
       customerStatus: analysisData.customerStatus || "מצב לקוח לא זוהה",
       summary: analysisData.summary || "סיכום לא זמין",
       highlightedTranscript: analysisData.highlightedTranscript || transcript,
-      currentProducts: processProducts(analysisData.currentProducts || [], 'current'),
-      suggestedProducts: processProducts(analysisData.suggestedProducts || [], 'recommended')
+      currentProducts: await processProducts(analysisData.currentProducts || [], 'current'),
+      suggestedProducts: await processProducts(analysisData.suggestedProducts || [], 'recommended')
     };
 
-    console.log('Analysis completed successfully');
+    console.log('✅ Analysis completed successfully');
     
     return new Response(
       JSON.stringify(finalData),
@@ -179,7 +217,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in analyze-call-transcript function:', error);
+    console.error('❌ Error in analyze-call-transcript function:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {

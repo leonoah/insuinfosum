@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useProductTaxonomy } from '@/hooks/useProductTaxonomy';
-import { matchCategory, matchSubCategory, matchCompany } from '@/utils/productMatcher';
+// No longer needed - matching is done by edge function
 
 interface VoiceProductInputProps {
   onProductAnalyzed: (productData: any) => void;
@@ -17,8 +17,7 @@ const VoiceProductInput: React.FC<VoiceProductInputProps> = ({ onProductAnalyzed
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
   
-  // Load taxonomy for smart matching
-  const { getAllCategories, getAllSubCategories, getAllCompanies } = useProductTaxonomy();
+  // No longer needed - matching is done by edge function
 
   const startRecording = async () => {
     try {
@@ -114,41 +113,49 @@ const VoiceProductInput: React.FC<VoiceProductInputProps> = ({ onProductAnalyzed
         throw new Error('לא זוהה טקסט בהקלטה');
       }
 
-      // Step 2: Analyze the transcribed text to extract product data
-      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
-        'analyze-product-speech',
+      // Step 2: Match product from database using the transcribed text
+      const { data: matchResult, error: matchError } = await supabase.functions.invoke(
+        'match-product-from-speech',
         {
           body: { text: transcribedText }
         }
       );
 
-      if (analysisError) {
-        throw new Error('שגיאה בניתוח: ' + analysisError.message);
+      if (matchError) {
+        throw new Error('שגיאה בהתאמת מוצר: ' + matchError.message);
       }
 
-      let productData = analysisResult.productData;
-      console.log('Analyzed product data (before matching):', productData);
-      
-      // Smart match the voice-recognized product
-      const categories = getAllCategories();
-      const subCategories = getAllSubCategories();
-      const companies = getAllCompanies();
-      
-      const matchedCategory = matchCategory(productData.category || '', categories);
-      const matchedSubCategory = matchSubCategory(productData.subCategory || '', subCategories);
-      const matchedCompany = matchCompany(productData.company || '', companies);
-      
-      console.log('🔍 Voice Product Matching Summary:');
-      console.log(`   Input: Category="${productData.category}", SubCategory="${productData.subCategory}", Company="${productData.company}"`);
-      console.log(`   Result: Category="${matchedCategory}", SubCategory="${matchedSubCategory}", Company="${matchedCompany}"`);
-      
-      // Update product data with matched values
-      productData = {
-        ...productData,
-        category: matchedCategory || productData.category,
-        subCategory: matchedSubCategory,
-        company: matchedCompany || productData.company
+      console.log('🎯 Product match result:', matchResult);
+
+      const { matchResult: match, fullProduct } = matchResult;
+
+      if (!match || match.confidence < 0.5) {
+        throw new Error('לא נמצא מוצר מתאים ברמת ביטחון מספקת');
+      }
+
+      // Build product data from matched product
+      const productData = {
+        productName: match.matchedProduct.trackName,
+        category: match.matchedProduct.category,
+        subCategory: match.matchedProduct.trackName,
+        company: match.matchedProduct.company,
+        amount: match.extractedInfo.amount || 0,
+        managementFeeOnDeposit: match.extractedInfo.managementFeeOnDeposit || 0,
+        managementFeeOnAccumulation: match.extractedInfo.managementFeeOnAccumulation || 0,
+        notes: match.extractedInfo.notes || '',
+        productNumber: match.matchedProduct.productCode,
+        // Include full product details if available
+        ...(fullProduct && {
+          exposureStocks: fullProduct.exposure_stocks,
+          exposureBonds: (fullProduct.exposure_government_bonds || 0) + 
+                         (fullProduct.exposure_corporate_bonds_tradable || 0) + 
+                         (fullProduct.exposure_corporate_bonds_non_tradable || 0),
+          exposureForeignCurrency: fullProduct.exposure_foreign_currency,
+          exposureForeignInvestments: fullProduct.exposure_foreign,
+        })
       };
+      
+      console.log('✅ Matched product data:', productData);
 
       toast({
         title: "הקלטה עובדה בהצלחה",
