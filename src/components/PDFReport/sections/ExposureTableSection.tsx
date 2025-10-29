@@ -65,38 +65,9 @@ export const ExposureTableSection = ({
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>השוואת חשיפות</Text>
       
-      {/* Summary Cards */}
+      {/* Aggregate Comparison Table */}
       {currentWithExposure.length > 0 && recommendedWithExposure.length > 0 && (
         <View>
-          <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10 }}>חשיפות ממוצעות - מצב מוצע</Text>
-          <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 15, gap: 8 }}>
-            {/* Stocks */}
-            <View style={{ alignItems: 'center', padding: 10, backgroundColor: '#eff6ff', borderRadius: 8, flex: 1 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#3b82f6' }}>{recommendedAvgStocks.toFixed(1)}%</Text>
-              <Text style={{ fontSize: 8, color: '#666', textAlign: 'center', marginTop: 4 }}>חשיפה למניות</Text>
-            </View>
-            
-            {/* Bonds */}
-            <View style={{ alignItems: 'center', padding: 10, backgroundColor: '#fef3c7', borderRadius: 8, flex: 1 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#f59e0b' }}>{recommendedAvgBonds.toFixed(1)}%</Text>
-              <Text style={{ fontSize: 8, color: '#666', textAlign: 'center', marginTop: 4 }}>חשיפה לאג״ח</Text>
-            </View>
-            
-            {/* Foreign Currency */}
-            <View style={{ alignItems: 'center', padding: 10, backgroundColor: '#d1fae5', borderRadius: 8, flex: 1 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#10b981' }}>{recommendedAvgForeignCurrency.toFixed(1)}%</Text>
-              <Text style={{ fontSize: 8, color: '#666', textAlign: 'center', marginTop: 4 }}>חשיפה למט״ח</Text>
-            </View>
-            
-            {/* Foreign Investments */}
-            <View style={{ alignItems: 'center', padding: 10, backgroundColor: '#ede9fe', borderRadius: 8, flex: 1 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#8b5cf6' }}>{recommendedAvgForeignInvestments.toFixed(1)}%</Text>
-              <Text style={{ fontSize: 8, color: '#666', textAlign: 'center', marginTop: 4 }}>חשיפה להשקעות חו״ל</Text>
-            </View>
-          </View>
-
-          {/* Comparison Table */}
-          <Text style={{ fontSize: 11, fontWeight: 'bold', marginTop: 10, marginBottom: 5 }}>השוואה מפורטת</Text>
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>סוג חשיפה</Text>
