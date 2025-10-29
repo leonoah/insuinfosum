@@ -908,6 +908,17 @@ const NewProductSelectionModal: React.FC<NewProductSelectionModalProps> = ({
                   </Alert>
                 )}
 
+                {/* Show success message when exposure data was auto-filled from voice */}
+                {formData.exposureStocks !== undefined && 
+                 formData.exposureStocks > 0 && 
+                 inputMode === 'manual' && (
+                  <Alert className="bg-green-500/10 border-green-500/30">
+                    <AlertDescription className="text-green-700 dark:text-green-400">
+                      ✓ נתוני החשיפה מולאו אוטומטית מהמוצר שזוהה
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {formData.exposureStocks === undefined ? (
                   <div className="glass p-4 text-center text-muted-foreground">
                     אין נתוני חשיפה
