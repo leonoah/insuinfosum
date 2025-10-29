@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
     global: "globalThis",
   },
   optimizeDeps: {
+    include: ['@emotion/styled', '@emotion/react'],
     esbuildOptions: {
       define: {
         global: "globalThis",
