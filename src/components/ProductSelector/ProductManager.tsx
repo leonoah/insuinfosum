@@ -8,6 +8,7 @@ import { ExposureComparisonTable } from './ExposureComparisonTable';
 import NewProductSelectionModal from './NewProductSelectionModal';
 import ProductList from './ProductList';
 import ComparisonSection from './ComparisonSection';
+import ReturnsComparisonSection from './ReturnsComparisonSection';
 import ExcelImportDialog from './ExcelImportDialog';
 import PensionFileImport from './PensionFileImport';
 import CurrentStateView from './CurrentStateView';
@@ -281,6 +282,12 @@ const ProductManager: React.FC<ProductManagerProps> = ({
 
       {/* Comparison Section - Always Visible */}
       <ComparisonSection 
+        currentProducts={currentProducts}
+        recommendedProducts={recommendedProducts}
+      />
+
+      {/* Returns Comparison Section */}
+      <ReturnsComparisonSection
         currentProducts={currentProducts}
         recommendedProducts={recommendedProducts}
       />
