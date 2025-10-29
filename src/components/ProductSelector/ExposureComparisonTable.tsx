@@ -73,9 +73,9 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                       <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" />
-                      <ExposureGauge value={product.exposureBonds} label="חשיפה לאג\"ח" />
-                      <ExposureGauge value={product.exposureForeignCurrency} label="חשיפה למט\"ח" />
-                      <ExposureGauge value={product.exposureForeignInvestments} label="חשיפה להשקעות בחו\"ל" />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' />
                     </div>
                   </div>
                 ))}
@@ -96,9 +96,9 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                     <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                       <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" />
-                      <ExposureGauge value={product.exposureBonds} label="חשיפה לאג\"ח" />
-                      <ExposureGauge value={product.exposureForeignCurrency} label="חשיפה למט\"ח" />
-                      <ExposureGauge value={product.exposureForeignInvestments} label="חשיפה להשקעות בחו\"ל" />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' />
                     </div>
                   </div>
                 ))}
@@ -117,15 +117,15 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                 />
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureBonds || 0), 0) / recommendedWithExposure.length}
-                  label="חשיפה לאג\"ח"
+                  label='חשיפה לאג"ח'
                 />
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignCurrency || 0), 0) / recommendedWithExposure.length}
-                  label="חשיפה למט\"ח"
+                  label='חשיפה למט"ח'
                 />
                 <ExposureGauge
                   value={recommendedWithExposure.reduce((sum, p) => sum + (p.exposureForeignInvestments || 0), 0) / recommendedWithExposure.length}
-                  label="חשיפה להשקעות בחו\"ל"
+                  label='חשיפה להשקעות בחו"ל'
                 />
               </div>
             </div>
