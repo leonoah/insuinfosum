@@ -168,27 +168,59 @@ ${Object.entries(tracksByCompanyAndType).map(([key, tracks]) => {
     // Find the best matching track
     let fullProduct = null;
     if (companyProducts && companyProducts.length > 0) {
-      // Try exact match first
+      console.log(`🔎 Looking for track: "${matchResult.trackName}"`);
+      console.log(`📋 Available tracks: ${companyProducts.map(p => `"${p.track_name}"`).join(', ')}`);
+      
+      // Try exact match first (case insensitive)
       fullProduct = companyProducts.find(p => 
-        p.track_name.toLowerCase() === matchResult.trackName.toLowerCase()
+        p.track_name.toLowerCase().trim() === matchResult.trackName.toLowerCase().trim()
       );
+      
+      if (fullProduct) {
+        console.log(`✅ Found exact match: "${fullProduct.track_name}"`);
+      }
 
-      // If no exact match, try partial match
+      // If no exact match, try to find tracks that contain the keyword
       if (!fullProduct) {
-        fullProduct = companyProducts.find(p => 
-          p.track_name.toLowerCase().includes(matchResult.trackName.toLowerCase()) ||
-          matchResult.trackName.toLowerCase().includes(p.track_name.toLowerCase())
-        );
+        const trackKeyword = matchResult.trackName.toLowerCase().trim();
+        console.log(`🔍 Searching for tracks containing: "${trackKeyword}"`);
+        
+        // Prioritize tracks that contain the exact keyword
+        fullProduct = companyProducts.find(p => {
+          const trackName = p.track_name.toLowerCase().trim();
+          // Check if the track name contains the keyword as a whole word
+          const wordMatch = new RegExp(`\\b${trackKeyword}\\b`).test(trackName);
+          if (wordMatch) {
+            console.log(`✅ Found word match: "${p.track_name}"`);
+            return true;
+          }
+          return false;
+        });
+      }
+
+      // If still no match, try partial contains
+      if (!fullProduct) {
+        console.log(`🔍 Trying partial match...`);
+        fullProduct = companyProducts.find(p => {
+          const trackName = p.track_name.toLowerCase().trim();
+          const keyword = matchResult.trackName.toLowerCase().trim();
+          const contains = trackName.includes(keyword) || keyword.includes(trackName);
+          if (contains) {
+            console.log(`✅ Found partial match: "${p.track_name}"`);
+            return true;
+          }
+          return false;
+        });
       }
 
       // If still no match, take the first one
       if (!fullProduct && companyProducts.length > 0) {
         fullProduct = companyProducts[0];
-        console.log('⚠️ No track match found, using first product');
+        console.log(`⚠️ No track match found for "${matchResult.trackName}", using first product: "${fullProduct.track_name}"`);
       }
     }
 
-    console.log('✅ Selected product:', fullProduct ? `${fullProduct.company} - ${fullProduct.track_name}` : 'null');
+    console.log('✅ Final selected product:', fullProduct ? `${fullProduct.company} - ${fullProduct.track_name}` : 'null');
 
     return new Response(
       JSON.stringify({ 
