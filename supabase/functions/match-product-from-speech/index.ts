@@ -49,6 +49,18 @@ serve(async (req) => {
     // Get unique product types
     const uniqueProductTypes = [...new Set(products.map(p => p.product_type))].sort();
 
+    // Build a map of tracks by company and product type for better matching
+    const tracksByCompanyAndType: Record<string, string[]> = {};
+    products.forEach(p => {
+      const key = `${p.company}|${p.product_type}`;
+      if (!tracksByCompanyAndType[key]) {
+        tracksByCompanyAndType[key] = [];
+      }
+      if (!tracksByCompanyAndType[key].includes(p.track_name)) {
+        tracksByCompanyAndType[key].push(p.track_name);
+      }
+    });
+
     console.log(`📋 Unique companies: ${uniqueCompanies.length}, Product types: ${uniqueProductTypes.length}`);
 
     const systemPrompt = `אתה עוזר שמנתח טקסט של פרטי מוצר פיננסי ומזהה את החברה, סוג המוצר והמסלול.
@@ -59,34 +71,44 @@ ${uniqueCompanies.join(', ')}
 סוגי המוצרים הזמינים:
 ${uniqueProductTypes.join(', ')}
 
+מסלולים זמינים לפי חברה וסוג מוצר:
+${Object.entries(tracksByCompanyAndType).map(([key, tracks]) => {
+  const [company, productType] = key.split('|');
+  return `${company} - ${productType}: ${tracks.join(', ')}`;
+}).slice(0, 100).join('\n')}
+
 המשימה שלך:
 1. לנתח את הטקסט ולזהות:
-   - שם החברה - חייב להתאים בדיוק לאחת מהחברות ברשימה למעלה (לא להמציא שם חדש!)
+   - שם החברה - חייב להתאים בדיוק לאחת מהחברות ברשימה למעלה
    - סוג המוצר - חייב להתאים בדיוק לאחד מסוגי המוצרים למעלה
-   - מסלול ההשקעה (מניות, אג"ח, כללי, משולב וכו')
+   - מסלול ההשקעה - חייב להתאים בדיוק לאחד המסלולים הזמינים לחברה וסוג המוצר
    - סכום (אם מוזכר)
-   - דמי ניהול (אם מוזכרים)
+   - **דמי ניהול** - חפש בטקסט את המילים: "דמי ניהול", "דמי יעול", "דמיי ניהול", "ניהול", או כל וריאציה דומה
 
 2. חשוב מאוד:
-   - אם מוזכר שם חברה בטקסט, חפש את ההתאמה הכי קרובה ברשימת החברות
-   - לדוגמה: "אנליסט" מתאים ל"אנליסט" מהרשימה
-   - אם לא בטוח מה החברה, השתמש ב"אחר"
+   - החברה והמסלול חייבים להיות מהרשימות למעלה בדיוק
+   - לגבי המסלול: תמצא את ההתאמה הכי קרובה מרשימת המסלולים של החברה והמוצר הספציפיים
+   - אם מוזכר "מניות" חפש "מניות" ברשימת המסלולים
+   - אם מוזכר "אג\"ח" חפש מסלול אג\"ח ברשימה
+   - תמיד חלץ את דמי הניהול גם אם הם נאמרים בצורה לא מדויקת (למשל "דמיי יעול" זה "דמי ניהול")
    
 3. להחזיר JSON בפורמט:
 {
   "companyIdentified": "שם החברה המזוהה מהטקסט",
   "companyMatched": "שם החברה המדויק מהרשימה",
   "productType": "סוג המוצר המדויק מהרשימה",
-  "trackName": "שם המסלול שזוהה",
+  "trackIdentified": "שם המסלול שזוהה מהטקסט",
+  "trackName": "שם המסלול המדויק מרשימת המסלולים הזמינים",
   "extractedInfo": {
     "amount": סכום אם מוזכר או 0,
-    "managementFeeOnDeposit": דמי ניהול מהפקדה או 0,
-    "managementFeeOnAccumulation": דמי ניהול מצבירה או 0,
-    "notes": "הערות נוספות"
+    "managementFeeOnDeposit": דמי ניהול מהפקדה אם מוזכר או 0,
+    "managementFeeOnAccumulation": דמי ניהול מצבירה אם מוזכר או 0,
+    "notes": "כל מידע נוסף שנמצא"
   },
   "confidence": מספר בין 0 ל-1
 }
 
+חשוב: תמיד תחפש וריאציות של "דמי ניהול" כמו "דמיי יעול", "דמי יעול", "ניהול" וכו'.
 תמיד החזר JSON תקין בלבד, ללא טקסט נוסף.`;
 
     // Send to OpenAI for analysis
