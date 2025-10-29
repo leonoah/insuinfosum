@@ -1289,50 +1289,139 @@ ${agentData.name}`;
     ) : null,
     returnsComparison: selectedSections.returnsComparison ? (
       <ReportSection sectionKey="returnsComparison">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
-            <h4 className="font-semibold text-white mb-2">תיק קיים</h4>
-            <p className="text-sm text-gray-300 mb-3">
-              תשואה ממוצעת: {typeof productStats.avgCurrentReturn === 'number' ? `${productStats.avgCurrentReturn.toFixed(2)}%` : 'אין נתוני תשואה'}
-            </p>
-            <div className="space-y-2">
-              {productStats.returnsComparison.current.length > 0 ? (
-                productStats.returnsComparison.current.map(item => (
-                  <div key={item.id} className="flex items-center justify-between text-sm text-gray-300 bg-gray-800/60 rounded-lg px-3 py-2">
-                    <div>
-                      <div className="font-medium text-white">{item.label}</div>
-                      {item.track && <div className="text-xs text-gray-400">מסלול: {item.track}</div>}
+        {(() => {
+          const hasReturnsData = typeof productStats.avgCurrentReturn === 'number' || typeof productStats.avgRecommendedReturn === 'number';
+          
+          if (!hasReturnsData) {
+            return <div className="text-sm text-gray-400">אין נתוני תשואה זמינים למוצרים שנבחרו.</div>;
+          }
+
+          return (
+            <div className="space-y-6">
+              {/* Average Returns Comparison Chart */}
+              <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
+                <h4 className="font-semibold text-white mb-4 text-center">השוואת תשואות ממוצעות</h4>
+                <div className="flex justify-center items-center gap-8">
+                  {/* Current Portfolio Gauge */}
+                  {typeof productStats.avgCurrentReturn === 'number' && (
+                    <div className="flex flex-col items-center">
+                      <Gauge
+                        value={productStats.avgCurrentReturn}
+                        width={120}
+                        height={120}
+                        startAngle={-90}
+                        endAngle={90}
+                        min={-10}
+                        max={20}
+                        text={`${productStats.avgCurrentReturn.toFixed(2)}%`}
+                        sx={{
+                          '& .MuiGauge-valueArc': {
+                            fill: '#6b7280',
+                          },
+                          '& .MuiGauge-referenceArc': {
+                            fill: 'rgba(107, 114, 128, 0.2)',
+                          },
+                          '& text': {
+                            fill: '#f3f4f6',
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                          }
+                        }}
+                      />
+                      <div className="text-sm text-gray-400 mt-2">תיק קיים</div>
+                      <div className="text-xs text-gray-500">{productStats.returnsComparison.current.length} מוצרים</div>
                     </div>
-                    <div className="text-cyan-300 font-semibold">{typeof item.returns === 'number' ? `${item.returns.toFixed(2)}%` : '—'}</div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-400">אין נתוני תשואה להצגה.</div>
-              )}
-            </div>
-          </div>
-          <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
-            <h4 className="font-semibold text-white mb-2">תיק מוצע</h4>
-            <p className="text-sm text-gray-300 mb-3">
-              תשואה ממוצעת: {typeof productStats.avgRecommendedReturn === 'number' ? `${productStats.avgRecommendedReturn.toFixed(2)}%` : 'אין נתוני תשואה'}
-            </p>
-            <div className="space-y-2">
-              {productStats.returnsComparison.recommended.length > 0 ? (
-                productStats.returnsComparison.recommended.map(item => (
-                  <div key={item.id} className="flex items-center justify-between text-sm text-gray-300 bg-gray-800/60 rounded-lg px-3 py-2">
-                    <div>
-                      <div className="font-medium text-white">{item.label}</div>
-                      {item.track && <div className="text-xs text-gray-400">מסלול: {item.track}</div>}
+                  )}
+
+                  {/* Arrow or VS */}
+                  {typeof productStats.avgCurrentReturn === 'number' && typeof productStats.avgRecommendedReturn === 'number' && (
+                    <div className="flex flex-col items-center">
+                      <ArrowRight className="w-8 h-8 text-cyan-400 rotate-180" />
+                      <div className="text-xs text-cyan-400 mt-1">
+                        {productStats.avgRecommendedReturn > productStats.avgCurrentReturn ? (
+                          <span className="text-green-400">+{(productStats.avgRecommendedReturn - productStats.avgCurrentReturn).toFixed(2)}%</span>
+                        ) : (
+                          <span className="text-red-400">{(productStats.avgRecommendedReturn - productStats.avgCurrentReturn).toFixed(2)}%</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-cyan-300 font-semibold">{typeof item.returns === 'number' ? `${item.returns.toFixed(2)}%` : '—'}</div>
+                  )}
+
+                  {/* Recommended Portfolio Gauge */}
+                  {typeof productStats.avgRecommendedReturn === 'number' && (
+                    <div className="flex flex-col items-center">
+                      <Gauge
+                        value={productStats.avgRecommendedReturn}
+                        width={120}
+                        height={120}
+                        startAngle={-90}
+                        endAngle={90}
+                        min={-10}
+                        max={20}
+                        text={`${productStats.avgRecommendedReturn.toFixed(2)}%`}
+                        sx={{
+                          '& .MuiGauge-valueArc': {
+                            fill: '#06b6d4',
+                          },
+                          '& .MuiGauge-referenceArc': {
+                            fill: 'rgba(6, 182, 212, 0.2)',
+                          },
+                          '& text': {
+                            fill: '#f3f4f6',
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                          }
+                        }}
+                      />
+                      <div className="text-sm text-cyan-400 mt-2">תיק מוצע</div>
+                      <div className="text-xs text-gray-500">{productStats.returnsComparison.recommended.length} מוצרים</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Detailed Product Returns */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                  <h4 className="font-semibold text-white mb-2">תיק קיים - פירוט</h4>
+                  <div className="space-y-2">
+                    {productStats.returnsComparison.current.length > 0 ? (
+                      productStats.returnsComparison.current.map(item => (
+                        <div key={item.id} className="flex items-center justify-between text-sm text-gray-300 bg-gray-800/60 rounded-lg px-3 py-2">
+                          <div>
+                            <div className="font-medium text-white">{item.label}</div>
+                            {item.track && <div className="text-xs text-gray-400">מסלול: {item.track}</div>}
+                          </div>
+                          <div className="text-gray-300 font-semibold">{typeof item.returns === 'number' ? `${item.returns.toFixed(2)}%` : '—'}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-gray-400">אין נתוני תשואה להצגה.</div>
+                    )}
                   </div>
-                ))
-              ) : (
-                <div className="text-sm text-gray-400">אין נתוני תשואה להצגה.</div>
-              )}
+                </div>
+                <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                  <h4 className="font-semibold text-white mb-2">תיק מוצע - פירוט</h4>
+                  <div className="space-y-2">
+                    {productStats.returnsComparison.recommended.length > 0 ? (
+                      productStats.returnsComparison.recommended.map(item => (
+                        <div key={item.id} className="flex items-center justify-between text-sm text-gray-300 bg-gray-800/60 rounded-lg px-3 py-2">
+                          <div>
+                            <div className="font-medium text-white">{item.label}</div>
+                            {item.track && <div className="text-xs text-gray-400">מסלול: {item.track}</div>}
+                          </div>
+                          <div className="text-cyan-300 font-semibold">{typeof item.returns === 'number' ? `${item.returns.toFixed(2)}%` : '—'}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-gray-400">אין נתוני תשואה להצגה.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </ReportSection>
     ) : null,
     productDetails: selectedSections.productDetails ? (
