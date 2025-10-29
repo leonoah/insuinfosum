@@ -8,16 +8,9 @@ import { Badge } from '@/components/ui/badge';
 interface ProductDetailsViewProps {
   products: SelectedProduct[];
   title?: string;
-  currentProducts?: SelectedProduct[];
-  showReturnsComparison?: boolean;
 }
 
-const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({ 
-  products, 
-  title = "פירוט מוצרים",
-  currentProducts,
-  showReturnsComparison = false,
-}) => {
+const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({ products, title = "פירוט מוצרים" }) => {
   if (products.length === 0) {
     return (
       <div className="text-sm text-muted-foreground text-center py-8">
@@ -46,70 +39,9 @@ const ProductDetailsView: React.FC<ProductDetailsViewProps> = ({
     accumulation: products.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / products.length,
   };
 
-  // Calculate average returns for comparison
-  const calculateAvgReturns = (prods: SelectedProduct[]) => {
-    const productsWithReturns = prods.filter(p => p.returns !== undefined && p.returns !== null);
-    if (productsWithReturns.length === 0) return null;
-    const sum = productsWithReturns.reduce((acc, p) => acc + (p.returns || 0), 0);
-    return sum / productsWithReturns.length;
-  };
-
-  const currentAvgReturns = currentProducts ? calculateAvgReturns(currentProducts) : null;
-  const recommendedAvgReturns = calculateAvgReturns(products);
-  const returnsDiff = currentAvgReturns !== null && recommendedAvgReturns !== null 
-    ? recommendedAvgReturns - currentAvgReturns 
-    : null;
-
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">{title}</h3>
-      
-      {/* Returns Comparison Chart */}
-      {showReturnsComparison && currentProducts && currentAvgReturns !== null && recommendedAvgReturns !== null && (
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle className="text-base">השוואת תשואות ממוצעות</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Bar Chart */}
-              <BarChart
-                height={250}
-                series={[
-                  {
-                    data: [currentAvgReturns, recommendedAvgReturns],
-                    label: 'תשואה ממוצעת (%)',
-                    color: '#10b981',
-                  },
-                ]}
-                xAxis={[{
-                  scaleType: 'band',
-                  data: ['מצב נוכחי', 'מצב מומלץ'],
-                }]}
-                sx={{
-                  '& .MuiChartsAxis-label': {
-                    fill: 'hsl(var(--foreground))',
-                  },
-                  '& .MuiChartsAxis-tick': {
-                    stroke: 'hsl(var(--border))',
-                  },
-                  '& .MuiChartsAxis-tickLabel': {
-                    fill: 'hsl(var(--foreground))',
-                  },
-                }}
-              />
-              
-              {/* Difference Indicator */}
-              <div className="flex items-center justify-center gap-2 pt-4 border-t border-border">
-                <span className="text-sm text-muted-foreground">שינוי בתשואה:</span>
-                <span className={`text-lg font-bold ${returnsDiff && returnsDiff >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {returnsDiff && returnsDiff >= 0 ? '+' : ''}{returnsDiff?.toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
       
       {/* Charts Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

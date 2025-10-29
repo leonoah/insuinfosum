@@ -27,8 +27,8 @@ const REPORT_SECTION_KEYS = [
   "executiveSummary",
   "conversationInsights",
   "portfolioComparison",
-  "productDetails",
   "returnsComparison",
+  "productDetails",
   "exposureComparison",
   "disclosures",
 ] as const;
@@ -40,8 +40,8 @@ const DEFAULT_SECTION_ORDER: ReportSectionKey[] = [
   "executiveSummary",
   "conversationInsights",
   "portfolioComparison",
-  "productDetails",
   "returnsComparison",
+  "productDetails",
   "exposureComparison",
   "disclosures",
 ];
@@ -1339,9 +1339,7 @@ ${agentData.name}`;
       <ReportSection sectionKey="productDetails">
         <ProductDetailsView 
           products={productStats.recommendedProducts}
-          currentProducts={productStats.currentProducts}
           title="מוצרים מוצעים"
-          showReturnsComparison={true}
         />
       </ReportSection>
     ) : null,
