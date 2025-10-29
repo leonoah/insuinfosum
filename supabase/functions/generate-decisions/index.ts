@@ -76,7 +76,8 @@ serve(async (req) => {
 - אל תשווה לממוצעים בשוק או לנתונים סטטיסטיים כלליים
 - הסבר כל מונח מקצועי בצורה פשוטה וברורה
 - חשוב כסוכן שמדבר ישירות עם הלקוח על בסיס הנתונים הקונקרטיים שלו בלבד
-- השתמש במירכאות בודדות (') במקום כפולות (") בתוך הטקסט
+- **CRITICAL**: השתמש תמיד במירכאות בודדות (') לכל ציטוט או הדגשה בעברית. לעולם אל תשתמש במירכאות כפולות (") בתוך הטקסט העברי - במיוחד בקיצורים כמו אג'ח, מט'ח, ש'ח וכדומה
+- כתוב בעברית תקנית וברורה
 
 חזור עם JSON בפורמט הבא (בלבד, ללא טקסט נוסף):
 {
@@ -219,14 +220,25 @@ serve(async (req) => {
           parsedContent = JSON.parse(jsonContent);
           console.log('Successfully parsed JSON on first attempt');
         } catch (firstError) {
-          console.log('First parse attempt failed, trying to fix common issues');
+          console.log('First parse attempt failed, trying to fix quotes in Hebrew text');
           
-          // Fix common issues: escape quotes in Hebrew text and complete truncated strings
-          let fixedContent = jsonContent
-            .replace(/ש"ח/g, 'ש\\"ח')
-            .replace(/למנכ"ל/g, 'למנכ\\"ל')
-            .replace(/מע"מ/g, 'מע\\"מ')
-            .replace(/אג"ח/g, 'אג\\"ח');
+          // More comprehensive quote fixing: find all string values and escape internal quotes
+          let fixedContent = jsonContent;
+          
+          // Fix common Hebrew abbreviations with quotes
+          fixedContent = fixedContent
+            .replace(/ש"ח/g, "ש'ח")
+            .replace(/למנכ"ל/g, "למנכ'ל")
+            .replace(/מע"מ/g, "מע'מ")
+            .replace(/אג"ח/g, "אג'ח")
+            .replace(/מט"ח/g, "מט'ח")
+            .replace(/ת"א/g, "ת'א")
+            .replace(/ביה"ס/g, "ביה'ס")
+            .replace(/ביה"ח/g, "ביה'ח");
+          
+          // More aggressive fix: replace any quote that appears between Hebrew characters
+          // This regex finds quotes that are NOT at string boundaries
+          fixedContent = fixedContent.replace(/([א-ת])"([א-ת])/g, "$1'$2");
           
           // If the last field appears truncated, try to close it properly
           if (fixedContent.includes(': "') && !fixedContent.trim().endsWith('"}')) {
@@ -240,7 +252,7 @@ serve(async (req) => {
           console.log('Attempting parse with fixed content');
           try {
             parsedContent = JSON.parse(fixedContent);
-            console.log('Successfully parsed after fixing common issues');
+            console.log('Successfully parsed after fixing quotes');
           } catch (secondError) {
             console.error('Both parse attempts failed:', {
               firstError: firstError instanceof Error ? firstError.message : String(firstError),
