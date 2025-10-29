@@ -152,15 +152,33 @@ ${Object.entries(tracksByCompanyAndType).map(([key, tracks]) => {
     console.log('✅ Match result:', matchResult);
 
     // Now fetch all products for the matched company and product type to find the best track match
-    const { data: companyProducts, error: companyError } = await supabase
+    let companyProductsRes = await supabase
       .from('products_information')
       .select('*')
       .eq('company', matchResult.companyMatched)
       .eq('product_type', matchResult.productType);
 
-    if (companyError) {
-      console.error('⚠️ Error fetching company products:', companyError);
+    if (companyProductsRes.error) {
+      console.error('⚠️ Error fetching company products:', companyProductsRes.error);
       throw new Error('Failed to fetch company products');
+    }
+
+    let companyProducts = companyProductsRes.data;
+
+    // Fallback: company variants (e.g., "מגדל" vs "מגדל מקפת")
+    if (!companyProducts || companyProducts.length === 0) {
+      console.log(`⚠️ No exact company match for "${matchResult.companyMatched}". Trying partial match (ILIKE).`);
+      const fallbackRes = await supabase
+        .from('products_information')
+        .select('*')
+        .ilike('company', `%${matchResult.companyMatched}%`)
+        .eq('product_type', matchResult.productType);
+
+      if (fallbackRes.error) {
+        console.error('⚠️ Error in fallback company fetch:', fallbackRes.error);
+      } else {
+        companyProducts = fallbackRes.data;
+      }
     }
 
     console.log(`📦 Found ${companyProducts?.length || 0} products for ${matchResult.companyMatched} - ${matchResult.productType}`);
