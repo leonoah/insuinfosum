@@ -137,9 +137,9 @@ const VoiceProductInput: React.FC<VoiceProductInputProps> = ({ onProductAnalyzed
 
       // Build product data from matched product
       const productData = {
-        productName: match.trackName,
+        productName: fullProduct?.track_name || match.trackName,
         category: match.productType,
-        subCategory: match.trackName,
+        subCategory: fullProduct?.track_name || match.trackName,
         company: match.companyMatched,
         amount: match.extractedInfo.amount || 0,
         managementFeeOnDeposit: match.extractedInfo.managementFeeOnDeposit || 0,
