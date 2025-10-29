@@ -61,7 +61,6 @@ const createProductStyles = () => StyleSheet.create({
     borderTopColor: '#e5e7eb',
     fontSize: 8,
     color: '#6b7280',
-    fontStyle: 'italic',
   },
   summaryCard: {
     flexDirection: 'row',
@@ -183,9 +182,10 @@ const ProductDetailsSection: React.FC<ProductDetailsSectionProps> = ({
                   <View style={productStyles.productRow}>
                     <Text style={productStyles.label}>חשיפות:</Text>
                     <Text style={productStyles.value}>
-                      {product.exposureStocks !== undefined && `מניות ${product.exposureStocks}%`}
-                      {product.exposureStocks !== undefined && product.exposureBonds !== undefined && ' | '}
-                      {product.exposureBonds !== undefined && `אג"ח ${product.exposureBonds}%`}
+                      {[
+                        product.exposureStocks !== undefined ? `מניות ${product.exposureStocks}%` : '',
+                        product.exposureBonds !== undefined ? `אג"ח ${product.exposureBonds}%` : ''
+                      ].filter(Boolean).join(' | ')}
                     </Text>
                   </View>
                 )}
