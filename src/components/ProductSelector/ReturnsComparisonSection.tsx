@@ -178,6 +178,13 @@ const ReturnsComparisonSection: React.FC<ReturnsComparisonSectionProps> = ({
                     },
                   },
                 ]}
+                yAxis={[
+                  {
+                    label: 'תשואה (%)',
+                  },
+                ]}
+                margin={{ top: 20, right: 20, bottom: 30, left: 50 }}
+                disableAxisListener
                 sx={{
                   '& .MuiChartsAxis-label': {
                     fill: 'hsl(var(--foreground))',
