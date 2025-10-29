@@ -232,6 +232,37 @@ const AppForm = () => {
     }
   };
 
+  const deleteForm = async (formId: string, formName: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    if (!confirm(`האם למחוק את הטופס של ${formName}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('saved_forms')
+        .delete()
+        .eq('id', formId);
+      
+      if (error) throw error;
+      
+      await loadSavedForms();
+      
+      toast({
+        title: "הטופס נמחק",
+        description: `הטופס של ${formName} נמחק בהצלחה`,
+      });
+    } catch (error) {
+      console.error('Error deleting form:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו למחוק את הטופס",
+        variant: "destructive"
+      });
+    }
+  };
+
   const saveFormToDatabase = async () => {
     if (!formData.clientName || !formData.clientId) {
       toast({
@@ -1419,7 +1450,7 @@ const AppForm = () => {
       {/* Load Form Dialog */}
       {showLoadDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-2xl w-full max-h-[80vh] overflow-hidden">
+          <Card className="max-w-2xl w-full max-h-[80vh] overflow-hidden bg-background">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
@@ -1447,12 +1478,14 @@ const AppForm = () => {
                   {savedForms.map((form) => (
                     <Card
                       key={form.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => loadFormFromDatabase(form)}
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <div 
+                            className="flex-1 cursor-pointer"
+                            onClick={() => loadFormFromDatabase(form)}
+                          >
                             <h3 className="font-medium">{form.client_name}</h3>
                             <p className="text-sm text-muted-foreground">
                               ת"ז: {form.client_id}
@@ -1461,13 +1494,24 @@ const AppForm = () => {
                               עודכן: {new Date(form.updated_at).toLocaleDateString('he-IL')}
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-xl"
-                          >
-                            טען
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="rounded-xl"
+                              onClick={() => loadFormFromDatabase(form)}
+                            >
+                              טען
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => deleteForm(form.id, form.client_name, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
