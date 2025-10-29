@@ -64,7 +64,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
             }
           }}
         />
-        <div className="text-sm text-center font-semibold text-foreground">{label}</div>
+        <div className="text-sm text-center font-bold text-foreground">{label}</div>
       </div>
     );
   };
