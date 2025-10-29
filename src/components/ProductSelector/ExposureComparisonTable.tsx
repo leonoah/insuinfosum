@@ -9,7 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
+import { Gauge } from '@mui/x-charts/Gauge';
+import { BarChart } from '@mui/x-charts/BarChart';
 
 interface ExposureBarProps {
   value: number;
@@ -24,12 +25,17 @@ const ExposureBar: React.FC<ExposureBarProps> = ({ value, color, label }) => {
         <span className="text-sm font-medium">{label}</span>
         <span className="text-sm font-bold">{value.toFixed(1)}%</span>
       </div>
-      <div className="relative h-3 bg-muted rounded-full overflow-hidden">
-        <div 
-          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-          style={{ 
-            width: `${value}%`,
-            backgroundColor: color
+      <div className="h-12 flex items-center">
+        <BarChart
+          series={[{ data: [value], color }]}
+          xAxis={[{ scaleType: 'band', data: [''] }]}
+          yAxis={[{ max: 100 }]}
+          height={50}
+          margin={{ top: 5, bottom: 5, left: 5, right: 5 }}
+          slotProps={{
+            bar: {
+              rx: 4,
+            },
           }}
         />
       </div>
@@ -106,24 +112,30 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     return diff > 0 ? 'text-success' : 'text-destructive';
   };
 
-  // Helper: render exposure value with progress bar
+  // Helper: render exposure value with gauge chart
   const renderExposureValue = (value: number | undefined, color: string) => {
     if (value === undefined || isNaN(Number(value))) {
       return <span className="text-muted-foreground">-</span>;
     }
     const numValue = Number(value);
     return (
-      <div className="space-y-1">
-        <span className="text-xs font-medium">{numValue.toFixed(1)}%</span>
-        <div className="relative h-2 bg-muted rounded-full overflow-hidden w-20">
-          <div 
-            className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-            style={{ 
-              width: `${numValue}%`,
-              backgroundColor: color
-            }}
-          />
-        </div>
+      <div className="flex flex-col items-center space-y-1">
+        <Gauge
+          value={numValue}
+          width={80}
+          height={80}
+          valueMin={0}
+          valueMax={100}
+          sx={{
+            '& .MuiGauge-valueArc': {
+              fill: color,
+            },
+            '& .MuiGauge-referenceArc': {
+              fill: 'hsl(var(--muted))',
+            },
+          }}
+          text={({ value }) => `${value.toFixed(1)}%`}
+        />
       </div>
     );
   };
