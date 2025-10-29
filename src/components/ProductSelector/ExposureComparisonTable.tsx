@@ -51,9 +51,11 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
           sx={{
             '& .MuiGauge-valueArc': {
               fill: color,
+              strokeWidth: 8,
             },
             '& .MuiGauge-referenceArc': {
               fill: 'gray',
+              strokeWidth: 8,
             },
             '& text': {
               fill: 'hsl(var(--foreground))',
