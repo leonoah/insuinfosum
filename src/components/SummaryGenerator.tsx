@@ -1339,7 +1339,9 @@ ${agentData.name}`;
       <ReportSection sectionKey="productDetails">
         <ProductDetailsView 
           products={productStats.recommendedProducts}
+          currentProducts={productStats.currentProducts}
           title="מוצרים מוצעים"
+          showReturnsComparison={true}
         />
       </ReportSection>
     ) : null,
