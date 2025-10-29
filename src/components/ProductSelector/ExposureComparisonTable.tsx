@@ -47,12 +47,14 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
           endAngle={90}
           min={0}
           max={100}
+          innerRadius="70%"
+          outerRadius="95%"
           sx={{
             '& .MuiGauge-valueArc': {
               fill: color,
             },
             '& .MuiGauge-referenceArc': {
-              fill: 'hsl(var(--muted))',
+              fill: 'hsl(var(--muted) / 0.2)',
             },
             '& text': {
               fill: 'hsl(var(--foreground))',
