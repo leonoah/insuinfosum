@@ -41,18 +41,19 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
       <div className="flex flex-col items-center gap-2 bg-background/50 rounded-lg p-3">
         <Gauge
           value={numericValue}
-          width={100}
-          height={70}
-          startAngle={-90}
-          endAngle={90}
+          width={120}
+          height={120}
+          startAngle={0}
+          endAngle={360}
           min={0}
           max={100}
+          text={`${numericValue.toFixed(1)}%`}
           sx={{
             '& .MuiGauge-valueArc': {
               fill: color,
             },
             '& .MuiGauge-referenceArc': {
-              fill: 'hsl(var(--muted))',
+              fill: 'hsl(var(--muted) / 0.2)',
             },
             '& text': {
               fill: 'hsl(var(--foreground))',
@@ -72,53 +73,7 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Current Products - Arc Gauges */}
-          {currentWithExposure.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">מצב קיים</h3>
-              <div className="space-y-3">
-                {currentWithExposure.map((product) => (
-                  <div key={product.id} className="border rounded-lg p-3">
-                    <div className="font-medium">
-                      {product.category}
-                    </div>
-                    <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
-                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
-                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
-                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Recommended Products - Arc Gauges */}
-          {recommendedWithExposure.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">מצב מוצע</h3>
-              <div className="space-y-3">
-                {recommendedWithExposure.map((product) => (
-                  <div key={product.id} className="border rounded-lg p-3">
-                    <div className="font-medium">
-                      {product.category}
-                    </div>
-                    <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
-                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
-                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
-                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Comparison Summary - Arc Gauges */}
+          {/* Comparison Summary - Full Circle Gauges */}
           {currentWithExposure.length > 0 && recommendedWithExposure.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-3">השוואת חשיפות ממוצעות</h3>
@@ -143,6 +98,52 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
                   label='חשיפה להשקעות בחו"ל'
                   color="#8b5cf6"
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Current Products - Full Circle Gauges */}
+          {currentWithExposure.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">מצב קיים</h3>
+              <div className="space-y-3">
+                {currentWithExposure.map((product) => (
+                  <div key={product.id} className="border rounded-lg p-3">
+                    <div className="font-medium">
+                      {product.category}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recommended Products - Full Circle Gauges */}
+          {recommendedWithExposure.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">מצב מוצע</h3>
+              <div className="space-y-3">
+                {recommendedWithExposure.map((product) => (
+                  <div key={product.id} className="border rounded-lg p-3">
+                    <div className="font-medium">
+                      {product.category}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{product.company} - {product.subCategory}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                      <ExposureGauge value={product.exposureStocks} label="חשיפה למניות" color="#3b82f6" />
+                      <ExposureGauge value={product.exposureBonds} label='חשיפה לאג"ח' color="#10b981" />
+                      <ExposureGauge value={product.exposureForeignCurrency} label='חשיפה למט"ח' color="#f59e0b" />
+                      <ExposureGauge value={product.exposureForeignInvestments} label='חשיפה להשקעות בחו"ל' color="#8b5cf6" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
