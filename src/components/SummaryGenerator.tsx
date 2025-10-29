@@ -27,8 +27,8 @@ const REPORT_SECTION_KEYS = [
   "executiveSummary",
   "conversationInsights",
   "portfolioComparison",
-  "returnsComparison",
   "productDetails",
+  "returnsComparison",
   "exposureComparison",
   "disclosures",
 ] as const;
@@ -40,8 +40,8 @@ const DEFAULT_SECTION_ORDER: ReportSectionKey[] = [
   "executiveSummary",
   "conversationInsights",
   "portfolioComparison",
-  "returnsComparison",
   "productDetails",
+  "returnsComparison",
   "exposureComparison",
   "disclosures",
 ];
