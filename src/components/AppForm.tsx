@@ -16,6 +16,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { User, FileText, CheckCircle, Save, Plus, Trash2, BarChart3, Search, Phone, Sparkles, Loader2, CalendarIcon, FolderOpen, Upload, Share2, Mail, Download } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { ReportDocument } from "@/components/PDFReport/ReportDocument";
@@ -111,6 +118,7 @@ const AppForm = () => {
   const [hasSkippedProducts, setHasSkippedProducts] = useState(false);
   const [savedForms, setSavedForms] = useState<SavedForm[]>([]);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [showDocumentsDialog, setShowDocumentsDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
@@ -1448,24 +1456,40 @@ const AppForm = () => {
                 </div>
 
                 <div>
-                  <Label>מסמכים / פעולות להשלמה</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                    {documentOptions.map((doc) => (
-                      <div key={doc} className="flex items-center space-x-2 space-x-reverse">
-                        <Checkbox
-                          id={doc}
-                          checked={formData.documents.includes(doc)}
-                          onCheckedChange={() => handleDocumentToggle(doc)}
-                        />
-                        <Label 
-                          htmlFor={doc} 
-                          className="text-sm font-normal cursor-pointer"
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>מסמכים / פעולות להשלמה</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDocumentsDialog(true)}
+                      className="h-8 w-8 p-0 rounded-full"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Show selected documents as badges */}
+                  {formData.documents.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.documents.map((doc) => (
+                        <Badge
+                          key={doc}
+                          variant="secondary"
+                          className="flex items-center gap-1 pr-1"
                         >
                           {doc}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDocumentToggle(doc)}
+                            className="ml-1 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1564,6 +1588,40 @@ const AppForm = () => {
         initialClientId={formData.clientId}
         initialClientName={formData.clientName}
       />
+
+      {/* Documents Selection Dialog */}
+      <Dialog open={showDocumentsDialog} onOpenChange={setShowDocumentsDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>בחר מסמכים / פעולות להשלמה</DialogTitle>
+            <DialogDescription>
+              בחר את המסמכים והפעולות הנדרשות להשלמת התהליך
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 py-4">
+            {documentOptions.map((doc) => (
+              <div key={doc} className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  id={`dialog-${doc}`}
+                  checked={formData.documents.includes(doc)}
+                  onCheckedChange={() => handleDocumentToggle(doc)}
+                />
+                <Label 
+                  htmlFor={`dialog-${doc}`} 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  {doc}
+                </Label>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowDocumentsDialog(false)}>
+              סיום
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Load Form Dialog */}
       {showLoadDialog && (
