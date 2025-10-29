@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SelectedProduct } from '@/types/products';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Gauge } from '@mui/x-charts/Gauge';
+import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { BarChart } from '@mui/x-charts/BarChart';
 
 interface ExposureBarProps {
@@ -19,15 +19,36 @@ interface ExposureBarProps {
 }
 
 const ExposureBar: React.FC<ExposureBarProps> = ({ value, color, label }) => {
+  const [animatedValue, setAnimatedValue] = useState(0);
+
+  useEffect(() => {
+    const duration = 1500;
+    const steps = 60;
+    const increment = value / steps;
+    let current = 0;
+    
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) {
+        setAnimatedValue(value);
+        clearInterval(timer);
+      } else {
+        setAnimatedValue(current);
+      }
+    }, duration / steps);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
         <span className="text-sm font-medium">{label}</span>
-        <span className="text-sm font-bold">{value.toFixed(1)}%</span>
+        <span className="text-sm font-bold">{animatedValue.toFixed(1)}%</span>
       </div>
       <div className="h-12 flex items-center">
         <BarChart
-          series={[{ data: [value], color }]}
+          series={[{ data: [animatedValue], color }]}
           xAxis={[{ scaleType: 'band', data: [''] }]}
           yAxis={[{ max: 100 }]}
           height={50}
@@ -112,30 +133,62 @@ const ExposureComparisonTable: React.FC<ExposureComparisonTableProps> = ({
     return diff > 0 ? 'text-success' : 'text-destructive';
   };
 
-  // Helper: render exposure value with gauge chart
+  // Helper: render exposure value with animated gauge chart
+  const AnimatedGauge: React.FC<{ value: number; color: string }> = ({ value, color }) => {
+    const [animatedValue, setAnimatedValue] = useState(0);
+
+    useEffect(() => {
+      const duration = 1500;
+      const steps = 60;
+      const increment = value / steps;
+      let current = 0;
+      
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= value) {
+          setAnimatedValue(value);
+          clearInterval(timer);
+        } else {
+          setAnimatedValue(current);
+        }
+      }, duration / steps);
+
+      return () => clearInterval(timer);
+    }, [value]);
+
+    return (
+      <Gauge
+        value={animatedValue}
+        width={100}
+        height={100}
+        valueMin={0}
+        valueMax={100}
+        cornerRadius="50%"
+        sx={(theme) => ({
+          [`& .${gaugeClasses.valueText}`]: {
+            fontSize: 20,
+            fontWeight: 'bold',
+          },
+          [`& .${gaugeClasses.valueArc}`]: {
+            fill: color,
+          },
+          [`& .${gaugeClasses.referenceArc}`]: {
+            fill: 'hsl(var(--muted))',
+          },
+        })}
+        text={({ value }) => `${value.toFixed(1)}%`}
+      />
+    );
+  };
+
   const renderExposureValue = (value: number | undefined, color: string) => {
     if (value === undefined || isNaN(Number(value))) {
       return <span className="text-muted-foreground">-</span>;
     }
     const numValue = Number(value);
     return (
-      <div className="flex flex-col items-center space-y-1">
-        <Gauge
-          value={numValue}
-          width={80}
-          height={80}
-          valueMin={0}
-          valueMax={100}
-          sx={{
-            '& .MuiGauge-valueArc': {
-              fill: color,
-            },
-            '& .MuiGauge-referenceArc': {
-              fill: 'hsl(var(--muted))',
-            },
-          }}
-          text={({ value }) => `${value.toFixed(1)}%`}
-        />
+      <div className="flex flex-col items-center">
+        <AnimatedGauge value={numValue} color={color} />
       </div>
     );
   };
