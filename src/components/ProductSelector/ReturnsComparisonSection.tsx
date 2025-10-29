@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SelectedProduct } from '@/types/products';
 import { Gauge } from '@mui/x-charts/Gauge';
-import { BarChart } from '@mui/x-charts/BarChart';
+import { ResponsiveContainer, BarChart as RBarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowRight, TrendingUp } from 'lucide-react';
 
 interface ReturnsComparisonSectionProps {
@@ -159,47 +159,20 @@ const ReturnsComparisonSection: React.FC<ReturnsComparisonSectionProps> = ({
 
           {/* Bar Chart */}
           {chartData.length > 0 && (
-            <div className="w-full">
-              <BarChart
-                height={250}
-                series={[
-                  {
-                    data: chartData.map(item => item.returns),
-                    label: 'תשואה ממוצעת (%)',
-                    color: 'hsl(var(--primary))',
-                  },
-                ]}
-                xAxis={[
-                  {
-                    scaleType: 'band',
-                    data: chartData.map(item => item.type),
-                    tickLabelStyle: {
-                      fontSize: 14,
-                    },
-                  },
-                ]}
-                yAxis={[
-                  {
-                    label: 'תשואה (%)',
-                  },
-                ]}
-                margin={{ top: 20, right: 20, bottom: 30, left: 50 }}
-                disableAxisListener
-                sx={{
-                  '& .MuiChartsAxis-label': {
-                    fill: 'hsl(var(--foreground))',
-                  },
-                  '& .MuiChartsAxis-tick': {
-                    stroke: 'hsl(var(--border))',
-                  },
-                  '& .MuiChartsAxis-tickLabel': {
-                    fill: 'hsl(var(--foreground))',
-                  },
-                  '& .MuiChartsLegend-series text': {
-                    fill: 'hsl(var(--foreground)) !important',
-                  },
-                }}
-              />
+            <div className="w-full h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RBarChart data={chartData} margin={{ top: 20, right: 20, bottom: 30, left: 20 }}>
+                  <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                  <XAxis dataKey="type" tick={{ fill: 'hsl(var(--foreground))' }} />
+                  <YAxis tick={{ fill: 'hsl(var(--foreground))' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'hsl(var(--muted))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+                    formatter={(value: any) => [`${value}%`, 'תשואה']}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Bar dataKey="returns" fill="hsl(var(--primary))" radius={[6,6,0,0]} />
+                </RBarChart>
+              </ResponsiveContainer>
             </div>
           )}
 
