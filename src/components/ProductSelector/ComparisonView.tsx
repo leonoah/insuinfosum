@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, TrendingUp, TrendingDown, RotateCcw } from 'luci
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SelectedProduct, PRODUCT_ICONS } from '@/types/products';
+import { BarChart } from '@mui/x-charts/BarChart';
 
 interface ComparisonViewProps {
   currentProducts: SelectedProduct[];
@@ -177,6 +178,135 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Charts - Amount Comparison */}
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle>השוואת סכומים לפי קטגוריה</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BarChart
+            height={300}
+            series={[
+              { 
+                data: currentProducts.reduce((acc, p) => {
+                  const existing = acc.find(item => item.category === p.category);
+                  if (existing) {
+                    existing.amount += p.amount;
+                  } else {
+                    acc.push({ category: p.category, amount: p.amount });
+                  }
+                  return acc;
+                }, [] as { category: string; amount: number }[]).map(item => item.amount),
+                label: 'מצב קיים',
+                color: '#3b82f6'
+              },
+              { 
+                data: recommendedProducts.reduce((acc, p) => {
+                  const existing = acc.find(item => item.category === p.category);
+                  if (existing) {
+                    existing.amount += p.amount;
+                  } else {
+                    acc.push({ category: p.category, amount: p.amount });
+                  }
+                  return acc;
+                }, [] as { category: string; amount: number }[]).map(item => item.amount),
+                label: 'מצב מוצע',
+                color: '#10b981'
+              },
+            ]}
+            xAxis={[{ 
+              scaleType: 'band', 
+              data: [...new Set([...currentProducts, ...recommendedProducts].map(p => p.category))],
+              tickLabelStyle: {
+                angle: 45,
+                textAnchor: 'start',
+                fontSize: 12,
+              }
+            }]}
+            yAxis={[{
+              label: 'סכום (₪)',
+            }]}
+            slotProps={{
+              legend: {
+                direction: 'row' as any,
+                position: { vertical: 'top', horizontal: 'center' },
+              },
+            }}
+            sx={{
+              '& .MuiChartsAxis-label': {
+                fill: 'hsl(var(--foreground))',
+              },
+              '& .MuiChartsAxis-tick': {
+                stroke: 'hsl(var(--border))',
+              },
+              '& .MuiChartsAxis-tickLabel': {
+                fill: 'hsl(var(--foreground))',
+              },
+              '& .MuiChartsLegend-series text': {
+                fill: 'hsl(var(--foreground)) !important',
+              },
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Charts - Fees Comparison */}
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle>השוואת דמי ניהול ממוצעים</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BarChart
+            height={250}
+            series={[
+              { 
+                data: [
+                  currentProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / (currentProducts.length || 1),
+                  currentProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / (currentProducts.length || 1),
+                ],
+                label: 'מצב קיים',
+                color: '#3b82f6'
+              },
+              { 
+                data: [
+                  recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnDeposit, 0) / (recommendedProducts.length || 1),
+                  recommendedProducts.reduce((sum, p) => sum + p.managementFeeOnAccumulation, 0) / (recommendedProducts.length || 1),
+                ],
+                label: 'מצב מוצע',
+                color: '#10b981'
+              },
+            ]}
+            xAxis={[{ 
+              scaleType: 'band', 
+              data: ['דמי ניהול על הפקדה', 'דמי ניהול על צבירה'],
+            }]}
+            yAxis={[{
+              label: 'אחוזים (%)',
+            }]}
+            slotProps={{
+              legend: {
+                direction: 'row' as any,
+                position: { vertical: 'top', horizontal: 'center' },
+              },
+            }}
+            sx={{
+              '& .MuiChartsAxis-label': {
+                fill: 'hsl(var(--foreground))',
+              },
+              '& .MuiChartsAxis-tick': {
+                stroke: 'hsl(var(--border))',
+              },
+              '& .MuiChartsAxis-tickLabel': {
+                fill: 'hsl(var(--foreground))',
+              },
+              '& .MuiChartsLegend-series text': {
+                fill: 'hsl(var(--foreground)) !important',
+              },
+            }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Summary Table */}
       <Card className="glass">
