@@ -9,7 +9,7 @@ interface ProductDetailsSectionProps {
   styles: any;
 }
 
-const createProductStyles = () => StyleSheet.create({
+const createProductStyles = (isDark: boolean) => StyleSheet.create({
   categoryHeader: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -17,15 +17,16 @@ const createProductStyles = () => StyleSheet.create({
     marginTop: 12,
     paddingBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: isDark ? '#334155' : '#e0e0e0',
+    color: isDark ? '#06b6d4' : '#0891b2',
   },
   productCard: {
     marginBottom: 10,
     padding: 10,
-    backgroundColor: '#f9fafb',
+    backgroundColor: isDark ? '#1e293b' : '#f9fafb',
     borderRadius: 4,
     borderLeftWidth: 3,
-    borderLeftColor: '#3b82f6',
+    borderLeftColor: isDark ? '#06b6d4' : '#3b82f6',
   },
   productHeader: {
     flexDirection: 'row',
@@ -35,7 +36,7 @@ const createProductStyles = () => StyleSheet.create({
   productTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: isDark ? '#f1f5f9' : '#1f2937',
   },
   productAmount: {
     fontSize: 11,
@@ -49,25 +50,25 @@ const createProductStyles = () => StyleSheet.create({
     fontSize: 9,
   },
   label: {
-    color: '#6b7280',
+    color: isDark ? '#94a3b8' : '#6b7280',
   },
   value: {
-    color: '#374151',
+    color: isDark ? '#cbd5e1' : '#374151',
   },
   notes: {
     marginTop: 6,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: isDark ? '#334155' : '#e5e7eb',
     fontSize: 8,
-    color: '#6b7280',
+    color: isDark ? '#94a3b8' : '#6b7280',
   },
   summaryCard: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 15,
     padding: 8,
-    backgroundColor: '#eff6ff',
+    backgroundColor: isDark ? '#334155' : '#eff6ff',
     borderRadius: 4,
   },
   summaryItem: {
@@ -75,13 +76,13 @@ const createProductStyles = () => StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 9,
-    color: '#6b7280',
+    color: isDark ? '#94a3b8' : '#6b7280',
     marginBottom: 2,
   },
   summaryValue: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: isDark ? '#f1f5f9' : '#1f2937',
   },
 });
 
@@ -90,7 +91,9 @@ const ProductDetailsSection: React.FC<ProductDetailsSectionProps> = ({
   recommendedProducts,
   styles,
 }) => {
-  const productStyles = createProductStyles();
+  // Extract isDark from styles theme (check background color)
+  const isDark = styles.page.backgroundColor === '#0f172a';
+  const productStyles = createProductStyles(isDark);
 
   // Group products by category
   const groupByCategory = (products: SelectedProduct[]) => {
