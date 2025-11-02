@@ -99,7 +99,7 @@ const AppNavigation = () => {
                 asChild 
                 className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-6 rounded-2xl shadow-glow"
               >
-                <Link to="/app">התחל סיכום</Link>
+                <Link to="/auth">התחבר</Link>
               </Button>
             )}
           </div>
@@ -153,8 +153,8 @@ const AppNavigation = () => {
                   asChild 
                   className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium rounded-2xl w-fit"
                 >
-                  <Link to="/app" onClick={() => setIsMenuOpen(false)}>
-                    התחל סיכום
+                  <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                    התחבר
                   </Link>
                 </Button>
               )}
