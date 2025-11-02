@@ -1,14 +1,49 @@
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
 import logo from "@/assets/logo-final.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const AppNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
+  useEffect(() => {
+    // Check auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "לא הצלחנו להתנתק",
+      });
+    } else {
+      toast({
+        title: "התנתקת בהצלחה",
+      });
+      navigate("/");
+    }
+  };
+
   const navItems = [
     { label: "בית", href: "/" },
     { label: "איך זה עובד", href: "/how-it-works" },
@@ -50,12 +85,23 @@ const AppNavigation = () => {
             
             <ThemeToggle />
             
-            <Button 
-              asChild 
-              className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-6 rounded-2xl shadow-glow"
-            >
-              <Link to="/app">התחל סיכום</Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button 
+                onClick={handleLogout}
+                variant="outline"
+                className="font-medium px-6 rounded-2xl"
+              >
+                <LogOut className="h-4 w-4" />
+                התנתק
+              </Button>
+            ) : (
+              <Button 
+                asChild 
+                className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium px-6 rounded-2xl shadow-glow"
+              >
+                <Link to="/app">התחל סיכום</Link>
+              </Button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -90,14 +136,28 @@ const AppNavigation = () => {
                 </Link>
               ))}
               
-              <Button 
-                asChild 
-                className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium rounded-2xl w-fit"
-              >
-                <Link to="/app" onClick={() => setIsMenuOpen(false)}>
-                  התחל סיכום
-                </Link>
-              </Button>
+              {isLoggedIn ? (
+                <Button 
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  variant="outline"
+                  className="font-medium rounded-2xl w-fit"
+                >
+                  <LogOut className="h-4 w-4" />
+                  התנתק
+                </Button>
+              ) : (
+                <Button 
+                  asChild 
+                  className="bg-primary hover:bg-primary-hover text-primary-foreground font-medium rounded-2xl w-fit"
+                >
+                  <Link to="/app" onClick={() => setIsMenuOpen(false)}>
+                    התחל סיכום
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         )}
