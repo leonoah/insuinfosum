@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AppNavigation from "@/components/Navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InsuranceManagement } from "@/components/admin/InsuranceManagement";
 import { AgentInfo } from "@/components/admin/AgentInfo";
 import { ClientsList } from "@/components/admin/ClientsList";
@@ -9,9 +11,75 @@ import { ClientManagement } from "@/components/admin/ClientManagement";
 import { ReportsLog } from "@/components/admin/ReportsLog";
 import { ProductInformationManagement } from "@/components/admin/ProductInformationManagement";
 import PensionParsingLogs from "@/components/admin/PensionParsingLogs";
-import { Shield, Building2, User, Users, FileText, Database, UserPlus, Activity } from "lucide-react";
+import { Shield, Building2, User, Users, FileText, Database, UserPlus, Activity, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Admin = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("נדרשת התחברות");
+        navigate("/auth?redirect=/admin");
+        return;
+      }
+
+      const { data: roleData, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .single();
+
+      if (error || !roleData) {
+        setIsAdmin(false);
+        toast.error("אין לך הרשאות גישה לעמוד זה");
+      } else {
+        setIsAdmin(true);
+      }
+    } catch (error) {
+      console.error("Error checking admin access:", error);
+      setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        <AppNavigation />
+        <main className="container mx-auto px-4 py-8">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>אין הרשאת גישה</AlertTitle>
+            <AlertDescription>
+              אין לך הרשאות מנהל לצפות בעמוד זה. אנא פנה למנהל המערכת.
+            </AlertDescription>
+          </Alert>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <AppNavigation />
