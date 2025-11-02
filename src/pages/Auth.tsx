@@ -7,11 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().trim().email({ message: "כתובת אימייל לא תקינה" }).max(255, { message: "אימייל ארוך מדי" }),
+  password: z.string().min(6, { message: "סיסמה חייבת להכיל לפחות 6 תווים" }).max(72, { message: "סיסמה ארוכה מדי" }),
+});
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,27 +40,62 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input
+    const validation = authSchema.safeParse({ email, password });
+    if (!validation.success) {
+      toast({
+        variant: "destructive",
+        title: "שגיאה בנתונים",
+        description: validation.error.errors[0].message,
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email: validation.data.email,
+          password: validation.data.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/app`,
+          },
+        });
 
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: error.message,
-        });
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהרשמה",
+            description: error.message,
+          });
+        } else {
+          toast({
+            title: "נרשמת בהצלחה",
+            description: "בדוק את האימייל שלך לאימות החשבון",
+          });
+        }
       } else {
-        toast({
-          title: "התחברת בהצלחה",
-          description: "מעביר אותך לאפליקציה...",
+        const { error } = await supabase.auth.signInWithPassword({
+          email: validation.data.email,
+          password: validation.data.password,
         });
+
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהתחברות",
+            description: error.message,
+          });
+        } else {
+          toast({
+            title: "התחברת בהצלחה",
+            description: "מעביר אותך לאפליקציה...",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -72,11 +114,15 @@ const Auth = () => {
       <div className="container mx-auto px-4 py-20 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">התחברות</CardTitle>
-            <CardDescription>הזן את פרטי ההתחברות שלך</CardDescription>
+            <CardTitle className="text-2xl">
+              {isSignUp ? "הרשמה" : "התחברות"}
+            </CardTitle>
+            <CardDescription>
+              {isSignUp ? "צור חשבון חדש" : "הזן את פרטי ההתחברות שלך"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSignIn} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">אימייל</Label>
                 <Input
@@ -87,6 +133,7 @@ const Auth = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
+                  maxLength={255}
                 />
               </div>
               <div className="space-y-2">
@@ -99,11 +146,28 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
+                  maxLength={72}
                 />
+                {isSignUp && (
+                  <p className="text-xs text-muted-foreground">
+                    הסיסמה חייבת להכיל לפחות 6 תווים
+                  </p>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "מתחבר..." : "התחבר"}
+                {loading ? (isSignUp ? "נרשם..." : "מתחבר...") : (isSignUp ? "הירשם" : "התחבר")}
               </Button>
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  disabled={loading}
+                  className="text-sm"
+                >
+                  {isSignUp ? "כבר יש לך חשבון? התחבר" : "אין לך חשבון? הירשם"}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
