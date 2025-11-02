@@ -23,17 +23,21 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Get redirect URL from query params
+    const params = new URLSearchParams(window.location.search);
+    const redirectUrl = params.get("redirect") || "/app";
+
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/app");
+        navigate(redirectUrl);
       }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate("/app");
+        navigate(redirectUrl);
       }
     });
 
@@ -58,11 +62,14 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
+        const params = new URLSearchParams(window.location.search);
+        const redirectUrl = params.get("redirect") || "/app";
+        
         const { error } = await supabase.auth.signUp({
           email: validation.data.email,
           password: validation.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/app`,
+            emailRedirectTo: `${window.location.origin}${redirectUrl}`,
           },
         });
 
@@ -111,10 +118,13 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect") || "/app";
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/app`,
+          redirectTo: `${window.location.origin}${redirectUrl}`,
         },
       });
 
